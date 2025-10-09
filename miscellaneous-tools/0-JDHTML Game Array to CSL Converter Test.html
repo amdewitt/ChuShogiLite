@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+<body>
+<h1>ChuShogiLite JDHTML Chu Board Game Converter</h1>
+
+<script>
+
+function convertJDHTMLGame(originalString) {
+  let newStringArray = originalString.split('\n');
+  let newString = '';
+  let firstApostropheIndex = -1;
+  let secondApostropheIndex = -1;
+  let moveText = '';
+
+    for (let i = 0; i < newStringArray.length; ++i) {
+        firstApostropheIndex = newStringArray[i].indexOf("'");
+        if (firstApostropheIndex !== -1) {
+            secondApostropheIndex = newStringArray[i].indexOf("'", firstApostropheIndex + 1);
+            if (secondApostropheIndex !== -1) {
+                moveText = newStringArray[i].substring(firstApostropheIndex + 1, secondApostropheIndex);
+                console.log(moveText);
+            } else {
+                return newString;
+            }
+        } else {
+            return newString;
+        }
+
+        if (moveText.length > 0) {
+            if (moveText.length < 8) return newString; // Invalid move
+
+            if (moveText.startsWith('i') || moveText.startsWith('n')) { // double moves stored in JDHTML Game as two separate moves beginning with i and n, in that order
+                newString += parseInt(moveText.substring(1, 3)).toString();
+                newString += String.fromCharCode(parseInt(moveText.substring(3, 5)) + 96);
+                ++i;
+                moveText = newStringArray[i].substring(firstApostropheIndex + 1, secondApostropheIndex); // get second part of move
+                newString += parseInt(moveText.substring(1, 3)).toString();
+                newString += String.fromCharCode(parseInt(moveText.substring(3, 5)) + 96);
+                newString += parseInt(moveText.substring(5, 7)).toString();
+                newString += String.fromCharCode(parseInt(moveText.substring(7, 9)) + 96);
+                if (moveText.charAt(8) == 'N') newString += '+' // promotion
+            } else { // normal move
+                newString += parseInt(moveText.substring(0, 2)).toString();
+                newString += String.fromCharCode(parseInt(moveText.substring(2, 4)) + 96);
+                newString += parseInt(moveText.substring(4, 6)).toString();
+                newString += String.fromCharCode(parseInt(moveText.substring(6, 8)) + 96);
+                if (moveText.charAt(8) == 'N') newString += '+' // promotion
+            }
+            if (i < (newStringArray.length - 1)) newString += ' ';
+        }
+    }
+
+  return newString;
+} // '01011212'
+
+function myFunction() {
+  document.getElementById("demo").innerHTML = "X";
+    document.getElementById("demo").innerHTML = convertJDHTMLGame(document.getElementById('gameInput').value);
+  document.getElementById('gameInput').value = '';
+}
+</script>
+
+
+<textarea id="gameInput"></textarea>
+<input type="button" value="Convert JDHTML Game" onclick="myFunction()">
+<p id="demo">No JDHTML Game converted yet</p>
+    <p>On any JDHTML Chu Board, like <a href="https://www.asahi-net.or.jp/~xr9s-ymgc/tume/tumechu16.html">this one</a>, use Ctrl+U to open its source and copy the sk array. Paste the copied array into the text box and then press 'Convert JDHTML Game' to get a CSL-compatible Game string.</p>
+</body>
+</html> 
