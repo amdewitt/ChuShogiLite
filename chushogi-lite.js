@@ -298,16 +298,24 @@
             allClasses: [
                 "selected",
                 "valid-move",
+                "repeat-promotion-move",
                 "last-move",
+                "last-move-outline",
                 "last-move-midpoint",
-                "promotion-origin",
-                "promotion-destination",
-                "promotion-deferral",
-                "promotion-alternate",
-                "lion-return-alternate",
+                "lion-first-move",
+                "lion-double-origin",
+                "lion-double-midpoint",
+                "lion-king-move",
+                "lion-return-choice",
+                "promotion-source",
+                "promotion-choice",
+                "promotion-midpoint",
                 "counterstrike-highlight",
                 "influence-friendly",
                 "influence-enemy",
+                "influence-white",
+                "influence-black",
+                "influence-contested",
                 "influence-king-zone",
                 "influence-promotion-zone",
                 "double-move-origin",
@@ -2457,15 +2465,8 @@
                 return;
             }
 
-            // Prevent moves during navigation
-            if (this.isNavigating) {
-                console.log(
-                    "Cannot make moves while navigating history. Use the navigation buttons to return to current position first.",
-                );
-                return;
-            }
-
             // Handle edit mode - check if we're in edit tab and handle piece placement
+            // Edit mode should work regardless of navigation state
             if (this.currentTab === "edit") {
                 if (this.editMode.counterStrikeSelection) {
                     // Handle Counter-strike square selection
@@ -2480,6 +2481,14 @@
                     this.handleEditModeBoardClick(squareId);
                     return;
                 }
+            }
+
+            // Prevent moves during navigation (only for normal play mode)
+            if (this.isNavigating) {
+                console.log(
+                    "Cannot make moves while navigating history. Use the navigation buttons to return to current position first.",
+                );
+                return;
             }
 
             // Lion return prompt clicks are now handled by the promotion system below
@@ -3854,17 +3863,11 @@
                 "lion-first-move",
                 "lion-double-origin",
                 "lion-double-midpoint",
-                "lion-double-midpoint",
-                "lion-double-destination",
-                "lion-midpoint",
                 "lion-king-move",
-                "lion-return-origin",
-                "lion-return-alternate",
-                "promotion-destination",
-                "promotion-deferral",
-                "promotion-origin",
+                "lion-return-choice",
+                "promotion-choice",
+                "promotion-source",
                 "promotion-midpoint",
-                "promotion-alternate",
                 "influence-white",
                 "influence-black",
                 "influence-contested",
@@ -3950,13 +3953,10 @@
                         "lion-first-move",
                         "lion-double-origin",
                         "lion-double-midpoint",
-                        "lion-double-destination",
-                        "lion-return-origin",
-                        "lion-return-alternate",
-                        "promotion-destination",
-                        "promotion-deferral",
-                        "promotion-origin",
-                        "promotion-alternate",
+                        "lion-king-move",
+                        "lion-return-choice",
+                        "promotion-choice",
+                        "promotion-source",
                         "influence-black",
                         "influence-white",
                         "influence-contested",
@@ -4017,7 +4017,17 @@
                             if (this.doubleMoveRepeatToOrigin) {
                                 shouldHaveHighlights.push("selected");
                             } else {
+                                // Always add the base origin class
                                 shouldHaveHighlights.push("lion-double-origin");
+                                
+                                // Add valid-move class when showLegalMoves is enabled and origin is a valid destination
+                                if (
+                                    this.config.showLegalMoves &&
+                                    this.doubleMoveDestinations &&
+                                    this.doubleMoveDestinations.includes(squareId)
+                                ) {
+                                    shouldHaveHighlights.push("valid-move");
+                                }
                             }
                         }
                         if (squareId === this.doubleMoveMidpoint) {
@@ -4067,9 +4077,7 @@
                                     this.doubleMoveRepeatToOrigin
                                 )
                             ) {
-                                shouldHaveHighlights.push(
-                                    "lion-double-destination",
-                                );
+                                shouldHaveHighlights.push("valid-move");
                             }
                         }
                     }
@@ -4101,13 +4109,13 @@
                     // Promotion highlighting
                     if (this.promotionPromptActive) {
                         if (squareId === this.promotionDestinationSquare) {
-                            shouldHaveHighlights.push("promotion-destination");
+                            shouldHaveHighlights.push("promotion-choice");
                         }
                         if (squareId === this.promotionDeferralSquare) {
-                            shouldHaveHighlights.push("promotion-deferral");
+                            shouldHaveHighlights.push("promotion-choice");
                         }
                         if (squareId === this.promotionAlternateSquare) {
-                            shouldHaveHighlights.push("promotion-alternate");
+                            shouldHaveHighlights.push("promotion-source");
                         }
                         if (
                             this.promotionMove &&
@@ -4121,7 +4129,7 @@
                                 !isCoveredByDestination &&
                                 !isCoveredByDeferral
                             ) {
-                                shouldHaveHighlights.push("promotion-origin");
+                                shouldHaveHighlights.push("promotion-source");
                             }
                         }
                     }
@@ -4129,10 +4137,10 @@
                     // Lion return highlighting
                     if (this.lionReturnPromptActive) {
                         if (this.selectedSquare === squareId) {
-                            shouldHaveHighlights.push("lion-return-origin");
+                            shouldHaveHighlights.push("lion-return-choice");
                         }
                         if (this.lionReturnAlternateSquare === squareId) {
-                            shouldHaveHighlights.push("lion-return-alternate");
+                            shouldHaveHighlights.push("lion-return-choice");
                         }
                     }
 
@@ -4278,7 +4286,7 @@
                         `[data-square="${this.promotionDestinationSquare}"]`,
                     );
                     if (destElement) {
-                        destElement.classList.add("promotion-destination");
+                        destElement.classList.add("promotion-choice");
                     }
                 }
 
@@ -4288,7 +4296,7 @@
                         `[data-square="${this.promotionDeferralSquare}"]`,
                     );
                     if (deferralElement) {
-                        deferralElement.classList.add("promotion-deferral");
+                        deferralElement.classList.add("promotion-choice");
                     }
                 }
 
@@ -4308,15 +4316,13 @@
 
                         if (isCoveredByDestination) {
                             // Origin is covered by destination - use destination highlighting
-                            originElement.classList.add(
-                                "promotion-destination",
-                            );
+                            originElement.classList.add("promotion-choice");
                         } else if (isCoveredByDeferral) {
                             // Origin is covered by deferral - use deferral highlighting
-                            originElement.classList.add("promotion-deferral");
+                            originElement.classList.add("promotion-choice");
                         } else {
                             // Normal origin highlighting when not covered
-                            originElement.classList.add("promotion-origin");
+                            originElement.classList.add("promotion-source");
                         }
                     }
                 }
@@ -4327,7 +4333,7 @@
                         `[data-square="${this.promotionAlternateSquare}"]`,
                     );
                     if (altElement) {
-                        altElement.classList.add("promotion-alternate");
+                        altElement.classList.add("promotion-source");
                     }
                 }
             },
@@ -4344,7 +4350,7 @@
                         `[data-square="${this.lionReturnAlternateSquare}"]`,
                     );
                     if (altElement) {
-                        altElement.classList.add("lion-return-alternate");
+                        altElement.classList.add("lion-return-choice");
                     }
                 }
             },
@@ -6529,15 +6535,8 @@
                 this.config.allowIllegalMoves = false;
             }
 
-            // Prevent moves during navigation
-            if (this.isNavigating) {
-                console.log(
-                    "Cannot make moves while navigating history. Use the navigation buttons to return to current position first.",
-                );
-                return;
-            }
-
             // Handle edit mode - check if we're in edit tab and handle piece placement
+            // Edit mode should work regardless of navigation state
             if (this.currentTab === "edit") {
                 if (this.editMode.counterStrikeSelection) {
                     // Handle Counter-strike square selection
@@ -6552,6 +6551,14 @@
                     this.handleEditModeBoardClick(squareId);
                     return;
                 }
+            }
+
+            // Prevent moves during navigation (only for normal play mode)
+            if (this.isNavigating) {
+                console.log(
+                    "Cannot make moves while navigating history. Use the navigation buttons to return to current position first.",
+                );
+                return;
             }
 
             // Lion return prompt clicks are now handled by the promotion system below
@@ -9242,12 +9249,12 @@
 
                     console.log("Post-resize promotion verification:", {
                         originHasClass:
-                            originEl?.classList.contains("promotion-origin"),
+                            originEl?.classList.contains("promotion-source"),
                         destHasClass: destEl?.classList.contains(
-                            "promotion-destination",
+                            "promotion-choice",
                         ),
                         deferralHasClass:
-                            defEl?.classList.contains("promotion-deferral"),
+                            defEl?.classList.contains("promotion-choice"),
                     });
                 }
 
@@ -9262,9 +9269,9 @@
 
                     console.log("Post-resize Lion return verification:", {
                         originHasClass:
-                            originEl?.classList.contains("lion-return-origin"),
+                            originEl?.classList.contains("lion-return-choice"),
                         alternateHasClass: altEl?.classList.contains(
-                            "lion-return-alternate",
+                            "lion-return-choice",
                         ),
                     });
                 }
@@ -9653,8 +9660,7 @@
                     "selected",
                     "valid-move",
                     "last-move",
-                    "lion-return-origin",
-                    "lion-return-alternate",
+                    "lion-return-choice",
                 );
             });
         }
