@@ -1110,9 +1110,8 @@
   font-weight: normal !important;
 }
 
-/* Selected/checked option styling */
-.chushogi-select option:checked,
-.chushogi-select option[selected] {
+/* Selected/checked option styling - only use :checked to avoid multiple selections appearing */
+.chushogi-select option:checked {
   background: #007bff !important;
   background-color: #007bff !important;
   color: white !important;
