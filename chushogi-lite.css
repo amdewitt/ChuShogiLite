@@ -387,12 +387,12 @@
 }
 
 /* Make unpromoted pieces visible on dark influence backgrounds - only when no other highlights are present */
-.chushogi-square.influence-black:not(.selected):not(.valid-move):not(.repeat-promotion-move):not(.lion-first-move):not(.lion-double-origin):not(.lion-double-midpoint):not(.lion-king-move):not(.lion-return-choice):not(.promotion-choice):not(.promotion-source):not(.promotion-origin-covered):not(.promotion-midpoint) .chushogi-piece:not(.promoted) {
+.chushogi-square.influence-black:not(.selected):not(.valid-move):not(.repeat-promotion-move):not(.valid-illegal-move):not(.lion-first-move):not(.lion-double-origin):not(.lion-double-midpoint):not(.lion-king-move):not(.lion-return-choice):not(.promotion-choice):not(.promotion-source):not(.promotion-origin-covered):not(.promotion-midpoint) .chushogi-piece:not(.promoted) {
   color: white !important;
 }
 
 /* Make promoted pieces visible on dark influence backgrounds - only when no other highlights are present */
-.chushogi-square.influence-black:not(.selected):not(.valid-move):not(.repeat-promotion-move):not(.lion-first-move):not(.lion-double-origin):not(.lion-double-midpoint):not(.lion-king-move):not(.lion-return-choice):not(.promotion-choice):not(.promotion-source):not(.promotion-origin-covered):not(.promotion-midpoint) .chushogi-piece.promoted {
+.chushogi-square.influence-black:not(.selected):not(.valid-move):not(.repeat-promotion-move):not(.valid-illegal-move):not(.lion-first-move):not(.lion-double-origin):not(.lion-double-midpoint):not(.lion-king-move):not(.lion-return-choice):not(.promotion-choice):not(.promotion-source):not(.promotion-origin-covered):not(.promotion-midpoint) .chushogi-piece.promoted {
   color: orange !important;
 }
 
@@ -422,6 +422,7 @@
 /* Dot highlights for empty squares - shared structure */
 .chushogi-square.valid-move::after,
 .chushogi-square.repeat-promotion-move::after,
+.chushogi-square.valid-illegal-move::after,
 .chushogi-square.lion-first-move::after {
   content: '' !important;
   position: absolute !important;
@@ -441,6 +442,7 @@
 /* Circle highlights for occupied squares - shared structure */
 .chushogi-square.valid-move:has(.chushogi-piece)::after,
 .chushogi-square.repeat-promotion-move:has(.chushogi-piece)::after,
+.chushogi-square.valid-illegal-move:has(.chushogi-piece)::after,
 .chushogi-square.lion-first-move:has(.chushogi-piece)::after,
 .chushogi-square.lion-king-move:has(.chushogi-piece)::after,
 .chushogi-square.lion-double-midpoint.valid-move:has(.chushogi-piece)::after {
@@ -470,6 +472,19 @@
 }
 
 .chushogi-square.repeat-promotion-move:has(.chushogi-piece)::after {
+  border: 3px solid #e77706 !important;
+}
+
+/* Illegal move highlights (when allowIllegalMoves is true) - amber to indicate illegal move */
+.chushogi-square.valid-illegal-move {
+  background-color: rgba(245, 158, 11, 0.5) !important;
+}
+
+.chushogi-square.valid-illegal-move::after {
+  background-color: #e77706 !important;
+}
+
+.chushogi-square.valid-illegal-move:has(.chushogi-piece)::after {
   border: 3px solid #e77706 !important;
 }
 
@@ -534,6 +549,7 @@
 /* Hide last move circles when other highlights are present */
 .chushogi-square.last-move-outline.valid-move::before,
 .chushogi-square.last-move-outline.repeat-promotion-move::before,
+.chushogi-square.last-move-outline.valid-illegal-move::before,
 .chushogi-square.last-move-outline.selected::before,
 .chushogi-square.last-move-outline.lion-first-move::before,
 .chushogi-square.last-move-outline.lion-double-origin::before,
