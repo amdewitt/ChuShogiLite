@@ -299,6 +299,7 @@
                 "selected",
                 "valid-move",
                 "repeat-promotion-move",
+                "valid-illegal-move",
                 "last-move",
                 "last-move-outline",
                 "last-move-midpoint",
@@ -736,6 +737,7 @@
             this.selectedSquare = null;
             this.validMoves = [];
             this.repeatPromotionMoves = []; // Moves that violate repetition but are promotion-eligible
+            this.illegalMoves = []; // Illegal moves when allowIllegalMoves is true
             this.lastMove = null;
             this.gameStatus = "playing";
             this.currentTab = "moves"; // Track current active tab
@@ -3076,6 +3078,10 @@
             this.doubleMoveOrigin = null;
             this.doubleMoveDestinations = [];
             this.doubleMoveRepeatToOrigin = false;
+            
+            // Clear repeat promotion and illegal move tracking
+            this.repeatPromotionMoves = [];
+            this.illegalMoves = [];
 
             console.log("clearSelection: Cleared double move state");
 
@@ -3948,6 +3954,7 @@
                         "selected",
                         "valid-move",
                         "repeat-promotion-move",
+                        "valid-illegal-move",
                         "last-move",
                         "last-move-outline",
                         "lion-first-move",
@@ -4095,8 +4102,13 @@
                         (!this.lionFirstMoves ||
                             !this.lionFirstMoves.includes(squareId))
                     ) {
-                        // Check if this is a repeat-promotion move (amber) or normal move (green)
+                        // Check if this is an illegal move (amber), repeat-promotion move (amber), or normal move (green)
                         if (
+                            this.illegalMoves &&
+                            this.illegalMoves.includes(squareId)
+                        ) {
+                            shouldHaveHighlights.push("valid-illegal-move");
+                        } else if (
                             this.repeatPromotionMoves &&
                             this.repeatPromotionMoves.includes(squareId)
                         ) {
@@ -6887,15 +6899,17 @@
                 validMoves: [
                     ...movesInfo.normalMoves,
                     ...movesInfo.repeatPromotionMoves,
-                ], // All valid moves for backward compatibility
+                    ...movesInfo.illegalMoves,
+                ], // All moves (including illegal when allowIllegalMoves is true) for backward compatibility
                 // Clear any existing double move state
                 doubleMoveMidpoint: null,
                 doubleMoveOrigin: null,
                 doubleMoveDestinations: [],
             });
 
-            // Store repeat promotion moves separately for highlighting
+            // Store repeat promotion moves and illegal moves separately for highlighting
             this.repeatPromotionMoves = movesInfo.repeatPromotionMoves;
+            this.illegalMoves = movesInfo.illegalMoves;
 
             // Invalidate influence cache when midpoint is cleared
             this.influenceManager.invalidate();
@@ -7776,13 +7790,13 @@
             },
 
             // Calculate all valid moves for a piece at a given square
-            calculateValidMoves: (squareId, piece = null) => {
+            calculateValidMoves: (squareId, piece = null, includeFriendlyCaptures = false) => {
                 const [rank, file] = this.parseSquareId(squareId);
                 const currentPiece = piece || this.board[rank][file];
                 if (!currentPiece) return [];
 
                 // If illegal moves are allowed, return all squares except the current one
-                if (this.config.allowIllegalMoves) {
+                if (this.config.allowIllegalMoves && !includeFriendlyCaptures) {
                     const allMoves = [];
                     for (let r = 0; r < 12; r++) {
                         for (let f = 0; f < 12; f++) {
@@ -7816,14 +7830,14 @@
 
                         const targetPiece = this.board[newRank][newFile];
                         if (targetPiece) {
-                            if (targetPiece.color !== currentPiece.color) {
-                                const targetSquare = this.getSquareId(
-                                    newRank,
-                                    newFile,
-                                );
-
+                            const targetSquare = this.getSquareId(
+                                newRank,
+                                newFile,
+                            );
+                            
+                            // Always include captures (even friendly) when includeFriendlyCaptures is true
+                            if (includeFriendlyCaptures || targetPiece.color !== currentPiece.color) {
                                 // Lion-trading rule validation removed
-
                                 moves.push(targetSquare);
                             }
                             break;
@@ -7837,6 +7851,11 @@
                 });
 
                 // Filter moves based on Counter-strike and Bridge-capture rules
+                // Skip these filters when includeFriendlyCaptures is true (allowIllegalMoves mode)
+                if (includeFriendlyCaptures) {
+                    return moves;
+                }
+                
                 const validMoves = moves.filter((targetSquare) => {
                     const counterStrikeResult =
                         this.moveValidator.validateCounterStrike(
@@ -7862,11 +7881,49 @@
             // Returns an object with:
             //   - normalMoves: array of moves that don't violate repetition rules
             //   - repeatPromotionMoves: array of moves that violate repetition but are promotion-eligible
+            //   - illegalMoves: array of illegal moves (when allowIllegalMoves is true)
             calculateMovesWithRepetitionInfo: (squareId, piece = null) => {
                 const [rank, file] = this.parseSquareId(squareId);
                 const currentPiece = piece || this.board[rank][file];
                 if (!currentPiece) {
-                    return { normalMoves: [], repeatPromotionMoves: [] };
+                    return { normalMoves: [], repeatPromotionMoves: [], illegalMoves: [] };
+                }
+
+                // If illegal moves are allowed, calculate legal moves and show illegal moves as amber
+                if (this.config.allowIllegalMoves) {
+                    // Temporarily disable allowIllegalMoves to get actual legal moves
+                    const originalSetting = this.config.allowIllegalMoves;
+                    this.config.allowIllegalMoves = false;
+                    
+                    // Calculate legal moves including friendly captures for consistency
+                    const legalMoves = this.moveValidator.calculateValidMoves(
+                        squareId,
+                        currentPiece,
+                        true  // includeFriendlyCaptures
+                    );
+                    
+                    // Restore setting
+                    this.config.allowIllegalMoves = originalSetting;
+                    
+                    // Get all possible squares
+                    const allMoves = [];
+                    for (let r = 0; r < 12; r++) {
+                        for (let f = 0; f < 12; f++) {
+                            const targetSquare = this.getSquareId(r, f);
+                            if (targetSquare !== squareId) {
+                                allMoves.push(targetSquare);
+                            }
+                        }
+                    }
+                    
+                    // Illegal moves are those not in legalMoves
+                    const illegalMoves = allMoves.filter(move => !legalMoves.includes(move));
+                    
+                    return {
+                        normalMoves: legalMoves,
+                        repeatPromotionMoves: [],
+                        illegalMoves: illegalMoves,
+                    };
                 }
 
                 // Get all valid moves first
@@ -7875,14 +7932,12 @@
                     currentPiece,
                 );
 
-                // If illegal moves are allowed or repetition handling is relaxed, all moves are normal
-                if (
-                    this.config.allowIllegalMoves ||
-                    this.config.repetitionHandling === "relaxed"
-                ) {
+                // If repetition handling is relaxed, all moves are normal
+                if (this.config.repetitionHandling === "relaxed") {
                     return {
                         normalMoves: allValidMoves,
                         repeatPromotionMoves: [],
+                        illegalMoves: [],
                     };
                 }
 
@@ -7921,7 +7976,7 @@
                     }
                 });
 
-                return { normalMoves, repeatPromotionMoves };
+                return { normalMoves, repeatPromotionMoves, illegalMoves: [] };
             },
 
             // Calculate double move destinations with repetition info
