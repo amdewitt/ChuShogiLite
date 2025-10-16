@@ -21,6 +21,7 @@
 .chushogi-container {
   font-family: 'Roboto', 'Helvetica Neue', Arial, sans-serif !important;
   background: #ffffff !important;
+  border: 1px solid black !important;
   border-radius: 8px !important;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
   overflow: auto !important;
@@ -386,12 +387,12 @@
 }
 
 /* Make unpromoted pieces visible on dark influence backgrounds - only when no other highlights are present */
-.chushogi-square.influence-black:not(.selected):not(.valid-move):not(.repeat-promotion-move):not(.lion-first-move):not(.lion-double-origin):not(.lion-double-midpoint):not(.lion-double-destination):not(.lion-midpoint):not(.lion-king-move):not(.lion-return-origin):not(.lion-return-alternate):not(.promotion-destination):not(.promotion-deferral):not(.promotion-origin):not(.promotion-alternate):not(.promotion-origin-covered):not(.promotion-midpoint) .chushogi-piece:not(.promoted) {
+.chushogi-square.influence-black:not(.selected):not(.valid-move):not(.repeat-promotion-move):not(.lion-first-move):not(.lion-double-origin):not(.lion-double-midpoint):not(.lion-king-move):not(.lion-return-choice):not(.promotion-choice):not(.promotion-source):not(.promotion-origin-covered):not(.promotion-midpoint) .chushogi-piece:not(.promoted) {
   color: white !important;
 }
 
 /* Make promoted pieces visible on dark influence backgrounds - only when no other highlights are present */
-.chushogi-square.influence-black:not(.selected):not(.valid-move):not(.repeat-promotion-move):not(.lion-first-move):not(.lion-double-origin):not(.lion-double-midpoint):not(.lion-double-destination):not(.lion-midpoint):not(.lion-king-move):not(.lion-return-origin):not(.lion-return-alternate):not(.promotion-destination):not(.promotion-deferral):not(.promotion-origin):not(.promotion-alternate):not(.promotion-origin-covered):not(.promotion-midpoint) .chushogi-piece.promoted {
+.chushogi-square.influence-black:not(.selected):not(.valid-move):not(.repeat-promotion-move):not(.lion-first-move):not(.lion-double-origin):not(.lion-double-midpoint):not(.lion-king-move):not(.lion-return-choice):not(.promotion-choice):not(.promotion-source):not(.promotion-origin-covered):not(.promotion-midpoint) .chushogi-piece.promoted {
   color: orange !important;
 }
 
@@ -409,7 +410,7 @@
 }
 
 /* Selected piece highlight should override last move highlight */
-.chushogi-square.selected {
+.chushogi-square.selected:not(.chushogi-square.valid-move) {
   background-color: rgba(255, 193, 7, 0.7) !important;
 }
 
@@ -418,14 +419,45 @@
   background-color: rgba(76, 175, 80, 0.3) !important;
 }
 
-.chushogi-square.valid-move::after {
+/* Dot highlights for empty squares - shared structure */
+.chushogi-square.valid-move::after,
+.chushogi-square.repeat-promotion-move::after,
+.chushogi-square.lion-first-move::after {
   content: '' !important;
   position: absolute !important;
   width: 30% !important;
   height: 30% !important;
-  background-color: #4caf50 !important;
   border-radius: 50% !important;
-  opacity: 0.8 !important;
+  opacity: 1 !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+}
+
+.chushogi-square.valid-move::after {
+  background-color: #4caf50 !important;
+}
+
+/* Circle highlights for occupied squares - shared structure */
+.chushogi-square.valid-move:has(.chushogi-piece)::after,
+.chushogi-square.repeat-promotion-move:has(.chushogi-piece)::after,
+.chushogi-square.lion-first-move:has(.chushogi-piece)::after,
+.chushogi-square.lion-king-move:has(.chushogi-piece)::after,
+.chushogi-square.lion-double-midpoint.valid-move:has(.chushogi-piece)::after {
+  width: 100% !important;
+  height: 100% !important;
+  background-color: transparent !important;
+  border-radius: 50% !important;
+  opacity: 1 !important;
+  top: 0 !important;
+  left: 0 !important;
+  transform: none !important;
+  box-sizing: border-box !important;
+}
+
+.chushogi-square.valid-move:has(.chushogi-piece)::after,
+.chushogi-square.lion-double-midpoint.valid-move:has(.chushogi-piece)::after {
+  border: 3px solid #4caf50 !important;
 }
 
 /* Repeat promotion move highlights - amber to indicate forced promotion */
@@ -434,13 +466,11 @@
 }
 
 .chushogi-square.repeat-promotion-move::after {
-  content: '' !important;
-  position: absolute !important;
-  width: 30% !important;
-  height: 30% !important;
   background-color: #e77706 !important;
-  border-radius: 50% !important;
-  opacity: 0.8 !important;
+}
+
+.chushogi-square.repeat-promotion-move:has(.chushogi-piece)::after {
+  border: 3px solid #e77706 !important;
 }
 
 /* Lion King moves (midpoint selection) - matches valid-move format */
@@ -462,45 +492,25 @@
   transform: translate(-50%, -50%) !important;
 }
 
-/* Lion midpoint highlighting */
-.chushogi-square.lion-midpoint {
-  background-color: rgba(245, 158, 11, 0.5) !important;
+.chushogi-square.lion-king-move:has(.chushogi-piece)::after {
+  opacity: 1 !important;
 }
 
-/* Lion return prompt highlighting */
-.chushogi-square.lion-return-origin {
+/* Lion return prompt highlighting - consolidated */
+.chushogi-square.lion-return-choice {
   background-color: rgba(245, 158, 11, 0.5) !important;
-  /* Light blue */
   cursor: pointer !important;
 }
 
-.chushogi-square.lion-return-alternate {
-  background-color: rgba(245, 158, 11, 0.5) !important;
-  /* Gold like selected piece */
-  cursor: pointer !important;
-}
-
-/* Promotion prompt highlighting */
-.chushogi-square.promotion-destination {
+/* Promotion prompt highlighting - consolidated */
+.chushogi-square.promotion-choice {
   background-color: rgba(245, 158, 11, 0.5) !important;
   box-shadow: inset 0 0 0 3px #e77706 !important;
   cursor: pointer !important;
 }
 
-.chushogi-square.promotion-deferral {
-  background-color: rgba(245, 158, 11, 0.5) !important;
-  box-shadow: inset 0 0 0 3px #e77706 !important;
-  cursor: pointer !important;
-}
-
-.chushogi-square.promotion-origin {
+.chushogi-square.promotion-source {
   background-color: rgba(255, 193, 7, 0.7) !important;
-  cursor: pointer !important;
-}
-
-.chushogi-square.promotion-alternate {
-  background-color: rgba(255, 193, 7, 0.7) !important;
-  /* Same as selected piece */
   cursor: pointer !important;
 }
 
@@ -528,15 +538,10 @@
 .chushogi-square.last-move-outline.lion-first-move::before,
 .chushogi-square.last-move-outline.lion-double-origin::before,
 .chushogi-square.last-move-outline.lion-double-midpoint::before,
-.chushogi-square.last-move-outline.lion-double-destination::before,
-.chushogi-square.last-move-outline.lion-midpoint::before,
 .chushogi-square.last-move-outline.lion-king-move::before,
-.chushogi-square.last-move-outline.lion-return-origin::before,
-.chushogi-square.last-move-outline.lion-return-alternate::before,
-.chushogi-square.last-move-outline.promotion-destination::before,
-.chushogi-square.last-move-outline.promotion-deferral::before,
-.chushogi-square.last-move-outline.promotion-origin::before,
-.chushogi-square.last-move-outline.promotion-alternate::before {
+.chushogi-square.last-move-outline.lion-return-choice::before,
+.chushogi-square.last-move-outline.promotion-choice::before,
+.chushogi-square.last-move-outline.promotion-source::before {
   display: none !important;
 }
 
@@ -546,13 +551,12 @@
 }
 
 .chushogi-square.lion-first-move::after {
-  content: '' !important;
-  position: absolute !important;
-  width: 30% !important;
-  height: 30% !important;
   background-color: #8a2be2 !important;
-  border-radius: 50% !important;
-  opacity: 0.8 !important;
+}
+
+.chushogi-square.lion-first-move:has(.chushogi-piece)::after,
+.chushogi-square.lion-king-move:has(.chushogi-piece)::after {
+  border: 3px solid #8a2be2 !important;
 }
 
 /* Lion double move state highlighting */
@@ -578,22 +582,10 @@
   height: 30% !important;
   background-color: #4caf50 !important;
   border-radius: 50% !important;
-  opacity: 0.8 !important;
+  opacity: 1 !important;
 }
 
-.chushogi-square.lion-double-destination {
-  background-color: rgba(76, 175, 80, 0.3) !important;
-}
 
-.chushogi-square.lion-double-destination::after {
-  content: '' !important;
-  position: absolute !important;
-  width: 30% !important;
-  height: 30% !important;
-  background-color: #4caf50 !important;
-  border-radius: 50% !important;
-  opacity: 0.8 !important;
-}
 
 .chushogi-piece {
   font-weight: bold !important;
@@ -604,7 +596,7 @@
 
 .chushogi-piece.promoted {
   color: #d32f2f !important;
-  font-style: italic;
+  font-style: italic !important;
   /* Red color for promoted pieces */
 }
 
@@ -637,11 +629,7 @@
 
 /* When board is flipped, white pieces get double rotation (360deg = 0deg) */
 .chushogi-container[data-flip-view="true"] .chushogi-piece.white {
-  transform: rotate(360deg);
-}
-
-.chushogi-piece.promoted {
-  color: #d32f2f !important;
+  transform: rotate(360deg) !important;
 }
 
 .chushogi-promotion-zone {
@@ -910,35 +898,8 @@
   font-weight: normal !important;
 }
 
-.chushogi-move-item {
-  font-family: 'Roboto Mono', monospace !important;
-  font-size: 14px !important;
-  color: hsl(20, 14.3%, 4.1%) !important;
-  margin-bottom: 4px !important;
-  padding: 2px 4px !important;
-  border-radius: 2px !important;
-  cursor: pointer !important;
-}
-
-.chushogi-move-item:hover {
-  background: hsl(60, 4.8%, 95.9%) !important;
-}
-
-.chushogi-move-item.current {
-  background: hsl(207, 90%, 54%) !important;
-  color: white !important;
-}
-
-.chushogi-move-item.selected {
-  background: hsl(25, 95%, 53%) !important;
-  color: white !important;
-}
-
-.chushogi-move-item.clickable {
-  cursor: pointer !important;
-  transition: background-color 0.2s !important;
-}
-
+/* Move item styles - shared properties */
+.chushogi-move-item,
 .chushogi-move-item-inline {
   font-family: 'Roboto Mono', monospace !important;
   font-size: 14px !important;
@@ -947,18 +908,28 @@
   border-radius: 2px !important;
   cursor: pointer !important;
   transition: background-color 0.2s !important;
+}
+
+.chushogi-move-item {
+  margin-bottom: 4px !important;
+}
+
+.chushogi-move-item-inline {
   display: inline !important;
 }
 
+.chushogi-move-item:hover,
 .chushogi-move-item-inline:hover {
   background: hsl(60, 4.8%, 95.9%) !important;
 }
 
+.chushogi-move-item.current,
 .chushogi-move-item-inline.current {
   background: hsl(207, 90%, 54%) !important;
   color: white !important;
 }
 
+.chushogi-move-item.selected,
 .chushogi-move-item-inline.selected {
   background: hsl(25, 95%, 53%) !important;
   color: white !important;
@@ -1126,6 +1097,33 @@
   appearance: auto !important;
   -webkit-appearance: menulist !important;
   -moz-appearance: menulist !important;
+}
+
+/* Dropdown option styling - protect from external CSS interference */
+.chushogi-select option {
+  background: white !important;
+  color: hsl(20, 14.3%, 4.1%) !important;
+  padding: 4px 8px !important;
+  font-size: 14px !important;
+  font-family: inherit !important;
+  line-height: 1.5 !important;
+  font-weight: normal !important;
+}
+
+/* Selected/checked option styling */
+.chushogi-select option:checked,
+.chushogi-select option[selected] {
+  background: #007bff !important;
+  background-color: #007bff !important;
+  color: white !important;
+  font-weight: normal !important;
+}
+
+/* Hover state for options in dropdown */
+.chushogi-select option:hover {
+  background: #e3f2fd !important;
+  background-color: #e3f2fd !important;
+  color: hsl(20, 14.3%, 4.1%) !important;
 }
 
 .chushogi-textarea {
