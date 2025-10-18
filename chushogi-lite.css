@@ -381,6 +381,16 @@
   /* Near white - white controls */
 }
 
+/* Make unpromoted pieces visible on light influence backgrounds - only when no other highlights are present */
+.chushogi-square.influence-white:not(.selected):not(.valid-move):not(.repeat-promotion-move):not(.valid-illegal-move):not(.lion-first-move):not(.lion-double-origin):not(.lion-double-midpoint):not(.lion-king-move):not(.lion-return-choice):not(.promotion-choice):not(.promotion-source):not(.promotion-origin-covered):not(.promotion-midpoint) .chushogi-piece:not(.promoted) {
+  color: #2c2c2c !important;
+}
+
+/* Make promoted pieces visible on light influence backgrounds - only when no other highlights are present */
+.chushogi-square.influence-white:not(.selected):not(.valid-move):not(.repeat-promotion-move):not(.valid-illegal-move):not(.lion-first-move):not(.lion-double-origin):not(.lion-double-midpoint):not(.lion-king-move):not(.lion-return-choice):not(.promotion-choice):not(.promotion-source):not(.promotion-origin-covered):not(.promotion-midpoint) .chushogi-piece.promoted {
+  color: #d32f2f !important;
+}
+
 .chushogi-square.influence-black {
   background-color: rgba(70, 70, 70, 0.8) !important;
   /* Dark grey - black controls */
@@ -399,6 +409,16 @@
 .chushogi-square.influence-contested {
   background-color: rgba(185, 185, 185, 0.7) !important;
   /* Light grey - both sides control */
+}
+
+/* Make unpromoted pieces visible on contested influence backgrounds - only when no other highlights are present */
+.chushogi-square.influence-contested:not(.selected):not(.valid-move):not(.repeat-promotion-move):not(.valid-illegal-move):not(.lion-first-move):not(.lion-double-origin):not(.lion-double-midpoint):not(.lion-king-move):not(.lion-return-choice):not(.promotion-choice):not(.promotion-source):not(.promotion-origin-covered):not(.promotion-midpoint) .chushogi-piece:not(.promoted) {
+  color: #2c2c2c !important;
+}
+
+/* Make promoted pieces visible on contested influence backgrounds - only when no other highlights are present */
+.chushogi-square.influence-contested:not(.selected):not(.valid-move):not(.repeat-promotion-move):not(.valid-illegal-move):not(.lion-first-move):not(.lion-double-origin):not(.lion-double-midpoint):not(.lion-king-move):not(.lion-return-choice):not(.promotion-choice):not(.promotion-source):not(.promotion-origin-covered):not(.promotion-midpoint) .chushogi-piece.promoted {
+  color: #d32f2f !important;
 }
 
 /* Mouse hover highlighting completely removed per user request */
