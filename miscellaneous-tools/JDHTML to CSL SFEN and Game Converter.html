@@ -99,7 +99,10 @@ function convertJDHTMLSFEN(originalString, isGoteToMove) {
     }
 
     sfenText += isGoteToMove ? ' w' : ' b';
-    sfenText += ' - 1';
+    let antiTradeCoordinate = document.getElementById('antiTradeCoordinate').value;
+    if(/^([2-9]|1[0-2]?)([a-l])$/.test(antiTradeCoordinate)) sfenText += ' ' + antiTradeCoordinate;
+    else sfenText += ' -'
+    sfenText += ' 1';
     return sfenText;
 }
 
@@ -152,28 +155,34 @@ function convertJDHTMLGame(originalString) {
 } // '01011212'
 
 function convertJDHTMLShoki() {
-  document.getElementById("demo").innerHTML = "X";
-    document.getElementById("demo").innerHTML = convertJDHTMLSFEN(document.getElementById('sfenInput').value, document.getElementById('sfenStartPlayer').checked);
+  document.getElementById("demo1").innerHTML = "X";
+    document.getElementById("demo1").innerHTML = convertJDHTMLSFEN(document.getElementById('sfenInput').value, document.getElementById('sfenStartPlayer').checked);
   document.getElementById('sfenInput').value = '';
 }
 
 function convertJDHTMLSk() {
-  document.getElementById("demo").innerHTML = "X";
-    document.getElementById("demo").innerHTML = convertJDHTMLGame(document.getElementById('gameInput').value);
+  document.getElementById("demo2").innerHTML = "X";
+    document.getElementById("demo2").innerHTML = convertJDHTMLGame(document.getElementById('gameInput').value);
   document.getElementById('gameInput').value = '';
 }
 </script>
 
-<textarea id="sfenInput"></textarea>
-<input type="button" value="Convert JDHTML SFEN" onclick="convertJDHTMLShoki()">
+<textarea id="sfenInput" placeholder="Paste shoki[] Array here"></textarea>
 <input type="checkbox" id="sfenStartPlayer">
 <label for="sfenStartPlayer">Player To Move (Unchecked = b, Checked = w)</label>
-<p id="demo">No JDHTML SFEN converted yet</p>
-    <p>On any JDHTML Chu Board, like <a href="https://www.asahi-net.or.jp/~xr9s-ymgc/tume/tumechu16.html">this one</a>, use Ctrl+U or its equivalent to view the source, then copy the shoki array. Paste the copied array into the text box above and then press 'Convert JDHTML SFEN' to get a CSL-compatible SFEN.</p>
+<br>
+<input type="text" id="antiTradeCoordinate" placeholder="Anti-Trade coord here">&nbsp;&nbsp;Anti-trade coordinate in USI format (i.e. 7f), blank = N/A
+<br>
+<br>
+<input type="button" value="Convert JDHTML Shoki (Board Setup)" onclick="convertJDHTMLShoki()">
+<p id="demo1">No JDHTML SFEN converted yet</p>
+    <p>On any JDHTML Chu Board, like <a href="https://www.asahi-net.or.jp/~xr9s-ymgc/tume/tumechu16.html">this one</a>, use Ctrl+U or its equivalent to view the source, then copy the shoki array. Paste the copied array into the text box above and then press 'Convert JDHTML Shoki (Board Setup)' to get a CSL-compatible SFEN.</p>
 </body>
-<textarea id="gameInput"></textarea>
-<input type="button" value="Convert JDHTML Game" onclick="convertJDHTMLSk()">
-<p id="demo">No JDHTML Game converted yet</p>
-    <p>On any JDHTML Chu Board, like <a href="https://www.asahi-net.or.jp/~xr9s-ymgc/tume/tumechu16.html">this one</a>, use Ctrl+U or its equivalent to view the source, then copy the sk array. Paste the copied array into the text box above and then press 'Convert JDHTML Game' to get a CSL-compatible Game string.</p>
+<textarea id="gameInput" placeholder="Paste sk[] Array here"></textarea>
+<br>
+<br>
+<input type="button" value="Convert JDHTML SK (Game)" onclick="convertJDHTMLSk()">
+<p id="demo2">No JDHTML Game converted yet</p>
+    <p>On any JDHTML Chu Board, like <a href="https://www.asahi-net.or.jp/~xr9s-ymgc/tume/tumechu16.html">this one</a>, use Ctrl+U or its equivalent to view the source, then copy the sk array. Paste the copied array into the text box above and then press 'Convert JDHTML SK (Game)' to get a CSL-compatible Game string.</p>
 </body>
 </html> 
