@@ -6,6 +6,9 @@
 (function (global) {
     "use strict";
 
+    // Version Number
+    const version = "beta";
+
     // Debug system
     const showDebugOutput = false;
 
@@ -1461,7 +1464,7 @@
             </div>
           </div>
           <div class="chushogi-credit">
-            ChuShogiLite by A. M. DeWitt
+            ChuShogiLite ${version} by A. M. DeWitt
           </div>
         </div>
         <div class="chushogi-controls">
@@ -1691,6 +1694,7 @@
             ${!isFixedSettings ? `<div class="chushogi-tab ${this.currentTab === "settings" ? "active" : ""}" data-tab="settings">⚙️</div>` : ""}
             <div class="chushogi-tab ${this.currentTab === "export" ? "active" : ""}" data-tab="export">⇅</div>
             ${!isViewOnly && !isFixedStart && !isPuzzle ? `<div class="chushogi-tab ${this.currentTab === "edit" ? "active" : ""}" data-tab="edit">✏️</div>` : ""}
+            <div class="chushogi-tab ${this.currentTab === "rules" ? "active" : ""}" data-tab="rules">ℹ️</div>
             <div class="chushogi-tab ${this.currentTab === "help" ? "active" : ""}" data-tab="help">❓</div>
           </div>
         </div>
@@ -1721,6 +1725,9 @@
         </div>`
                 : ""
         }
+        <div class="chushogi-panel ${this.currentTab === "rules" ? "active" : ""}" data-panel="rules">
+          ${this.generateRulesPanel()}
+        </div>
         <div class="chushogi-panel ${this.currentTab === "help" ? "active" : ""}" data-panel="help">
           ${this.generateHelpPanel()}
         </div>
@@ -2112,6 +2119,16 @@
             }
         }
 
+        generateRulesPanel() {
+            return `
+        <div class="chushogi-help">
+          <div class="chushogi-setting-group">
+            <h4>Rules of Chu Shogi</h4>
+          </div>
+        </div>
+      `;
+        }
+
         generateHelpPanel() {
             const isViewOnly = this.config.appletMode === "viewOnly";
             const isFixedStart =
@@ -2128,7 +2145,7 @@
           <div class="chushogi-setting-group">
             <h4>About</h4>
             <div class="chushogi-help-content">
-            <p><strong>ChuShogiLite</strong></p>
+            <p><strong>ChuShogiLite ${version}</strong></p>
             <p>Made by A. M. DeWitt using the Replit.com Core Agent</p>
             </div>
           </div>
@@ -2211,6 +2228,7 @@
                 <li>⚙️ Settings: Shows available settings${isViewOnly ? " (some settings are restricted in view-only mode)" : ""}</li>
                 <li>⇅ Export/Import: Allows for games to be exported to plaintext${!isViewOnly ? (isFixedStart ? " and imported from plaintext (imports restricted to same starting position)" : " and imported from plaintext") : " (Game imports not available in viewOnly mode)"}${isPuzzle ? " and has a 'View Solution' button to reveal the complete puzzle answer" : ""}</li>
                 ${!isViewOnly && !isFixedStart && !isPuzzle ? "<li>✏️ Edit: Allows the board to be edited without importing a game</li>" : ""}
+                <li>ℹ️ Rules: Explains the rules of Chu Shogi</li>
                 <li>❓ Help: This help window</li>
               </ul>
               ${
