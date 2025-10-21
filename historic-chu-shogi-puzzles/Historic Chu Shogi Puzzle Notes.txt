@@ -490,9 +490,9 @@ E14 (TumeChu 1): OK. Mate in 3.
 
 E15 (TumeChu 3): OK. Mate in 9.
 
-E16 (TumeChu 4): OK. Mate in 41. This puzzle is a simple example of what the author calls a "chaser," a type of puzzle where the attacker chases the opposing King around the board at least once.
+E16 (TumeChu 4): OK. Mate in 41. This puzzle is a simple example of what the author calls a "chaser," a type of puzzle where the attacker chases the opposing King around part of the board at least once.
 
-E17 (TumeChu 5): OK. Mate in 37. This puzzle is a simple example of the author calls a "saw," a type of puzzle where the attacker's motion resembles that of a saw. Such puzzles have very repetitive solutions, sometimes to the point where the defending King will just shuffle back and forth between two squares.
+E17 (TumeChu 5): OK. Mate in 37. This puzzle is a simple example of the author calls a "saw," a type of puzzle where the attacker's motion resembles that of a saw, and is often used to capture pieces in a long-winded manner. Such puzzles have very repetitive solutions, often to the point where the defending King will just shuffle back and forth between two squares.
 
 E18 (TumeChu 6): OK. Mate in 6.
 
@@ -502,7 +502,7 @@ E20 (TumeChu 9): OK. Mate in 56.
 
 E21 (TumeChu 11): OK. Mate in 14.
 
-E22 (TumeChu 14): This puzzle is the longest puzzle in the entire collection excluding the three thousand-move puzzles, being a mate in 135. It combines the "chaser" and "saw" ideas into one long puzzle. HaChu confirmed this with human assistance via process of elimination, as it found several deviations from the given solution, but all of them were sub-optimal.
+E22 (TumeChu 14): This puzzle is the longest puzzle in the entire collection, excluding the three thousand-move puzzles, being a mate in 135. It combines the chaser and saw ideas into one very long puzzle. HaChu confirmed the mate with human assistance via process of elimination, as it found several deviations from the given solution, but all of them were sub-optimal.
 
 E23 (TumeChu 19): OK. Mate in 14.
 
@@ -556,8 +556,8 @@ E47 (TumeChu 99): OK. Mate in 37.
 
 TUMECHU THOUSAND-MOVES COLLECTION (https://www.asahi-net.or.jp/~xr9s-ymgc/tume/tumechuX.html)
 
-E48 (TumeChu 12): OK. Mate in 505. This puzzle combines two different "saws" to create an extremely long mate.
+E48 (TumeChu 12): OK. Mate in 505. This puzzle combines a chaser and a saw to create an extremely long mate.
 
-E49 (TumeChu 60): OK. Mate in 672. This puzzle uses the same idea as the previous one, but the saws are longer, and the initial phase involves clearing several pieces to clear the way for the first saw.
+E49 (TumeChu 60): OK. Mate in 672. This puzzle uses the same idea as the previous one, except the initial phase involves clearing several pieces to clear the way for the chaser.
 
-E50 (TumeChu 16): OK. Mate in 1,629. This puzzle holds the title for the longest Chu Shogi tsume puzzle ever made, and is far and away the longest puzzle in the entire collection. It uses the same idea as the previous two puzzles, but the second saw takes longer each time it goes from one side to the other. HaChu found a deviation involving blocking the sawing Dragon Horse with the Dragon King on 4i instead of the 4th-file Go-Between, but this is very poor defense, as it allows pieces trapped near the bottom of the board to escape far earlier than they would otherwise be able to.
+E50 (TumeChu 16): OK. Mate in 1,629. This puzzle holds the title for the longest Chu Shogi tsume puzzle ever made, and is far and away the longest puzzle in the entire collection. It uses the same idea as the previous two puzzles, except the saw encompasses a much wider area and follows a curved trajectory. HaChu found a deviation involving blocking the sawing Dragon Horse with the Dragon King on 4i instead of the 4th-file Go-Between, but this is very poor defense, as it allows pieces trapped near the bottom of the board to escape far earlier than they would otherwise be able to.
