@@ -847,13 +847,13 @@
   display: block !important;
 }
 
-.chushogi-move-history {
+.chushogi-game-log {
   margin-bottom: 16px !important;
   display: flex !important;
   flex-direction: column !important;
 }
 
-.chushogi-move-history h4 {
+.chushogi-game-log h4 {
   font-size: 16px !important;
   font-weight: 500 !important;
   color: hsl(20, 14.3%, 4.1%) !important;
@@ -865,6 +865,17 @@
   border: 1px solid hsl(20, 5.9%, 90%) !important;
   border-bottom: 2px solid hsl(20, 5.9%, 75%) !important;
   border-radius: 4px 4px 0 0 !important;
+  padding: 0 !important;
+  flex-shrink: 0 !important;
+}
+
+.chushogi-sfen-section {
+  background: white !important;
+  border-left: 1px solid hsl(20, 5.9%, 90%) !important;
+  border-right: 1px solid hsl(20, 5.9%, 90%) !important;
+  border-bottom: 2px solid hsl(20, 5.9%, 75%) !important;
+  border-top: none !important;
+  border-radius: 0 !important;
   padding: 0 !important;
   flex-shrink: 0 !important;
 }
@@ -918,12 +929,12 @@
   margin-bottom: 0px !important;
 }
 
-/* SFEN Display styling - match other containers but keep default height */
+/* SFEN Display styling - no border since container handles it */
 .chushogi-sfen-display {
-  background: white !important;
-  border: 1px solid hsl(20, 5.9%, 90%) !important;
-  border-radius: 4px !important;
-  height: 80px !important;
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  height: 96px !important;
   overflow-y: auto !important;
   padding: 12px !important;
   font-family: 'Roboto Mono', monospace !important;
