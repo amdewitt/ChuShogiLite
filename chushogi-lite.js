@@ -14109,7 +14109,7 @@
                 totalMoves = this.moveHistory.length;
             }
 
-            return `${currentPosition} / ${totalMoves}`;
+            return `<span translate="yes">Position</span> ${currentPosition} / ${totalMoves}`;
         }
 
         viewPuzzleSolution() {
