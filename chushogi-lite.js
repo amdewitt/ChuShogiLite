@@ -1729,12 +1729,8 @@
 
         generateMovesPanel() {
             return `
-        <div class="chushogi-setting-group" style="padding-bottom:12px;">
-          <h4>SFEN</h4>
-          <div class="chushogi-sfen-display" translate="no" data-current-sfen>Loading...</div>
-        </div>
-        <div class="chushogi-move-history">
-          <h4>Move History</h4>
+        <div class="chushogi-game-log">
+          <h4>Game Log</h4>
           <div class="chushogi-checkbox" style="margin-bottom: 8px;">
             <input type="checkbox" id="use-inline-notation-${this.instanceId}" ${this.config.useInlineNotation ? "checked" : ""}>
             <label for="use-inline-notation-${this.instanceId}">Display inline</label>
@@ -1742,6 +1738,9 @@
           <div class="chushogi-displayed-position-section">
             <div class="chushogi-position-display" translate="no" data-position-display>
             </div>
+          </div>
+          <div class="chushogi-sfen-section">
+            <div class="chushogi-sfen-display" translate="no" data-current-sfen>Loading...</div>
           </div>
           <div class="chushogi-move-list" translate="no" data-move-list>
             <div class="chushogi-move-item">Starting Position</div>
@@ -3078,7 +3077,7 @@
             this.doubleMoveOrigin = null;
             this.doubleMoveDestinations = [];
             this.doubleMoveRepeatToOrigin = false;
-            
+
             // Clear repeat promotion and illegal move tracking
             this.repeatPromotionMoves = [];
             this.illegalMoves = [];
@@ -4026,12 +4025,14 @@
                             } else {
                                 // Always add the base origin class
                                 shouldHaveHighlights.push("lion-double-origin");
-                                
+
                                 // Add valid-move class when showLegalMoves is enabled and origin is a valid destination
                                 if (
                                     this.config.showLegalMoves &&
                                     this.doubleMoveDestinations &&
-                                    this.doubleMoveDestinations.includes(squareId)
+                                    this.doubleMoveDestinations.includes(
+                                        squareId,
+                                    )
                                 ) {
                                     shouldHaveHighlights.push("valid-move");
                                 }
@@ -7790,7 +7791,11 @@
             },
 
             // Calculate all valid moves for a piece at a given square
-            calculateValidMoves: (squareId, piece = null, includeFriendlyCaptures = false) => {
+            calculateValidMoves: (
+                squareId,
+                piece = null,
+                includeFriendlyCaptures = false,
+            ) => {
                 const [rank, file] = this.parseSquareId(squareId);
                 const currentPiece = piece || this.board[rank][file];
                 if (!currentPiece) return [];
@@ -7834,9 +7839,12 @@
                                 newRank,
                                 newFile,
                             );
-                            
+
                             // Always include captures (even friendly) when includeFriendlyCaptures is true
-                            if (includeFriendlyCaptures || targetPiece.color !== currentPiece.color) {
+                            if (
+                                includeFriendlyCaptures ||
+                                targetPiece.color !== currentPiece.color
+                            ) {
                                 // Lion-trading rule validation removed
                                 moves.push(targetSquare);
                             }
@@ -7855,7 +7863,7 @@
                 if (includeFriendlyCaptures) {
                     return moves;
                 }
-                
+
                 const validMoves = moves.filter((targetSquare) => {
                     const counterStrikeResult =
                         this.moveValidator.validateCounterStrike(
@@ -7886,7 +7894,11 @@
                 const [rank, file] = this.parseSquareId(squareId);
                 const currentPiece = piece || this.board[rank][file];
                 if (!currentPiece) {
-                    return { normalMoves: [], repeatPromotionMoves: [], illegalMoves: [] };
+                    return {
+                        normalMoves: [],
+                        repeatPromotionMoves: [],
+                        illegalMoves: [],
+                    };
                 }
 
                 // If illegal moves are allowed, calculate legal moves and show illegal moves as amber
@@ -7894,17 +7906,17 @@
                     // Temporarily disable allowIllegalMoves to get actual legal moves
                     const originalSetting = this.config.allowIllegalMoves;
                     this.config.allowIllegalMoves = false;
-                    
+
                     // Calculate legal moves including friendly captures for consistency
                     const legalMoves = this.moveValidator.calculateValidMoves(
                         squareId,
                         currentPiece,
-                        true  // includeFriendlyCaptures
+                        true, // includeFriendlyCaptures
                     );
-                    
+
                     // Restore setting
                     this.config.allowIllegalMoves = originalSetting;
-                    
+
                     // Get all possible squares
                     const allMoves = [];
                     for (let r = 0; r < 12; r++) {
@@ -7915,10 +7927,12 @@
                             }
                         }
                     }
-                    
+
                     // Illegal moves are those not in legalMoves
-                    const illegalMoves = allMoves.filter(move => !legalMoves.includes(move));
-                    
+                    const illegalMoves = allMoves.filter(
+                        (move) => !legalMoves.includes(move),
+                    );
+
                     return {
                         normalMoves: legalMoves,
                         repeatPromotionMoves: [],
@@ -9305,9 +9319,8 @@
                     console.log("Post-resize promotion verification:", {
                         originHasClass:
                             originEl?.classList.contains("promotion-source"),
-                        destHasClass: destEl?.classList.contains(
-                            "promotion-choice",
-                        ),
+                        destHasClass:
+                            destEl?.classList.contains("promotion-choice"),
                         deferralHasClass:
                             defEl?.classList.contains("promotion-choice"),
                     });
@@ -9325,9 +9338,8 @@
                     console.log("Post-resize Lion return verification:", {
                         originHasClass:
                             originEl?.classList.contains("lion-return-choice"),
-                        alternateHasClass: altEl?.classList.contains(
-                            "lion-return-choice",
-                        ),
+                        alternateHasClass:
+                            altEl?.classList.contains("lion-return-choice"),
                     });
                 }
             }, 0);
@@ -9639,7 +9651,7 @@
                 if (sfenExport) {
                     try {
                         sfenExport.textContent =
-                            this.getNavigationDisplaySFEN();
+                            "SFEN\n" + this.getNavigationDisplaySFEN();
                     } catch (error) {
                         console.error("Error updating SFEN display:", error);
                         sfenExport.textContent = "Error loading SFEN";
@@ -11226,9 +11238,10 @@
 
             // Set current position as the new starting position with selected player to move
             const currentSFEN = this.exportSFEN();
-            // Replace the current player in SFEN with selected player
+            // Replace the current player in SFEN with selected player and reset move number to 1
             const sfenParts = currentSFEN.split(" ");
             sfenParts[1] = selectedPlayer;
+            sfenParts[3] = "1"; // Reset move number to 1 for new starting position
 
             // Preserve Counter-strike rule state if it was set during editing
             // The current Counter-strike state is already included in the exported SFEN
