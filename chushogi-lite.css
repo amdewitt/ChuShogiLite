@@ -1155,29 +1155,10 @@
 
 /* Dropdown option styling - protect from external CSS interference */
 .chushogi-select option {
-  background: white !important;
   color: hsl(20, 14.3%, 4.1%) !important;
-  padding: 4px 8px !important;
   font-size: 14px !important;
   font-family: inherit !important;
-  line-height: 1.5 !important;
   font-weight: normal !important;
-}
-
-/* Selected/checked option styling */
-.chushogi-select option:checked,
-.chushogi-select option[selected] {
-  background: #007bff !important;
-  background-color: #007bff !important;
-  color: white !important;
-  font-weight: normal !important;
-}
-
-/* Hover state for options in dropdown */
-.chushogi-select option:hover {
-  background: #e3f2fd !important;
-  background-color: #e3f2fd !important;
-  color: hsl(20, 14.3%, 4.1%) !important;
 }
 
 .chushogi-textarea {
@@ -1620,4 +1601,19 @@
   background: none !important;
   pointer-events: none !important;
   z-index: 1 !important;
+}
+
+.chushogi-sidebar .chuRulesDiagramTable {
+  border-collapse: collapse !important;
+}
+
+.chushogi-sidebar .chuRulesDiagramCell {
+  border: 1px solid !important;
+  width: 20px !important;
+  height: 20px !important;
+  text-align: center !important;
+}
+
+.chushogi-sidebar .chuRulesDiagramCell.flippedRulesDiagramCell {
+  transform: rotate(180deg) !important;
 }
