@@ -2119,11 +2119,254 @@
             }
         }
 
+        // Helper method to update rules panel content when settings change
+        updateRulesPanel() {
+            const rulesPanel = this.container.querySelector(
+                '[data-panel="rules"]',
+            );
+            if (rulesPanel) {
+                rulesPanel.innerHTML = this.generateRulesPanel();
+            }
+        }
+
+        getRepetitionHandlingValue() {
+            if (this.config.repetitionHandling === "lenient")
+                return "Lenient (ban 3rd repeat)";
+            if (this.config.repetitionHandling === "relaxed")
+                return "Relaxed (allow all repeats)";
+            return "Strict (ban 1st repeat)";
+        }
+
         generateRulesPanel() {
             return `
         <div class="chushogi-help">
           <div class="chushogi-setting-group">
-            <h4>Rules of Chu Shogi</h4>
+            <h3>Rules of Chu Shogi</h3>
+            <h4>Current Rules Settings</h4>
+            <ul>
+            <li>Midpoint protection: ${this.config.midpointProtection ? "Yes" : "No"}</li>
+            <li>Trapped Lance promotion: ${this.config.trappedLancePromotion ? "Yes" : "No"}</li>
+            <li>Repetition handling: ${this.getRepetitionHandlingValue()}</li>
+            </ul>
+            <h4>Introduction</h4>
+            <p>Chu Shogi (Japanese: 中将棋 chū shōgi) is a two-player abstract strategy game native to Japan which is essentially 
+a bigger version of Chess, which has been played since at least the 14th century. It is famous for its Lion 
+piece, which moves as a King up to twice per turn.</p>
+            <h4>Setup</h4>
+            
+            <table class="chuRulesDiagramTable">
+            <tr>
+            <td class="chuRulesDiagramCell flippedRulesDiagramCell">香</td>
+            <td class="chuRulesDiagramCell flippedRulesDiagramCell">豹</td>
+            <td class="chuRulesDiagramCell flippedRulesDiagramCell">銅</td>
+            <td class="chuRulesDiagramCell flippedRulesDiagramCell">銀</td>
+            <td class="chuRulesDiagramCell flippedRulesDiagramCell">金</td>
+            <td class="chuRulesDiagramCell flippedRulesDiagramCell">象</td>
+            <td class="chuRulesDiagramCell flippedRulesDiagramCell">王</td>
+            <td class="chuRulesDiagramCell flippedRulesDiagramCell">金</td>
+            <td class="chuRulesDiagramCell flippedRulesDiagramCell">銀</td>
+            <td class="chuRulesDiagramCell flippedRulesDiagramCell">銅</td>
+            <td class="chuRulesDiagramCell flippedRulesDiagramCell">豹</td>
+            <td class="chuRulesDiagramCell flippedRulesDiagramCell">香</td>
+            </tr>
+            <tr>
+            <td class="chuRulesDiagramCell flippedRulesDiagramCell">反</td>
+            <td class="chuRulesDiagramCell">&#160;</td>
+            <td class="chuRulesDiagramCell flippedRulesDiagramCell">角</td>
+            <td class="chuRulesDiagramCell">&#160;</td>
+            <td class="chuRulesDiagramCell flippedRulesDiagramCell">虎</td>
+            <td class="chuRulesDiagramCell flippedRulesDiagramCell">鳳</td>
+            <td class="chuRulesDiagramCell flippedRulesDiagramCell">麒</td>
+            <td class="chuRulesDiagramCell flippedRulesDiagramCell">虎</td>
+            <td class="chuRulesDiagramCell">&#160;</td>
+            <td class="chuRulesDiagramCell flippedRulesDiagramCell">角</td>
+            <td class="chuRulesDiagramCell">&#160;</td>
+            <td class="chuRulesDiagramCell flippedRulesDiagramCell">反</td>
+            </tr>
+            <tr>
+            <td class="chuRulesDiagramCell flippedRulesDiagramCell">横</td>
+            <td class="chuRulesDiagramCell flippedRulesDiagramCell">竪</td>
+            <td class="chuRulesDiagramCell flippedRulesDiagramCell">飛</td>
+            <td class="chuRulesDiagramCell flippedRulesDiagramCell">馬</td>
+            <td class="chuRulesDiagramCell flippedRulesDiagramCell">龍</td>
+            <td class="chuRulesDiagramCell flippedRulesDiagramCell">奔</td>
+            <td class="chuRulesDiagramCell flippedRulesDiagramCell">獅</td>
+            <td class="chuRulesDiagramCell flippedRulesDiagramCell">龍</td>
+            <td class="chuRulesDiagramCell flippedRulesDiagramCell">馬</td>
+            <td class="chuRulesDiagramCell flippedRulesDiagramCell">飛</td>
+            <td class="chuRulesDiagramCell flippedRulesDiagramCell">竪</td>
+            <td class="chuRulesDiagramCell flippedRulesDiagramCell">横</td>
+            </tr>
+            <tr>
+            <td class="chuRulesDiagramCell flippedRulesDiagramCell">歩</td>
+            <td class="chuRulesDiagramCell flippedRulesDiagramCell">歩</td>
+            <td class="chuRulesDiagramCell flippedRulesDiagramCell">歩</td>
+            <td class="chuRulesDiagramCell flippedRulesDiagramCell">歩</td>
+            <td class="chuRulesDiagramCell flippedRulesDiagramCell">歩</td>
+            <td class="chuRulesDiagramCell flippedRulesDiagramCell">歩</td>
+            <td class="chuRulesDiagramCell flippedRulesDiagramCell">歩</td>
+            <td class="chuRulesDiagramCell flippedRulesDiagramCell">歩</td>
+            <td class="chuRulesDiagramCell flippedRulesDiagramCell">歩</td>
+            <td class="chuRulesDiagramCell flippedRulesDiagramCell">歩</td>
+            <td class="chuRulesDiagramCell flippedRulesDiagramCell">歩</td>
+            <td class="chuRulesDiagramCell flippedRulesDiagramCell">歩</td>
+            </tr>
+            <tr>
+            <td class="chuRulesDiagramCell">&#160;</td>
+            <td class="chuRulesDiagramCell">&#160;</td>
+            <td class="chuRulesDiagramCell">&#160;</td>
+            <td class="chuRulesDiagramCell flippedRulesDiagramCell">仲</td>
+            <td class="chuRulesDiagramCell">&#160;</td>
+            <td class="chuRulesDiagramCell">&#160;</td>
+            <td class="chuRulesDiagramCell">&#160;</td>
+            <td class="chuRulesDiagramCell">&#160;</td>
+            <td class="chuRulesDiagramCell flippedRulesDiagramCell">仲</td>
+            <td class="chuRulesDiagramCell">&#160;</td>
+            <td class="chuRulesDiagramCell">&#160;</td>
+            <td class="chuRulesDiagramCell">&#160;</td>
+            </tr>
+            <tr>
+            <td class="chuRulesDiagramCell">&#160;</td>
+            <td class="chuRulesDiagramCell">&#160;</td>
+            <td class="chuRulesDiagramCell">&#160;</td>
+            <td class="chuRulesDiagramCell">&#160;</td>
+            <td class="chuRulesDiagramCell">&#160;</td>
+            <td class="chuRulesDiagramCell">&#160;</td>
+            <td class="chuRulesDiagramCell">&#160;</td>
+            <td class="chuRulesDiagramCell">&#160;</td>
+            <td class="chuRulesDiagramCell">&#160;</td>
+            <td class="chuRulesDiagramCell">&#160;</td>
+            <td class="chuRulesDiagramCell">&#160;</td>
+            <td class="chuRulesDiagramCell">&#160;</td>
+            </tr>
+            <tr>
+            <td class="chuRulesDiagramCell">&#160;</td>
+            <td class="chuRulesDiagramCell">&#160;</td>
+            <td class="chuRulesDiagramCell">&#160;</td>
+            <td class="chuRulesDiagramCell">&#160;</td>
+            <td class="chuRulesDiagramCell">&#160;</td>
+            <td class="chuRulesDiagramCell">&#160;</td>
+            <td class="chuRulesDiagramCell">&#160;</td>
+            <td class="chuRulesDiagramCell">&#160;</td>
+            <td class="chuRulesDiagramCell">&#160;</td>
+            <td class="chuRulesDiagramCell">&#160;</td>
+            <td class="chuRulesDiagramCell">&#160;</td>
+            <td class="chuRulesDiagramCell">&#160;</td>
+            </tr>
+            <tr>
+            <td class="chuRulesDiagramCell">&#160;</td>
+            <td class="chuRulesDiagramCell">&#160;</td>
+            <td class="chuRulesDiagramCell">&#160;</td>
+            <td class="chuRulesDiagramCell">仲</td>
+            <td class="chuRulesDiagramCell">&#160;</td>
+            <td class="chuRulesDiagramCell">&#160;</td>
+            <td class="chuRulesDiagramCell">&#160;</td>
+            <td class="chuRulesDiagramCell">&#160;</td>
+            <td class="chuRulesDiagramCell">仲</td>
+            <td class="chuRulesDiagramCell">&#160;</td>
+            <td class="chuRulesDiagramCell">&#160;</td>
+            <td class="chuRulesDiagramCell">&#160;</td>
+            </tr>
+            <tr>
+            <td class="chuRulesDiagramCell">歩</td>
+            <td class="chuRulesDiagramCell">歩</td>
+            <td class="chuRulesDiagramCell">歩</td>
+            <td class="chuRulesDiagramCell">歩</td>
+            <td class="chuRulesDiagramCell">歩</td>
+            <td class="chuRulesDiagramCell">歩</td>
+            <td class="chuRulesDiagramCell">歩</td>
+            <td class="chuRulesDiagramCell">歩</td>
+            <td class="chuRulesDiagramCell">歩</td>
+            <td class="chuRulesDiagramCell">歩</td>
+            <td class="chuRulesDiagramCell">歩</td>
+            <td class="chuRulesDiagramCell">歩</td>
+            </tr>
+            <tr>
+            <td class="chuRulesDiagramCell">横</td>
+            <td class="chuRulesDiagramCell">竪</td>
+            <td class="chuRulesDiagramCell">飛</td>
+            <td class="chuRulesDiagramCell">馬</td>
+            <td class="chuRulesDiagramCell">龍</td>
+            <td class="chuRulesDiagramCell">獅</td>
+            <td class="chuRulesDiagramCell">奔</td>
+            <td class="chuRulesDiagramCell">龍</td>
+            <td class="chuRulesDiagramCell">馬</td>
+            <td class="chuRulesDiagramCell">飛</td>
+            <td class="chuRulesDiagramCell">竪</td>
+            <td class="chuRulesDiagramCell">横</td>
+            </tr>
+            <tr>
+            <td class="chuRulesDiagramCell">反</td>
+            <td class="chuRulesDiagramCell">&#160;</td>
+            <td class="chuRulesDiagramCell">角</td>
+            <td class="chuRulesDiagramCell">&#160;</td>
+            <td class="chuRulesDiagramCell">虎</td>
+            <td class="chuRulesDiagramCell">麒</td>
+            <td class="chuRulesDiagramCell">鳳</td>
+            <td class="chuRulesDiagramCell">虎</td>
+            <td class="chuRulesDiagramCell">&#160;</td>
+            <td class="chuRulesDiagramCell">角</td>
+            <td class="chuRulesDiagramCell">&#160;</td>
+            <td class="chuRulesDiagramCell">反</td>
+            </tr>
+            <tr>
+            <td class="chuRulesDiagramCell">香</td>
+            <td class="chuRulesDiagramCell">豹</td>
+            <td class="chuRulesDiagramCell">銅</td>
+            <td class="chuRulesDiagramCell">銀</td>
+            <td class="chuRulesDiagramCell">金</td>
+            <td class="chuRulesDiagramCell">玉</td>
+            <td class="chuRulesDiagramCell">象</td>
+            <td class="chuRulesDiagramCell">金</td>
+            <td class="chuRulesDiagramCell">銀</td>
+            <td class="chuRulesDiagramCell">銅</td>
+            <td class="chuRulesDiagramCell">豹</td>
+            <td class="chuRulesDiagramCell">香</td>
+            </tr>
+            </table>
+            <br>
+            <table>
+            <tr>
+            <th class="chuRulesDiagramCell">Piece</th>
+            <th class="chuRulesDiagramCell">Name</th>
+            <th class="chuRulesDiagramCell">Promotion</th>
+            <th class="chuRulesDiagramCell">Prom. Name</th>
+            <th class="chuRulesDiagramCell">Piece</th>
+            <th class="chuRulesDiagramCell">Name</th>
+            <th class="chuRulesDiagramCell">Promotion</th>
+            <th class="chuRulesDiagramCell">Prom. Name</th>
+            </tr>
+            <tr>
+            <td class="chuRulesDiagramCell">歩</td>
+            <td class="chuRulesDiagramCell">Pawn</td>
+            <td class="chuRulesDiagramCell"><i>金</i></td>
+            <td class="chuRulesDiagramCell">Gold General</td>
+            <td class="chuRulesDiagramCell">仲</td>
+            <td class="chuRulesDiagramCell">Go-Between</td>
+            <td class="chuRulesDiagramCell"><i>象</i></td>
+            <td class="chuRulesDiagramCell">Drunk Elephant</td>
+            </tr>
+            <tr>
+            <td class="chuRulesDiagramCell">銅</td>
+            <td class="chuRulesDiagramCell">Copper General</td>
+            <td class="chuRulesDiagramCell"><i>横</i></td>
+            <td class="chuRulesDiagramCell">Side Mover</td>
+            <td class="chuRulesDiagramCell">銀</td>
+            <td class="chuRulesDiagramCell">Silver General</td>
+            <td class="chuRulesDiagramCell"><i>竪</i></td>
+            <td class="chuRulesDiagramCell">Vertical Mover</td>
+            </tr>
+            <tr>
+            <td class="chuRulesDiagramCell"></td>
+            <td class="chuRulesDiagramCell"></td>
+            <td class="chuRulesDiagramCell"><i></i></td>
+            <td class="chuRulesDiagramCell"></td>
+            <td class="chuRulesDiagramCell"></td>
+            <td class="chuRulesDiagramCell"></td>
+            <td class="chuRulesDiagramCell"><i></i></td>
+            <td class="chuRulesDiagramCell"></td>
+            </tr>
+            </table>
           </div>
         </div>
       `;
@@ -2328,8 +2571,8 @@
   "showCoordinates": true,
   "showLegalMoves": true,
   "showLastMove": true,
-  "showPromotionZone": true,
-  "showInfluenceDisplay": true,
+  "showPromotionZones": false,
+  "showInfluenceDisplay": false,
   "allowIllegalMoves": false,
   "midpointProtection": false,
   "trappedLancePromotion": false,
@@ -6468,6 +6711,7 @@
                         newSettings.allowIllegalMoves !== undefined ||
                         newSettings.midpointProtection !== undefined ||
                         newSettings.trappedLancePromotion !== undefined ||
+                        newSettings.repetitionHandling !== undefined ||
                         newSettings.showCoordinates !== undefined ||
                         newSettings.useInlineNotation !== undefined
                     ) {
@@ -6502,6 +6746,15 @@
                         if (newSettings.useInlineNotation !== undefined) {
                             this.updateMoveHistory();
                             this.updateMoveHistoryHighlight();
+                        }
+
+                        // Update Rules panel when rule settings change
+                        if (
+                            newSettings.midpointProtection !== undefined ||
+                            newSettings.trappedLancePromotion !== undefined ||
+                            newSettings.repetitionHandling !== undefined
+                        ) {
+                            this.updateRulesPanel();
                         }
 
                         // Update highlights for highlight-related settings
@@ -9146,8 +9399,8 @@
   "showCoordinates": true,
   "showLegalMoves": true,
   "showLastMove": true,
-  "showPromotionZone": true,
-  "showInfluenceDisplay": true,
+  "showPromotionZones": false,
+  "showInfluenceDisplay": false,
   "allowIllegalMoves": false,
   "midpointProtection": false,
   "trappedLancePromotion": false,
