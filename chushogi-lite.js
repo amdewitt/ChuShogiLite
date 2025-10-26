@@ -3426,7 +3426,7 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                 <li>⚙️ Settings: Shows available settings${isViewOnly ? " (some settings are restricted in view-only mode)" : ""}</li>
                 <li>⇅ Export/Import: Allows for games to be exported to plaintext${!isViewOnly ? (isFixedStart ? " and imported from plaintext (imports restricted to same starting position)" : " and imported from plaintext") : " (Game imports not available in viewOnly mode)"}${isPuzzle ? " and has a 'View Solution' button to reveal the complete puzzle answer" : ""}</li>
                 ${!isViewOnly && !isFixedStart && !isPuzzle ? "<li>✏️ Edit: Allows the board to be edited without importing a game</li>" : ""}
-                <li>ℹ️ Rules: Explains the rules of Chu Shogi and displays the current Rules settings</li>
+                <li>ℹ️ Rules: Explains the rules of Chu Shogi and displays the current Rules Settings</li>
                 <li>❓ Help: This help window</li>
               </ul>
               ${
