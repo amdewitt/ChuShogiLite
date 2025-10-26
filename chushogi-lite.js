@@ -823,6 +823,19 @@
                 "true,true": "#d39f27", // Gold (Shift + Alt)
             };
 
+            // Keyboard navigation state
+            this.keyboardNavigation = {
+                pressedKeys: new Set(), // Set of currently pressed arrow keys
+                lastPressedKey: null, // The last arrow key that was pressed
+                keyToButton: {
+                    // Map arrow keys to navigation button types
+                    ArrowUp: "start", // |< button
+                    ArrowLeft: "prev", // < button
+                    ArrowRight: "next", // > button
+                    ArrowDown: "end", // >| button
+                },
+            };
+
             this.init();
         }
 
@@ -1199,10 +1212,82 @@
         }
 
         addKeyboardEventListeners() {
-            // Keyboard event handling is now managed by EventManager
-            // This function is kept for compatibility but no longer adds duplicate listeners
+            // Handle keyboard navigation with arrow keys
+            const handleKeyDown = (e) => {
+                const key = e.key;
+                const buttonType = this.keyboardNavigation.keyToButton[key];
+
+                // Only handle arrow keys
+                if (!buttonType) return;
+
+                // Prevent default scrolling behavior for arrow keys
+                e.preventDefault();
+
+                // Block keyboard navigation during Edit mode or puzzle opponent thinking
+                const isEditMode = this.currentTab === "edit";
+                const isPuzzleOpponentThinking =
+                    this.config.appletMode === "puzzle" &&
+                    this.puzzleOpponentThinking;
+
+                if (isEditMode || isPuzzleOpponentThinking) {
+                    return;
+                }
+
+                // If this key is already pressed, ignore (prevent key repeat)
+                if (this.keyboardNavigation.pressedKeys.has(key)) return;
+
+                // Add to pressed keys set
+                this.keyboardNavigation.pressedKeys.add(key);
+
+                // Update last pressed key
+                const previousKey = this.keyboardNavigation.lastPressedKey;
+                this.keyboardNavigation.lastPressedKey = key;
+
+                // If there was a different key active, release it first
+                if (previousKey && previousKey !== key) {
+                    this.releaseNavigationKey(previousKey);
+                }
+
+                // Trigger the corresponding button press
+                this.triggerNavigationKey(buttonType);
+            };
+
+            const handleKeyUp = (e) => {
+                const key = e.key;
+                const buttonType = this.keyboardNavigation.keyToButton[key];
+
+                // Only handle arrow keys
+                if (!buttonType) return;
+
+                // Remove from pressed keys set
+                this.keyboardNavigation.pressedKeys.delete(key);
+
+                // If this was the active key, release it
+                if (this.keyboardNavigation.lastPressedKey === key) {
+                    this.releaseNavigationKey(key);
+                    this.keyboardNavigation.lastPressedKey = null;
+
+                    // If there are other keys still pressed, activate the most recent one
+                    if (this.keyboardNavigation.pressedKeys.size > 0) {
+                        // Get the last key in the set (most recently added)
+                        const keysArray = Array.from(
+                            this.keyboardNavigation.pressedKeys,
+                        );
+                        const newActiveKey = keysArray[keysArray.length - 1];
+                        this.keyboardNavigation.lastPressedKey = newActiveKey;
+                        const newButtonType =
+                            this.keyboardNavigation.keyToButton[newActiveKey];
+                        this.triggerNavigationKey(newButtonType);
+                    }
+                }
+            };
+
+            // Add event listeners to document
+            document.addEventListener("keydown", handleKeyDown);
+            document.addEventListener("keyup", handleKeyUp);
+
             console.log(
-                "addKeyboardEventListeners: Keyboard handling delegated to EventManager",
+                "addKeyboardEventListeners: Arrow key navigation enabled",
             );
         }
 
@@ -1475,13 +1560,13 @@
             </div>
             <button class="chushogi-btn" onclick="this.closest('.chushogi-container').chuShogiInstance.flipBoard()">🔄
             </button>
-            <button class="chushogi-btn" onclick="this.closest('.chushogi-container').chuShogiInstance.goToStart()" title="Go to start position">|&lt;
+            <button class="chushogi-btn" data-nav-start onclick="this.closest('.chushogi-container').chuShogiInstance.goToStart()" title="Go to start position">|&lt;
             </button>
-            <button class="chushogi-btn" onclick="this.closest('.chushogi-container').chuShogiInstance.goBackOneMove()" title="Go back one move">&lt;
+            <button class="chushogi-btn" data-nav-prev onclick="this.closest('.chushogi-container').chuShogiInstance.goBackOneMove()" title="Go back one move (hold to navigate continuously)">&lt;
             </button>
-            <button class="chushogi-btn" onclick="this.closest('.chushogi-container').chuShogiInstance.goForwardOneMove()" title="Go forward one move">&gt;
+            <button class="chushogi-btn" data-nav-next onclick="this.closest('.chushogi-container').chuShogiInstance.goForwardOneMove()" title="Go forward one move (hold to navigate continuously)">&gt;
             </button>
-            <button class="chushogi-btn" onclick="this.closest('.chushogi-container').chuShogiInstance.goToCurrent()" title="Go to current position">&gt;|
+            <button class="chushogi-btn" data-nav-end onclick="this.closest('.chushogi-container').chuShogiInstance.goToCurrent()" title="Go to current position">&gt;|
             </button>
             ${
                 !isViewOnly
@@ -3269,7 +3354,7 @@ piece, which moves as a King up to twice per turn.</p>
             <ul>
             <li>it enters the zone (starts outside, ends within).</li>
             <li>it starts inside the zone and captures something.</li>
-            <li>it is a Pawn${(this.config.trappedLancePromotion ? " or Lance" : "")} moving to the last rank.</li>
+            <li>it is a Pawn${this.config.trappedLancePromotion ? " or Lance" : ""} moving to the last rank.</li>
             </ul>
             <p>Promoted pieces have their kanji italicized to indicatea their promoted status.</p>
             <p>The King, Queen, and Lion do not promote, nor can already promoted pieces promote further.</p>
@@ -3318,10 +3403,10 @@ impossible to fulfill for either player, the game is considered a draw.</p>
         }
 
         getRepetitionRuleText() {
-            if(this.config.repetitionHandling === "lenient") {
+            if (this.config.repetitionHandling === "lenient") {
                 return "Repeating the same board position four times with the same player to move (including the original position) is forbidden, but this does not apply to a player who is in check (see Check and Mate for more information).";
             }
-            if(this.config.repetitionHandling === "relaxed") {
+            if (this.config.repetitionHandling === "relaxed") {
                 return "Repeating the same board position four times with the same player to move (including the original position) is considered a draw.";
             }
             return "Repeating the same board position two times with the same player to move (including the original position) is forbidden, but this does not apply to a player who is in check (see Check and Mate for more information).";
@@ -6702,6 +6787,111 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                         "click",
                         this.eventManager.handlers.gameActionClick,
                     );
+                });
+
+                // Navigation hold functionality for < and > buttons
+                // Don't clear existing hold state here - let the buttons manage their own state
+
+                const navPrevButton =
+                    this.container.querySelector("[data-nav-prev]");
+                const navNextButton =
+                    this.container.querySelector("[data-nav-next]");
+
+                [navPrevButton, navNextButton].forEach((button) => {
+                    if (!button) return;
+
+                    // Clone and replace to remove old event listeners
+                    const newButton = button.cloneNode(true);
+
+                    // Preserve the holding class if it exists on the old button
+                    if (button.classList.contains("holding")) {
+                        newButton.classList.add("holding");
+                    }
+
+                    button.parentNode.replaceChild(newButton, button);
+
+                    // Remove the onclick attribute as we'll handle all clicks through event listeners
+                    newButton.removeAttribute("onclick");
+
+                    // Update the stored button reference if this is the button being held
+                    if (
+                        this.navigationHold &&
+                        this.navigationHold.button === button
+                    ) {
+                        this.navigationHold.button = newButton;
+                    }
+
+                    const isNext = newButton.hasAttribute("data-nav-next");
+
+                    const startHold = (e) => {
+                        e.preventDefault(); // Prevent default to avoid any conflicts
+
+                        // Clear any existing timers first
+                        this.clearNavigationHold();
+
+                        // Initialize hold state
+                        if (!this.navigationHold) {
+                            this.navigationHold = {};
+                        }
+                        this.navigationHold.isHolding = false;
+                        this.navigationHold.direction = isNext
+                            ? "next"
+                            : "prev";
+                        this.navigationHold.button = newButton; // Store button reference
+
+                        // Add holding class immediately to maintain pressed appearance through navigation
+                        newButton.classList.add("holding");
+
+                        // Perform single navigation immediately on press
+                        if (isNext) {
+                            this.goForwardOneMove();
+                        } else {
+                            this.goBackOneMove();
+                        }
+
+                        // Start timer for hold detection after 1 second
+                        this.navigationHold.holdTimer = setTimeout(() => {
+                            this.navigationHold.isHolding = true;
+
+                            // Start continuous navigation at 4 times per second (every 250ms)
+                            this.navigationHold.navigationInterval =
+                                setInterval(() => {
+                                    // Check if we can still navigate
+                                    const canContinue = isNext
+                                        ? this.canNavigateForward()
+                                        : this.canNavigateBack();
+
+                                    if (!canContinue) {
+                                        // Stop the interval if we can't navigate anymore
+                                        this.clearNavigationHold();
+                                        return;
+                                    }
+
+                                    if (isNext) {
+                                        this.goForwardOneMove();
+                                    } else {
+                                        this.goBackOneMove();
+                                    }
+                                }, 125);
+                        }, 750);
+                    };
+
+                    const stopHold = (e) => {
+                        if (!this.navigationHold) return;
+
+                        // Clear timers and intervals (no additional navigation on release)
+                        this.clearNavigationHold();
+                    };
+
+                    // Mouse events
+                    newButton.addEventListener("mousedown", startHold);
+                    newButton.addEventListener("mouseup", stopHold);
+                    newButton.addEventListener("mouseleave", stopHold);
+
+                    // Touch events
+                    newButton.addEventListener("touchstart", startHold);
+                    newButton.addEventListener("touchend", stopHold);
+                    newButton.addEventListener("touchcancel", stopHold);
                 });
             },
 
@@ -10242,18 +10432,18 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                 'button[onclick*="confirmReset()"]',
             );
 
-            // Get the navigation buttons
+            // Get the navigation buttons using data attributes
             const goToStartBtn = this.container.querySelector(
-                'button[onclick*="goToStart()"]',
+                "[data-nav-start]",
             );
             const goBackBtn = this.container.querySelector(
-                'button[onclick*="goBackOneMove()"]',
+                "[data-nav-prev]",
             );
             const goForwardBtn = this.container.querySelector(
-                'button[onclick*="goForwardOneMove()"]',
+                "[data-nav-next]",
             );
             const goToCurrentBtn = this.container.querySelector(
-                'button[onclick*="goToCurrent()"]',
+                "[data-nav-end]",
             );
 
             // Get the View Solution button (puzzle mode only)
@@ -10784,9 +10974,7 @@ impossible to fulfill for either player, the game is considered a draw.</p>
 
                 if (turnText) {
                     turnText.textContent =
-                        this.currentPlayer === "b"
-                            ? "Black"
-                            : "White";
+                        this.currentPlayer === "b" ? "Black" : "White";
                 }
 
                 if (!this.isBatchImporting) {
@@ -12059,6 +12247,41 @@ impossible to fulfill for either player, the game is considered a draw.</p>
         }
 
         // Navigation methods
+        clearNavigationHold() {
+            if (this.navigationHold) {
+                if (this.navigationHold.holdTimer) {
+                    clearTimeout(this.navigationHold.holdTimer);
+                }
+                if (this.navigationHold.navigationInterval) {
+                    clearInterval(this.navigationHold.navigationInterval);
+                }
+                // Remove holding class from button to restore normal appearance
+                if (this.navigationHold.button) {
+                    this.navigationHold.button.classList.remove("holding");
+                }
+                this.navigationHold = null;
+            }
+        }
+
+        canNavigateBack() {
+            // Can't navigate back if at start position
+            if (this.currentNavigationIndex === -1) return false;
+            // Can navigate back if there are moves and we're not at start
+            return this.moveHistory.length > 0;
+        }
+
+        canNavigateForward() {
+            // Can't navigate forward if at current position
+            if (
+                this.currentNavigationIndex === null ||
+                this.currentNavigationIndex === this.moveHistory.length - 1
+            ) {
+                return false;
+            }
+            // Can navigate forward otherwise
+            return true;
+        }
+
         goToStart() {
             this.navigateToPosition("start");
         }
@@ -12115,6 +12338,114 @@ impossible to fulfill for either player, the game is considered a draw.</p>
 
         goToCurrent() {
             this.navigateToPosition("current");
+        }
+
+        // Keyboard navigation helper methods
+        triggerNavigationKey(buttonType) {
+            // Simulate pressing the navigation button
+            // Clear any existing hold state first
+            this.clearNavigationHold();
+
+            // Initialize hold state
+            if (!this.navigationHold) {
+                this.navigationHold = {};
+            }
+            this.navigationHold.isHolding = false;
+            this.navigationHold.direction = buttonType;
+            this.navigationHold.button = null; // No actual button for keyboard
+            this.navigationHold.fromKeyboard = true; // Mark as keyboard-triggered
+
+            // Find and add holding class to the corresponding button for visual feedback
+            let buttonSelector;
+            switch (buttonType) {
+                case "start":
+                    buttonSelector = "[data-nav-start]";
+                    break;
+                case "prev":
+                    buttonSelector = "[data-nav-prev]";
+                    break;
+                case "next":
+                    buttonSelector = "[data-nav-next]";
+                    break;
+                case "end":
+                    buttonSelector = "[data-nav-end]";
+                    break;
+            }
+
+            const button = this.container.querySelector(buttonSelector);
+            if (button) {
+                button.classList.add("holding");
+                this.navigationHold.button = button;
+            }
+
+            // Perform the navigation action immediately
+            switch (buttonType) {
+                case "start":
+                    this.goToStart();
+                    break;
+                case "prev":
+                    this.goBackOneMove();
+                    break;
+                case "next":
+                    this.goForwardOneMove();
+                    break;
+                case "end":
+                    this.goToCurrent();
+                    break;
+            }
+
+            // Start timer for hold detection after 1 second
+            this.navigationHold.holdTimer = setTimeout(() => {
+                this.navigationHold.isHolding = true;
+
+                // Start continuous navigation at 4 moves per second
+                this.navigationHold.navigationInterval = setInterval(() => {
+                    // Check if we can still navigate
+                    let canContinue = false;
+                    switch (buttonType) {
+                        case "start":
+                            canContinue = this.canNavigateBack();
+                            break;
+                        case "prev":
+                            canContinue = this.canNavigateBack();
+                            break;
+                        case "next":
+                            canContinue = this.canNavigateForward();
+                            break;
+                        case "end":
+                            canContinue = this.canNavigateForward();
+                            break;
+                    }
+
+                    if (!canContinue) {
+                        this.clearNavigationHold();
+                        return;
+                    }
+
+                    // Perform navigation
+                    switch (buttonType) {
+                        case "start":
+                            this.goToStart();
+                            break;
+                        case "prev":
+                            this.goBackOneMove();
+                            break;
+                        case "next":
+                            this.goForwardOneMove();
+                            break;
+                        case "end":
+                            this.goToCurrent();
+                            break;
+                    }
+                }, 125);
+            }, 750);
+        }
+
+        releaseNavigationKey(key) {
+            // Simulate releasing the navigation button
+            if (this.navigationHold && this.navigationHold.fromKeyboard) {
+                this.clearNavigationHold();
+            }
         }
 
         loadNavigationPosition() {
