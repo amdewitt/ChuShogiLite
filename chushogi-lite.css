@@ -48,7 +48,6 @@
 
 /* Small board button adjustments - make buttons smaller to fit within board container */
 .chushogi-container.small .chushogi-btn {
-  padding: 2px 8px !important;
   font-size: 14px !important;
   height: 28px !important;
 }
@@ -188,7 +187,7 @@
 }
 
 .chushogi-btn {
-  padding: 2px 12px !important;
+  padding: 2px 8px !important;
   height: 32px !important;
   font-size: 16px !important;
   background: hsl(60, 4.8%, 95.9%) !important;
@@ -207,6 +206,12 @@
 
 .chushogi-btn:hover {
   background: hsl(20, 5.9%, 90%) !important;
+}
+
+.chushogi-btn:active,
+.chushogi-btn.holding {
+  background: hsl(20, 5.9%, 80%) !important;
+  transform: translateY(1px) !important;
 }
 
 /* Prevent Font Awesome icons in buttons from displaying as icons */
