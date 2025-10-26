@@ -141,12 +141,12 @@
   height: 12px !important;
   border-radius: 50% !important;
   background-color: #2c2c2c !important;
+  border: 1px solid #2c2c2c !important;
   display: inline-block !important;
 }
 
 .chushogi-turn-indicator.white {
   background-color: #f8f8f8 !important;
-  border: 1px solid #2c2c2c !important;
 }
 
 .chushogi-turn-text {
@@ -1064,6 +1064,7 @@
   font-family: inherit !important;
   text-decoration: none !important;
   line-height: normal !important;
+  text-decoration: underline !important;
 }
 
 .chushogi-setting-group>label {
@@ -1607,13 +1608,23 @@
   border-collapse: collapse !important;
 }
 
-.chushogi-sidebar .chuRulesDiagramCell {
+.chushogi-sidebar .chuRulesDiagramTableCell {
   border: 1px solid !important;
-  width: 20px !important;
-  height: 20px !important;
   text-align: center !important;
 }
 
-.chushogi-sidebar .chuRulesDiagramCell.flippedRulesDiagramCell {
+.chushogi-sidebar .chuRulesDiagramTableCell:not(.noFixedWidth) {
+  width: 20px !important;
+  height: 20px !important;
+}
+
+.chushogi-sidebar .chuRulesLargeDiagramTableCell {
+  border: 1px solid !important;
+  text-align: center !important;
+  width: 24px !important;
+  height: 25px !important;
+}
+
+.chushogi-sidebar .chuRulesDiagramTableCell.flippedRulesDiagramCell {
   transform: rotate(180deg) !important;
 }
