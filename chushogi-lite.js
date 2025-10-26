@@ -2149,227 +2149,1182 @@
             <li>Repetition handling: ${this.getRepetitionHandlingValue()}</li>
             </ul>
             <h4>Introduction</h4>
-            <p>Chu Shogi (Japanese: 中将棋 chū shōgi) is a two-player abstract strategy game native to Japan which is essentially 
+            <p>Chu Shogi (<span translate="no">中将棋 <i>chū shōgi</i></span>) is a two-player abstract strategy game native to Japan which is essentially 
 a bigger version of Chess, which has been played since at least the 14th century. It is famous for its Lion 
 piece, which moves as a King up to twice per turn.</p>
             <h4>Setup</h4>
-            
+            <p>Chu Shogi is played on a board of 12 ranks (rows) and 12 files (columns). The setup is as follows. Pieces are oriented with the top side facing the enemy, showing who controls what.</p>
             <table class="chuRulesDiagramTable">
             <tr>
-            <td class="chuRulesDiagramCell flippedRulesDiagramCell">香</td>
-            <td class="chuRulesDiagramCell flippedRulesDiagramCell">豹</td>
-            <td class="chuRulesDiagramCell flippedRulesDiagramCell">銅</td>
-            <td class="chuRulesDiagramCell flippedRulesDiagramCell">銀</td>
-            <td class="chuRulesDiagramCell flippedRulesDiagramCell">金</td>
-            <td class="chuRulesDiagramCell flippedRulesDiagramCell">象</td>
-            <td class="chuRulesDiagramCell flippedRulesDiagramCell">王</td>
-            <td class="chuRulesDiagramCell flippedRulesDiagramCell">金</td>
-            <td class="chuRulesDiagramCell flippedRulesDiagramCell">銀</td>
-            <td class="chuRulesDiagramCell flippedRulesDiagramCell">銅</td>
-            <td class="chuRulesDiagramCell flippedRulesDiagramCell">豹</td>
-            <td class="chuRulesDiagramCell flippedRulesDiagramCell">香</td>
+            <td class="chuRulesDiagramTableCell flippedRulesDiagramCell" translate="no">香</td>
+            <td class="chuRulesDiagramTableCell flippedRulesDiagramCell" translate="no">豹</td>
+            <td class="chuRulesDiagramTableCell flippedRulesDiagramCell" translate="no">銅</td>
+            <td class="chuRulesDiagramTableCell flippedRulesDiagramCell" translate="no">銀</td>
+            <td class="chuRulesDiagramTableCell flippedRulesDiagramCell" translate="no">金</td>
+            <td class="chuRulesDiagramTableCell flippedRulesDiagramCell" translate="no">象</td>
+            <td class="chuRulesDiagramTableCell flippedRulesDiagramCell" translate="no">王</td>
+            <td class="chuRulesDiagramTableCell flippedRulesDiagramCell" translate="no">金</td>
+            <td class="chuRulesDiagramTableCell flippedRulesDiagramCell" translate="no">銀</td>
+            <td class="chuRulesDiagramTableCell flippedRulesDiagramCell" translate="no">銅</td>
+            <td class="chuRulesDiagramTableCell flippedRulesDiagramCell" translate="no">豹</td>
+            <td class="chuRulesDiagramTableCell flippedRulesDiagramCell" translate="no">香</td>
             </tr>
             <tr>
-            <td class="chuRulesDiagramCell flippedRulesDiagramCell">反</td>
-            <td class="chuRulesDiagramCell">&#160;</td>
-            <td class="chuRulesDiagramCell flippedRulesDiagramCell">角</td>
-            <td class="chuRulesDiagramCell">&#160;</td>
-            <td class="chuRulesDiagramCell flippedRulesDiagramCell">虎</td>
-            <td class="chuRulesDiagramCell flippedRulesDiagramCell">鳳</td>
-            <td class="chuRulesDiagramCell flippedRulesDiagramCell">麒</td>
-            <td class="chuRulesDiagramCell flippedRulesDiagramCell">虎</td>
-            <td class="chuRulesDiagramCell">&#160;</td>
-            <td class="chuRulesDiagramCell flippedRulesDiagramCell">角</td>
-            <td class="chuRulesDiagramCell">&#160;</td>
-            <td class="chuRulesDiagramCell flippedRulesDiagramCell">反</td>
+            <td class="chuRulesDiagramTableCell flippedRulesDiagramCell" translate="no">反</td>
+            <td class="chuRulesDiagramTableCell">&#160;</td>
+            <td class="chuRulesDiagramTableCell flippedRulesDiagramCell" translate="no">角</td>
+            <td class="chuRulesDiagramTableCell">&#160;</td>
+            <td class="chuRulesDiagramTableCell flippedRulesDiagramCell" translate="no">虎</td>
+            <td class="chuRulesDiagramTableCell flippedRulesDiagramCell" translate="no">鳳</td>
+            <td class="chuRulesDiagramTableCell flippedRulesDiagramCell" translate="no">麒</td>
+            <td class="chuRulesDiagramTableCell flippedRulesDiagramCell" translate="no">虎</td>
+            <td class="chuRulesDiagramTableCell">&#160;</td>
+            <td class="chuRulesDiagramTableCell flippedRulesDiagramCell" translate="no">角</td>
+            <td class="chuRulesDiagramTableCell">&#160;</td>
+            <td class="chuRulesDiagramTableCell flippedRulesDiagramCell" translate="no">反</td>
             </tr>
             <tr>
-            <td class="chuRulesDiagramCell flippedRulesDiagramCell">横</td>
-            <td class="chuRulesDiagramCell flippedRulesDiagramCell">竪</td>
-            <td class="chuRulesDiagramCell flippedRulesDiagramCell">飛</td>
-            <td class="chuRulesDiagramCell flippedRulesDiagramCell">馬</td>
-            <td class="chuRulesDiagramCell flippedRulesDiagramCell">龍</td>
-            <td class="chuRulesDiagramCell flippedRulesDiagramCell">奔</td>
-            <td class="chuRulesDiagramCell flippedRulesDiagramCell">獅</td>
-            <td class="chuRulesDiagramCell flippedRulesDiagramCell">龍</td>
-            <td class="chuRulesDiagramCell flippedRulesDiagramCell">馬</td>
-            <td class="chuRulesDiagramCell flippedRulesDiagramCell">飛</td>
-            <td class="chuRulesDiagramCell flippedRulesDiagramCell">竪</td>
-            <td class="chuRulesDiagramCell flippedRulesDiagramCell">横</td>
+            <td class="chuRulesDiagramTableCell flippedRulesDiagramCell" translate="no">横</td>
+            <td class="chuRulesDiagramTableCell flippedRulesDiagramCell" translate="no">竪</td>
+            <td class="chuRulesDiagramTableCell flippedRulesDiagramCell" translate="no">飛</td>
+            <td class="chuRulesDiagramTableCell flippedRulesDiagramCell" translate="no">馬</td>
+            <td class="chuRulesDiagramTableCell flippedRulesDiagramCell" translate="no">龍</td>
+            <td class="chuRulesDiagramTableCell flippedRulesDiagramCell" translate="no">奔</td>
+            <td class="chuRulesDiagramTableCell flippedRulesDiagramCell" translate="no">獅</td>
+            <td class="chuRulesDiagramTableCell flippedRulesDiagramCell" translate="no">龍</td>
+            <td class="chuRulesDiagramTableCell flippedRulesDiagramCell" translate="no">馬</td>
+            <td class="chuRulesDiagramTableCell flippedRulesDiagramCell" translate="no">飛</td>
+            <td class="chuRulesDiagramTableCell flippedRulesDiagramCell" translate="no">竪</td>
+            <td class="chuRulesDiagramTableCell flippedRulesDiagramCell" translate="no">横</td>
             </tr>
             <tr>
-            <td class="chuRulesDiagramCell flippedRulesDiagramCell">歩</td>
-            <td class="chuRulesDiagramCell flippedRulesDiagramCell">歩</td>
-            <td class="chuRulesDiagramCell flippedRulesDiagramCell">歩</td>
-            <td class="chuRulesDiagramCell flippedRulesDiagramCell">歩</td>
-            <td class="chuRulesDiagramCell flippedRulesDiagramCell">歩</td>
-            <td class="chuRulesDiagramCell flippedRulesDiagramCell">歩</td>
-            <td class="chuRulesDiagramCell flippedRulesDiagramCell">歩</td>
-            <td class="chuRulesDiagramCell flippedRulesDiagramCell">歩</td>
-            <td class="chuRulesDiagramCell flippedRulesDiagramCell">歩</td>
-            <td class="chuRulesDiagramCell flippedRulesDiagramCell">歩</td>
-            <td class="chuRulesDiagramCell flippedRulesDiagramCell">歩</td>
-            <td class="chuRulesDiagramCell flippedRulesDiagramCell">歩</td>
+            <td class="chuRulesDiagramTableCell flippedRulesDiagramCell" translate="no">歩</td>
+            <td class="chuRulesDiagramTableCell flippedRulesDiagramCell" translate="no">歩</td>
+            <td class="chuRulesDiagramTableCell flippedRulesDiagramCell" translate="no">歩</td>
+            <td class="chuRulesDiagramTableCell flippedRulesDiagramCell" translate="no">歩</td>
+            <td class="chuRulesDiagramTableCell flippedRulesDiagramCell" translate="no">歩</td>
+            <td class="chuRulesDiagramTableCell flippedRulesDiagramCell" translate="no">歩</td>
+            <td class="chuRulesDiagramTableCell flippedRulesDiagramCell" translate="no">歩</td>
+            <td class="chuRulesDiagramTableCell flippedRulesDiagramCell" translate="no">歩</td>
+            <td class="chuRulesDiagramTableCell flippedRulesDiagramCell" translate="no">歩</td>
+            <td class="chuRulesDiagramTableCell flippedRulesDiagramCell" translate="no">歩</td>
+            <td class="chuRulesDiagramTableCell flippedRulesDiagramCell" translate="no">歩</td>
+            <td class="chuRulesDiagramTableCell flippedRulesDiagramCell" translate="no">歩</td>
             </tr>
             <tr>
-            <td class="chuRulesDiagramCell">&#160;</td>
-            <td class="chuRulesDiagramCell">&#160;</td>
-            <td class="chuRulesDiagramCell">&#160;</td>
-            <td class="chuRulesDiagramCell flippedRulesDiagramCell">仲</td>
-            <td class="chuRulesDiagramCell">&#160;</td>
-            <td class="chuRulesDiagramCell">&#160;</td>
-            <td class="chuRulesDiagramCell">&#160;</td>
-            <td class="chuRulesDiagramCell">&#160;</td>
-            <td class="chuRulesDiagramCell flippedRulesDiagramCell">仲</td>
-            <td class="chuRulesDiagramCell">&#160;</td>
-            <td class="chuRulesDiagramCell">&#160;</td>
-            <td class="chuRulesDiagramCell">&#160;</td>
+            <td class="chuRulesDiagramTableCell">&#160;</td>
+            <td class="chuRulesDiagramTableCell">&#160;</td>
+            <td class="chuRulesDiagramTableCell">&#160;</td>
+            <td class="chuRulesDiagramTableCell flippedRulesDiagramCell" translate="no">仲</td>
+            <td class="chuRulesDiagramTableCell">&#160;</td>
+            <td class="chuRulesDiagramTableCell">&#160;</td>
+            <td class="chuRulesDiagramTableCell">&#160;</td>
+            <td class="chuRulesDiagramTableCell">&#160;</td>
+            <td class="chuRulesDiagramTableCell flippedRulesDiagramCell" translate="no">仲</td>
+            <td class="chuRulesDiagramTableCell">&#160;</td>
+            <td class="chuRulesDiagramTableCell">&#160;</td>
+            <td class="chuRulesDiagramTableCell">&#160;</td>
             </tr>
             <tr>
-            <td class="chuRulesDiagramCell">&#160;</td>
-            <td class="chuRulesDiagramCell">&#160;</td>
-            <td class="chuRulesDiagramCell">&#160;</td>
-            <td class="chuRulesDiagramCell">&#160;</td>
-            <td class="chuRulesDiagramCell">&#160;</td>
-            <td class="chuRulesDiagramCell">&#160;</td>
-            <td class="chuRulesDiagramCell">&#160;</td>
-            <td class="chuRulesDiagramCell">&#160;</td>
-            <td class="chuRulesDiagramCell">&#160;</td>
-            <td class="chuRulesDiagramCell">&#160;</td>
-            <td class="chuRulesDiagramCell">&#160;</td>
-            <td class="chuRulesDiagramCell">&#160;</td>
+            <td class="chuRulesDiagramTableCell">&#12288;</td>
+            <td class="chuRulesDiagramTableCell">&#160;</td>
+            <td class="chuRulesDiagramTableCell">&#160;</td>
+            <td class="chuRulesDiagramTableCell">&#160;</td>
+            <td class="chuRulesDiagramTableCell">&#160;</td>
+            <td class="chuRulesDiagramTableCell">&#160;</td>
+            <td class="chuRulesDiagramTableCell">&#160;</td>
+            <td class="chuRulesDiagramTableCell">&#160;</td>
+            <td class="chuRulesDiagramTableCell">&#160;</td>
+            <td class="chuRulesDiagramTableCell">&#160;</td>
+            <td class="chuRulesDiagramTableCell">&#160;</td>
+            <td class="chuRulesDiagramTableCell">&#160;</td>
             </tr>
             <tr>
-            <td class="chuRulesDiagramCell">&#160;</td>
-            <td class="chuRulesDiagramCell">&#160;</td>
-            <td class="chuRulesDiagramCell">&#160;</td>
-            <td class="chuRulesDiagramCell">&#160;</td>
-            <td class="chuRulesDiagramCell">&#160;</td>
-            <td class="chuRulesDiagramCell">&#160;</td>
-            <td class="chuRulesDiagramCell">&#160;</td>
-            <td class="chuRulesDiagramCell">&#160;</td>
-            <td class="chuRulesDiagramCell">&#160;</td>
-            <td class="chuRulesDiagramCell">&#160;</td>
-            <td class="chuRulesDiagramCell">&#160;</td>
-            <td class="chuRulesDiagramCell">&#160;</td>
+            <td class="chuRulesDiagramTableCell">&#12288;</td>
+            <td class="chuRulesDiagramTableCell">&#160;</td>
+            <td class="chuRulesDiagramTableCell">&#160;</td>
+            <td class="chuRulesDiagramTableCell">&#160;</td>
+            <td class="chuRulesDiagramTableCell">&#160;</td>
+            <td class="chuRulesDiagramTableCell">&#160;</td>
+            <td class="chuRulesDiagramTableCell">&#160;</td>
+            <td class="chuRulesDiagramTableCell">&#160;</td>
+            <td class="chuRulesDiagramTableCell">&#160;</td>
+            <td class="chuRulesDiagramTableCell">&#160;</td>
+            <td class="chuRulesDiagramTableCell">&#160;</td>
+            <td class="chuRulesDiagramTableCell">&#160;</td>
             </tr>
             <tr>
-            <td class="chuRulesDiagramCell">&#160;</td>
-            <td class="chuRulesDiagramCell">&#160;</td>
-            <td class="chuRulesDiagramCell">&#160;</td>
-            <td class="chuRulesDiagramCell">仲</td>
-            <td class="chuRulesDiagramCell">&#160;</td>
-            <td class="chuRulesDiagramCell">&#160;</td>
-            <td class="chuRulesDiagramCell">&#160;</td>
-            <td class="chuRulesDiagramCell">&#160;</td>
-            <td class="chuRulesDiagramCell">仲</td>
-            <td class="chuRulesDiagramCell">&#160;</td>
-            <td class="chuRulesDiagramCell">&#160;</td>
-            <td class="chuRulesDiagramCell">&#160;</td>
+            <td class="chuRulesDiagramTableCell">&#160;</td>
+            <td class="chuRulesDiagramTableCell">&#160;</td>
+            <td class="chuRulesDiagramTableCell">&#160;</td>
+            <td class="chuRulesDiagramTableCell" translate="no">仲</td>
+            <td class="chuRulesDiagramTableCell">&#160;</td>
+            <td class="chuRulesDiagramTableCell">&#160;</td>
+            <td class="chuRulesDiagramTableCell">&#160;</td>
+            <td class="chuRulesDiagramTableCell">&#160;</td>
+            <td class="chuRulesDiagramTableCell" translate="no">仲</td>
+            <td class="chuRulesDiagramTableCell">&#160;</td>
+            <td class="chuRulesDiagramTableCell">&#160;</td>
+            <td class="chuRulesDiagramTableCell">&#160;</td>
             </tr>
             <tr>
-            <td class="chuRulesDiagramCell">歩</td>
-            <td class="chuRulesDiagramCell">歩</td>
-            <td class="chuRulesDiagramCell">歩</td>
-            <td class="chuRulesDiagramCell">歩</td>
-            <td class="chuRulesDiagramCell">歩</td>
-            <td class="chuRulesDiagramCell">歩</td>
-            <td class="chuRulesDiagramCell">歩</td>
-            <td class="chuRulesDiagramCell">歩</td>
-            <td class="chuRulesDiagramCell">歩</td>
-            <td class="chuRulesDiagramCell">歩</td>
-            <td class="chuRulesDiagramCell">歩</td>
-            <td class="chuRulesDiagramCell">歩</td>
+            <td class="chuRulesDiagramTableCell" translate="no">歩</td>
+            <td class="chuRulesDiagramTableCell" translate="no">歩</td>
+            <td class="chuRulesDiagramTableCell" translate="no">歩</td>
+            <td class="chuRulesDiagramTableCell" translate="no">歩</td>
+            <td class="chuRulesDiagramTableCell" translate="no">歩</td>
+            <td class="chuRulesDiagramTableCell" translate="no">歩</td>
+            <td class="chuRulesDiagramTableCell" translate="no">歩</td>
+            <td class="chuRulesDiagramTableCell" translate="no">歩</td>
+            <td class="chuRulesDiagramTableCell" translate="no">歩</td>
+            <td class="chuRulesDiagramTableCell" translate="no">歩</td>
+            <td class="chuRulesDiagramTableCell" translate="no">歩</td>
+            <td class="chuRulesDiagramTableCell" translate="no">歩</td>
             </tr>
             <tr>
-            <td class="chuRulesDiagramCell">横</td>
-            <td class="chuRulesDiagramCell">竪</td>
-            <td class="chuRulesDiagramCell">飛</td>
-            <td class="chuRulesDiagramCell">馬</td>
-            <td class="chuRulesDiagramCell">龍</td>
-            <td class="chuRulesDiagramCell">獅</td>
-            <td class="chuRulesDiagramCell">奔</td>
-            <td class="chuRulesDiagramCell">龍</td>
-            <td class="chuRulesDiagramCell">馬</td>
-            <td class="chuRulesDiagramCell">飛</td>
-            <td class="chuRulesDiagramCell">竪</td>
-            <td class="chuRulesDiagramCell">横</td>
+            <td class="chuRulesDiagramTableCell" translate="no">横</td>
+            <td class="chuRulesDiagramTableCell" translate="no">竪</td>
+            <td class="chuRulesDiagramTableCell" translate="no">飛</td>
+            <td class="chuRulesDiagramTableCell" translate="no">馬</td>
+            <td class="chuRulesDiagramTableCell" translate="no">龍</td>
+            <td class="chuRulesDiagramTableCell" translate="no">獅</td>
+            <td class="chuRulesDiagramTableCell" translate="no">奔</td>
+            <td class="chuRulesDiagramTableCell" translate="no">龍</td>
+            <td class="chuRulesDiagramTableCell" translate="no">馬</td>
+            <td class="chuRulesDiagramTableCell" translate="no">飛</td>
+            <td class="chuRulesDiagramTableCell" translate="no">竪</td>
+            <td class="chuRulesDiagramTableCell" translate="no">横</td>
             </tr>
             <tr>
-            <td class="chuRulesDiagramCell">反</td>
-            <td class="chuRulesDiagramCell">&#160;</td>
-            <td class="chuRulesDiagramCell">角</td>
-            <td class="chuRulesDiagramCell">&#160;</td>
-            <td class="chuRulesDiagramCell">虎</td>
-            <td class="chuRulesDiagramCell">麒</td>
-            <td class="chuRulesDiagramCell">鳳</td>
-            <td class="chuRulesDiagramCell">虎</td>
-            <td class="chuRulesDiagramCell">&#160;</td>
-            <td class="chuRulesDiagramCell">角</td>
-            <td class="chuRulesDiagramCell">&#160;</td>
-            <td class="chuRulesDiagramCell">反</td>
+            <td class="chuRulesDiagramTableCell" translate="no">反</td>
+            <td class="chuRulesDiagramTableCell" translate="no">&#160;</td>
+            <td class="chuRulesDiagramTableCell" translate="no">角</td>
+            <td class="chuRulesDiagramTableCell" translate="no">&#160;</td>
+            <td class="chuRulesDiagramTableCell" translate="no">虎</td>
+            <td class="chuRulesDiagramTableCell" translate="no">麒</td>
+            <td class="chuRulesDiagramTableCell" translate="no">鳳</td>
+            <td class="chuRulesDiagramTableCell" translate="no">虎</td>
+            <td class="chuRulesDiagramTableCell" translate="no">&#160;</td>
+            <td class="chuRulesDiagramTableCell" translate="no">角</td>
+            <td class="chuRulesDiagramTableCell" translate="no">&#160;</td>
+            <td class="chuRulesDiagramTableCell" translate="no">反</td>
             </tr>
             <tr>
-            <td class="chuRulesDiagramCell">香</td>
-            <td class="chuRulesDiagramCell">豹</td>
-            <td class="chuRulesDiagramCell">銅</td>
-            <td class="chuRulesDiagramCell">銀</td>
-            <td class="chuRulesDiagramCell">金</td>
-            <td class="chuRulesDiagramCell">玉</td>
-            <td class="chuRulesDiagramCell">象</td>
-            <td class="chuRulesDiagramCell">金</td>
-            <td class="chuRulesDiagramCell">銀</td>
-            <td class="chuRulesDiagramCell">銅</td>
-            <td class="chuRulesDiagramCell">豹</td>
-            <td class="chuRulesDiagramCell">香</td>
+            <td class="chuRulesDiagramTableCell" translate="no">香</td>
+            <td class="chuRulesDiagramTableCell" translate="no">豹</td>
+            <td class="chuRulesDiagramTableCell" translate="no">銅</td>
+            <td class="chuRulesDiagramTableCell" translate="no">銀</td>
+            <td class="chuRulesDiagramTableCell" translate="no">金</td>
+            <td class="chuRulesDiagramTableCell" translate="no">玉</td>
+            <td class="chuRulesDiagramTableCell" translate="no">象</td>
+            <td class="chuRulesDiagramTableCell" translate="no">金</td>
+            <td class="chuRulesDiagramTableCell" translate="no">銀</td>
+            <td class="chuRulesDiagramTableCell" translate="no">銅</td>
+            <td class="chuRulesDiagramTableCell" translate="no">豹</td>
+            <td class="chuRulesDiagramTableCell" translate="no">香</td>
             </tr>
             </table>
-            <br>
-            <table>
+            <h4>Piece Legend</h4>
+            <table class="chuRulesDiagramTable">
             <tr>
-            <th class="chuRulesDiagramCell">Piece</th>
-            <th class="chuRulesDiagramCell">Name</th>
-            <th class="chuRulesDiagramCell">Promotion</th>
-            <th class="chuRulesDiagramCell">Prom. Name</th>
-            <th class="chuRulesDiagramCell">Piece</th>
-            <th class="chuRulesDiagramCell">Name</th>
-            <th class="chuRulesDiagramCell">Promotion</th>
-            <th class="chuRulesDiagramCell">Prom. Name</th>
+            <th class="chuRulesDiagramTableCell">Piece</th>
+            <th class="chuRulesDiagramTableCell">Name</th>
+            <th class="chuRulesDiagramTableCell">Promotion</th>
+            <th class="chuRulesDiagramTableCell">Prom. Name</th>
             </tr>
             <tr>
-            <td class="chuRulesDiagramCell">歩</td>
-            <td class="chuRulesDiagramCell">Pawn</td>
-            <td class="chuRulesDiagramCell"><i>金</i></td>
-            <td class="chuRulesDiagramCell">Gold General</td>
-            <td class="chuRulesDiagramCell">仲</td>
-            <td class="chuRulesDiagramCell">Go-Between</td>
-            <td class="chuRulesDiagramCell"><i>象</i></td>
-            <td class="chuRulesDiagramCell">Drunk Elephant</td>
+            <td class="chuRulesDiagramTableCell" translate="no">歩</td>
+            <td class="chuRulesDiagramTableCell">Pawn</td>
+            <td class="chuRulesDiagramTableCell" translate="no"><i>金</i></td>
+            <td class="chuRulesDiagramTableCell">Gold General</td>
             </tr>
             <tr>
-            <td class="chuRulesDiagramCell">銅</td>
-            <td class="chuRulesDiagramCell">Copper General</td>
-            <td class="chuRulesDiagramCell"><i>横</i></td>
-            <td class="chuRulesDiagramCell">Side Mover</td>
-            <td class="chuRulesDiagramCell">銀</td>
-            <td class="chuRulesDiagramCell">Silver General</td>
-            <td class="chuRulesDiagramCell"><i>竪</i></td>
-            <td class="chuRulesDiagramCell">Vertical Mover</td>
+            <td class="chuRulesDiagramTableCell" translate="no">仲</td>
+            <td class="chuRulesDiagramTableCell">Go-Between</td>
+            <td class="chuRulesDiagramTableCell" translate="no"><i>象</i></td>
+            <td class="chuRulesDiagramTableCell">Drunk Elephant</td>
             </tr>
             <tr>
-            <td class="chuRulesDiagramCell"></td>
-            <td class="chuRulesDiagramCell"></td>
-            <td class="chuRulesDiagramCell"><i></i></td>
-            <td class="chuRulesDiagramCell"></td>
-            <td class="chuRulesDiagramCell"></td>
-            <td class="chuRulesDiagramCell"></td>
-            <td class="chuRulesDiagramCell"><i></i></td>
-            <td class="chuRulesDiagramCell"></td>
+            <td class="chuRulesDiagramTableCell" translate="no">銅</td>
+            <td class="chuRulesDiagramTableCell">Copper General</td>
+            <td class="chuRulesDiagramTableCell" translate="no"><i>横</i></td>
+            <td class="chuRulesDiagramTableCell">Side Mover</td>
+            </tr>
+            <tr>
+            <td class="chuRulesDiagramTableCell" translate="no">銀</td>
+            <td class="chuRulesDiagramTableCell">Silver General</td>
+            <td class="chuRulesDiagramTableCell" translate="no"><i>竪</i></td>
+            <td class="chuRulesDiagramTableCell">Vertical Mover</td>
+            </tr>
+            <tr>
+            <td class="chuRulesDiagramTableCell" translate="no">金</td>
+            <td class="chuRulesDiagramTableCell">Gold General</td>
+            <td class="chuRulesDiagramTableCell" translate="no"><i>飛</i></td>
+            <td class="chuRulesDiagramTableCell">Rook</td>
+            <tr>
+            <td class="chuRulesDiagramTableCell" translate="no">豹</td>
+            <td class="chuRulesDiagramTableCell">Ferocious Leopard</td>
+            <td class="chuRulesDiagramTableCell" translate="no"><i>角</i></td>
+            <td class="chuRulesDiagramTableCell">Bishop</td>
+            </tr>
+            </tr>
+            <tr>
+            <td class="chuRulesDiagramTableCell" translate="no">虎</td>
+            <td class="chuRulesDiagramTableCell">Blind Tiger</td>
+            <td class="chuRulesDiagramTableCell" translate="no"><i>鹿</i></td>
+            <td class="chuRulesDiagramTableCell">Flying Stag</td>
+            </tr>
+            <tr>
+            <td class="chuRulesDiagramTableCell" translate="no">象</td>
+            <td class="chuRulesDiagramTableCell">Drunk Elephant</td>
+            <td class="chuRulesDiagramTableCell" translate="no"><i>太</i></td>
+            <td class="chuRulesDiagramTableCell">Prince</td>
+            </tr>
+            <tr>
+            <td class="chuRulesDiagramTableCell" translate="no">鳳</td>
+            <td class="chuRulesDiagramTableCell">Phoenix</td>
+            <td class="chuRulesDiagramTableCell" translate="no"><i>奔</i></td>
+            <td class="chuRulesDiagramTableCell">Queen</td>
+            </tr>
+            <tr>
+            <td class="chuRulesDiagramTableCell" translate="no">麒</td>
+            <td class="chuRulesDiagramTableCell">Kirin</td>
+            <td class="chuRulesDiagramTableCell" translate="no"><i>獅</i></td>
+            <td class="chuRulesDiagramTableCell">Lion</td>
+            </tr>
+            <tr>
+            <td class="chuRulesDiagramTableCell" translate="no">香</td>
+            <td class="chuRulesDiagramTableCell">Lance</td>
+            <td class="chuRulesDiagramTableCell" translate="no"><i>駒</i></td>
+            <td class="chuRulesDiagramTableCell">White Horse</td>
+            </tr>
+            <tr>
+            <td class="chuRulesDiagramTableCell" translate="no">反</td>
+            <td class="chuRulesDiagramTableCell">Reverse Chariot</td>
+            <td class="chuRulesDiagramTableCell" translate="no"><i>鯨</i></td>
+            <td class="chuRulesDiagramTableCell">Whale</td>
+            </tr>
+            <tr>
+            <td class="chuRulesDiagramTableCell" translate="no">横</td>
+            <td class="chuRulesDiagramTableCell">Side Mover</td>
+            <td class="chuRulesDiagramTableCell" translate="no"><i>猪</i></td>
+            <td class="chuRulesDiagramTableCell">Free Boar</td>
+            </tr>
+            <tr>
+            <td class="chuRulesDiagramTableCell" translate="no">竪</td>
+            <td class="chuRulesDiagramTableCell">Vertical Mover</td>
+            <td class="chuRulesDiagramTableCell" translate="no"><i>牛</i></td>
+            <td class="chuRulesDiagramTableCell">Flying Ox</td>
+            </tr>
+            <tr>
+            <td class="chuRulesDiagramTableCell" translate="no">角</td>
+            <td class="chuRulesDiagramTableCell">Bishop</td>
+            <td class="chuRulesDiagramTableCell" translate="no"><i>馬</i></td>
+            <td class="chuRulesDiagramTableCell">Dragon Horse</td>
+            </tr>
+            <tr>
+            <td class="chuRulesDiagramTableCell" translate="no">飛</td>
+            <td class="chuRulesDiagramTableCell">Rook</td>
+            <td class="chuRulesDiagramTableCell" translate="no"><i>龍</i></td>
+            <td class="chuRulesDiagramTableCell">Dragon King</td>
+            </tr>
+            <tr>
+            <td class="chuRulesDiagramTableCell" translate="no">馬</td>
+            <td class="chuRulesDiagramTableCell">Dragon Horse</td>
+            <td class="chuRulesDiagramTableCell" translate="no"><i>鷹</i></td>
+            <td class="chuRulesDiagramTableCell">Horned Falcon</td>
+            </tr>
+            <tr>
+            <td class="chuRulesDiagramTableCell" translate="no">龍</td>
+            <td class="chuRulesDiagramTableCell">Dragon King</td>
+            <td class="chuRulesDiagramTableCell" translate="no"><i>鷲</i></td>
+            <td class="chuRulesDiagramTableCell">Soaring Eagle</td>
+            </tr>
+            <tr>
+            <td class="chuRulesDiagramTableCell" translate="no">奔</td>
+            <td class="chuRulesDiagramTableCell">Queen</td>
+            <td class="chuRulesDiagramTableCell">-</td>
+            <td class="chuRulesDiagramTableCell">-</td>
+            </tr>
+            <tr>
+            <td class="chuRulesDiagramTableCell" translate="no">獅</td>
+            <td class="chuRulesDiagramTableCell">Lion</td>
+            <td class="chuRulesDiagramTableCell">-</td>
+            <td class="chuRulesDiagramTableCell">-</td>
+            </tr>
+            <tr>
+            <td class="chuRulesDiagramTableCell" translate="no">玉<br>王</td>
+            <td class="chuRulesDiagramTableCell">King*</td>
+            <td class="chuRulesDiagramTableCell">-</td>
+            <td class="chuRulesDiagramTableCell">-</td>
             </tr>
             </table>
+            <h4>Deciding who goes first</h4>
+            <p>Traditionally, the least skilled player goes first. However, the players may also decide who goes first through a game of chance or mutual agreement. The player who goes first is called Black (<span translate="no">先手 <i>sente</i></span>) and the other player is called White (<span translate="no">後手 <i>gote</i></span>). Black gets the King with the extra mark and vice versa.</p>
+            <h4>Gameplay</h4>
+            <p>Black moves first, and then players alternate making moves. Making a move is required - it is illegal to skip a move, even if having to move is detrimental. Only one piece may be moved per turn, and captured pieces are permanently removed from the game.</p>
+            <h4>Object of the Game</h4>
+            <p>The object of the game is to capture all of your opponent's royal pieces. The royal pieces are the King and Prince.</p>
+            <h4>Movement</h4>
+            <p>The following table describe the different movements a piece might have.</p>
+            <table class="chuRulesDiagramTable" style="width:250px;">
+            <tr>
+            <th class="chuRulesDiagramTableCell">Symbol</th>
+            <th class="chuRulesDiagramTableCell">Description</th>
+            </tr>
+            <tr>
+            <td class="chuRulesDiagramTableCell">●</td>
+            <td class="chuRulesDiagramTableCell">Jumps to this square, ignoring any intervening piece</td>
+            </tr>
+            <tr>
+            <td class="chuRulesDiagramTableCell">│</td>
+            <td class="chuRulesDiagramTableCell" rowspan="4">Slide any number of squares in a straight line, stopping at the first capture or short of the first friendly piece.</td>
+            </tr>
+            <tr>
+            <td class="chuRulesDiagramTableCell">―</td>
+            </tr>
+            <tr>
+            <td class="chuRulesDiagramTableCell">╲</td>
+            </tr>
+            <tr>
+            <td class="chuRulesDiagramTableCell">╱</td>
+            </tr>
+            <tr>
+            <td class="chuRulesDiagramTableCell"><b>※</b></td>
+            <td class="chuRulesDiagramTableCell">Moves to this square, then optionally moves to any orthogonally or diagonally adjacent square in the same turn.</td>
+            </tr>
+            <tr>
+            <td class="chuRulesDiagramTableCell">‡</td>
+            <td class="chuRulesDiagramTableCell">Moves to this square, then optionally moves to the starting square or the next square in the same direction in the same turn.</td>
+            </tr>
+            </table>
+            <h4>Movement Diagrams</h4>
+            <p>Promoted pieces that appear in the setup move identically to their unpromoted counterparts.</p>
+            <table style="width:250px;">
+            <tr>
+            <td>
+                <table class="chuRulesDiagramTable">
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell" colspan="3">Pawn</th>
+                </tr>
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell">&#160;</td>
+                <td class="chuRulesLargeDiagramTableCell">●</td>
+                <td class="chuRulesLargeDiagramTableCell">&#160;</td>
+                </tr>
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell">&#160;</td>
+                <td class="chuRulesLargeDiagramTableCell" translate="no">歩</td>
+                <td class="chuRulesLargeDiagramTableCell">&#160;</td>
+                </tr>
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell">&#160;</td>
+                <td class="chuRulesLargeDiagramTableCell">&#160;</td>
+                <td class="chuRulesLargeDiagramTableCell">&#160;</td>
+                </tr>
+                </table>
+            </td>
+            <td>
+                <table class="chuRulesDiagramTable">
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell" colspan="3">Go-Between</th>
+                </tr>
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell">&#160;</td>
+                <td class="chuRulesLargeDiagramTableCell">●</td>
+                <td class="chuRulesLargeDiagramTableCell">&#160;</td>
+                </tr>
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell">&#160;</td>
+                <td class="chuRulesLargeDiagramTableCell" translate="no">仲</td>
+                <td class="chuRulesLargeDiagramTableCell">&#160;</td>
+                </tr>
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell">&#160;</td>
+                <td class="chuRulesLargeDiagramTableCell">●</td>
+                <td class="chuRulesLargeDiagramTableCell">&#160;</td>
+                </tr>
+                </table>
+            </td>
+            <td>
+                <table class="chuRulesDiagramTable">
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell" colspan="3">Copper General</th>
+                </tr>
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell">●</td>
+                <td class="chuRulesLargeDiagramTableCell">●</td>
+                <td class="chuRulesLargeDiagramTableCell">●</td>
+                </tr>
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell">&#160;</td>
+                <td class="chuRulesLargeDiagramTableCell" translate="no">銅</td>
+                <td class="chuRulesLargeDiagramTableCell">&#160;</td>
+                </tr>
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell">&#160;</td>
+                <td class="chuRulesLargeDiagramTableCell">●</td>
+                <td class="chuRulesLargeDiagramTableCell">&#160;</td>
+                </tr>
+                </table>
+            </td>
+            </tr>
+            <tr>
+            <td>
+                <table class="chuRulesDiagramTable">
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell" colspan="3">Silver General</th>
+                </tr>
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell">●</td>
+                <td class="chuRulesLargeDiagramTableCell">●</td>
+                <td class="chuRulesLargeDiagramTableCell">●</td>
+                </tr>
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell">&#160;</td>
+                <td class="chuRulesLargeDiagramTableCell" translate="no">銀</td>
+                <td class="chuRulesLargeDiagramTableCell">&#160;</td>
+                </tr>
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell">●</td>
+                <td class="chuRulesLargeDiagramTableCell">&#160;</td>
+                <td class="chuRulesLargeDiagramTableCell">●</td>
+                </tr>
+                </table>
+            </td>
+            <td>
+                <table class="chuRulesDiagramTable">
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell" colspan="3">Gold General</th>
+                </tr>
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell">●</td>
+                <td class="chuRulesLargeDiagramTableCell">●</td>
+                <td class="chuRulesLargeDiagramTableCell">●</td>
+                </tr>
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell">●</td>
+                <td class="chuRulesLargeDiagramTableCell" translate="no">金</td>
+                <td class="chuRulesLargeDiagramTableCell">●</td>
+                </tr>
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell">&#160;</td>
+                <td class="chuRulesLargeDiagramTableCell">●</td>
+                <td class="chuRulesLargeDiagramTableCell">&#160;</td>
+                </tr>
+                </table>
+            </td>
+            <td>
+                <table class="chuRulesDiagramTable">
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell" colspan="3">Ferocious Leopard</th>
+                </tr>
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell">●</td>
+                <td class="chuRulesLargeDiagramTableCell">●</td>
+                <td class="chuRulesLargeDiagramTableCell">●</td>
+                </tr>
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell">&#160;</td>
+                <td class="chuRulesLargeDiagramTableCell" translate="no">豹</td>
+                <td class="chuRulesLargeDiagramTableCell">&#160;</td>
+                </tr>
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell">●</td>
+                <td class="chuRulesLargeDiagramTableCell">●</td>
+                <td class="chuRulesLargeDiagramTableCell">●</td>
+                </tr>
+                </table>
+            </td>
+            </tr>
+            <tr>
+            <td>
+                <table class="chuRulesDiagramTable">
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell" colspan="3">Blind Tiger</th>
+                </tr>
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell">●</td>
+                <td class="chuRulesLargeDiagramTableCell">&#160;</td>
+                <td class="chuRulesLargeDiagramTableCell">●</td>
+                </tr>
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell">●</td>
+                <td class="chuRulesLargeDiagramTableCell" translate="no">虎</td>
+                <td class="chuRulesLargeDiagramTableCell">●</td>
+                </tr>
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell">●</td>
+                <td class="chuRulesLargeDiagramTableCell">●</td>
+                <td class="chuRulesLargeDiagramTableCell">●</td>
+                </tr>
+                </table>
+            </td>
+            <td>
+                <table class="chuRulesDiagramTable">
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell" colspan="3">Drunk Elephant</th>
+                </tr>
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell">●</td>
+                <td class="chuRulesLargeDiagramTableCell">●</td>
+                <td class="chuRulesLargeDiagramTableCell">●</td>
+                </tr>
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell">●</td>
+                <td class="chuRulesLargeDiagramTableCell" translate="no">象</td>
+                <td class="chuRulesLargeDiagramTableCell">●</td>
+                </tr>
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell">●</td>
+                <td class="chuRulesLargeDiagramTableCell">&#160;</td>
+                <td class="chuRulesLargeDiagramTableCell">●</td>
+                </tr>
+                </table>
+            </td>
+            <td>
+                <table class="chuRulesDiagramTable">
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell" colspan="3">Lance</th>
+                </tr>
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell">&#160;</td>
+                <td class="chuRulesLargeDiagramTableCell">│</td>
+                <td class="chuRulesLargeDiagramTableCell">&#160;</td>
+                </tr>
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell">&#160;</td>
+                <td class="chuRulesLargeDiagramTableCell" translate="no">香</td>
+                <td class="chuRulesLargeDiagramTableCell">&#160;</td>
+                </tr>
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell">&#160;</td>
+                <td class="chuRulesLargeDiagramTableCell">&#160;</td>
+                <td class="chuRulesLargeDiagramTableCell">&#160;</td>
+                </tr>
+                </table>
+            </td>
+            </tr>
+            <tr>
+            <td>
+                <table class="chuRulesDiagramTable">
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell" colspan="3">Reverse Chariot</th>
+                </tr>
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell">&#160;</td>
+                <td class="chuRulesLargeDiagramTableCell">│</td>
+                <td class="chuRulesLargeDiagramTableCell">&#160;</td>
+                </tr>
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell">&#160;</td>
+                <td class="chuRulesLargeDiagramTableCell" translate="no">反</td>
+                <td class="chuRulesLargeDiagramTableCell">&#160;</td>
+                </tr>
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell">&#160;</td>
+                <td class="chuRulesLargeDiagramTableCell">│</td>
+                <td class="chuRulesLargeDiagramTableCell">&#160;</td>
+                </tr>
+                </table>
+            </td>
+            <td>
+                <table class="chuRulesDiagramTable">
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell" colspan="3">Side Mover</th>
+                </tr>
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell">&#160;</td>
+                <td class="chuRulesLargeDiagramTableCell">●</td>
+                <td class="chuRulesLargeDiagramTableCell">&#160;</td>
+                </tr>
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell">―</td>
+                <td class="chuRulesLargeDiagramTableCell" translate="no">横</td>
+                <td class="chuRulesLargeDiagramTableCell">―</td>
+                </tr>
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell">&#160;</td>
+                <td class="chuRulesLargeDiagramTableCell">●</td>
+                <td class="chuRulesLargeDiagramTableCell">&#160;</td>
+                </tr>
+                </table>
+            </td>
+            <td>
+                <table class="chuRulesDiagramTable">
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell" colspan="3">Vertical Mover</th>
+                </tr>
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell">&#160;</td>
+                <td class="chuRulesLargeDiagramTableCell">│</td>
+                <td class="chuRulesLargeDiagramTableCell">&#160;</td>
+                </tr>
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell">●</td>
+                <td class="chuRulesLargeDiagramTableCell" translate="no">竪</td>
+                <td class="chuRulesLargeDiagramTableCell">●</td>
+                </tr>
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell">&#160;</td>
+                <td class="chuRulesLargeDiagramTableCell">│</td>
+                <td class="chuRulesLargeDiagramTableCell">&#160;</td>
+                </tr>
+                </table>
+            </td>
+            </tr>
+            <tr>
+            <td>
+                <table class="chuRulesDiagramTable">
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell" colspan="3">Bishop</th>
+                </tr>
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell">╲</td>
+                <td class="chuRulesLargeDiagramTableCell">&#160;</td>
+                <td class="chuRulesLargeDiagramTableCell">╱</td>
+                </tr>
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell">&#160;</td>
+                <td class="chuRulesLargeDiagramTableCell" translate="no">角</td>
+                <td class="chuRulesLargeDiagramTableCell">&#160;</td>
+                </tr>
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell">╱</td>
+                <td class="chuRulesLargeDiagramTableCell">&#160;</td>
+                <td class="chuRulesLargeDiagramTableCell">╲</td>
+                </tr>
+                </table>
+            </td>
+            <td>
+                <table class="chuRulesDiagramTable">
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell" colspan="3">Rook</th>
+                </tr>
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell">&#160;</td>
+                <td class="chuRulesLargeDiagramTableCell">│</td>
+                <td class="chuRulesLargeDiagramTableCell">&#160;</td>
+                </tr>
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell">―</td>
+                <td class="chuRulesLargeDiagramTableCell" translate="no">飛</td>
+                <td class="chuRulesLargeDiagramTableCell">―</td>
+                </tr>
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell">&#160;</td>
+                <td class="chuRulesLargeDiagramTableCell">│</td>
+                <td class="chuRulesLargeDiagramTableCell">&#160;</td>
+                </tr>
+                </table>
+            </td>
+            <td>
+                <table class="chuRulesDiagramTable">
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell" colspan="3">Dragon Horse</th>
+                </tr>
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell">╲</td>
+                <td class="chuRulesLargeDiagramTableCell">●</td>
+                <td class="chuRulesLargeDiagramTableCell">╱</td>
+                </tr>
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell">●</td>
+                <td class="chuRulesLargeDiagramTableCell" translate="no">馬</td>
+                <td class="chuRulesLargeDiagramTableCell">●</td>
+                </tr>
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell">╱</td>
+                <td class="chuRulesLargeDiagramTableCell">●</td>
+                <td class="chuRulesLargeDiagramTableCell">╲</td>
+                </tr>
+                </table>
+            </td>
+            </tr>
+            <tr>
+            <td>
+                <table class="chuRulesDiagramTable">
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell" colspan="3">Dragon King</th>
+                </tr>
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell">●</td>
+                <td class="chuRulesLargeDiagramTableCell">│</td>
+                <td class="chuRulesLargeDiagramTableCell">●</td>
+                </tr>
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell">―</td>
+                <td class="chuRulesLargeDiagramTableCell" translate="no">龍</td>
+                <td class="chuRulesLargeDiagramTableCell">―</td>
+                </tr>
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell">●</td>
+                <td class="chuRulesLargeDiagramTableCell">│</td>
+                <td class="chuRulesLargeDiagramTableCell">●</td>
+                </tr>
+                </table>
+            </td>
+            <td>
+                <table class="chuRulesDiagramTable">
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell" colspan="3">Queen</th>
+                </tr>
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell">╲</td>
+                <td class="chuRulesLargeDiagramTableCell">│</td>
+                <td class="chuRulesLargeDiagramTableCell">╱</td>
+                </tr>
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell">―</td>
+                <td class="chuRulesLargeDiagramTableCell" translate="no">奔</td>
+                <td class="chuRulesLargeDiagramTableCell">―</td>
+                </tr>
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell">╱</td>
+                <td class="chuRulesLargeDiagramTableCell">│</td>
+                <td class="chuRulesLargeDiagramTableCell">╲</td>
+                </tr>
+                </table>
+            </td>
+            <td>
+                <table class="chuRulesDiagramTable">
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell" colspan="3">King<br><span translate="no">玉</span> / <span translate="no">王</span></th>
+                </tr>
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell">●</td>
+                <td class="chuRulesLargeDiagramTableCell">●</td>
+                <td class="chuRulesLargeDiagramTableCell">●</td>
+                </tr>
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell">●</td>
+                <td class="chuRulesLargeDiagramTableCell" translate="no">王</td>
+                <td class="chuRulesLargeDiagramTableCell">●</td>
+                </tr>
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell">●</td>
+                <td class="chuRulesLargeDiagramTableCell">●</td>
+                <td class="chuRulesLargeDiagramTableCell">●</td>
+                </tr>
+                </table>
+            </td>
+            </tr>
+            <tr>
+            <td>
+                <table class="chuRulesDiagramTable">
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell" colspan="3">Prince</th>
+                </tr>
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell">●</td>
+                <td class="chuRulesLargeDiagramTableCell">●</td>
+                <td class="chuRulesLargeDiagramTableCell">●</td>
+                </tr>
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell">●</td>
+                <td class="chuRulesLargeDiagramTableCell" translate="no"><i>太</i></td>
+                <td class="chuRulesLargeDiagramTableCell">●</td>
+                </tr>
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell">●</td>
+                <td class="chuRulesLargeDiagramTableCell">●</td>
+                <td class="chuRulesLargeDiagramTableCell">●</td>
+                </tr>
+                </table>
+            </td>
+            <td>
+                <table class="chuRulesDiagramTable">
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell" colspan="3">White Horse</th>
+                </tr>
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell">╲</td>
+                <td class="chuRulesLargeDiagramTableCell">│</td>
+                <td class="chuRulesLargeDiagramTableCell">╱</td>
+                </tr>
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell">&#160;</td>
+                <td class="chuRulesLargeDiagramTableCell" translate="no"><i>駒</i></td>
+                <td class="chuRulesLargeDiagramTableCell">&#160;</td>
+                </tr>
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell">&#160;</td>
+                <td class="chuRulesLargeDiagramTableCell">│</td>
+                <td class="chuRulesLargeDiagramTableCell">&#160;</td>
+                </tr>
+                </table>
+            </td>
+            <td>
+                <table class="chuRulesDiagramTable">
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell" colspan="3">Whale</th>
+                </tr>
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell">&#160;</td>
+                <td class="chuRulesLargeDiagramTableCell">│</td>
+                <td class="chuRulesLargeDiagramTableCell">&#160;</td>
+                </tr>
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell">&#160;</td>
+                <td class="chuRulesLargeDiagramTableCell" translate="no"><i>鯨</i></td>
+                <td class="chuRulesLargeDiagramTableCell">&#160;</td>
+                </tr>
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell">╱</td>
+                <td class="chuRulesLargeDiagramTableCell">│</td>
+                <td class="chuRulesLargeDiagramTableCell">╲</td>
+                </tr>
+                </table>
+            </td>
+            </tr>
+                        <tr>
+            <td>
+                <table class="chuRulesDiagramTable">
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell" colspan="3">Flying Stag</th>
+                </tr>
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell">●</td>
+                <td class="chuRulesLargeDiagramTableCell">│</td>
+                <td class="chuRulesLargeDiagramTableCell">●</td>
+                </tr>
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell">●</td>
+                <td class="chuRulesLargeDiagramTableCell" translate="no"><i>鹿</i></td>
+                <td class="chuRulesLargeDiagramTableCell">●</td>
+                </tr>
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell">●</td>
+                <td class="chuRulesLargeDiagramTableCell">│</td>
+                <td class="chuRulesLargeDiagramTableCell">●</td>
+                </tr>
+                </table>
+            </td>
+            <td>
+                <table class="chuRulesDiagramTable">
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell" colspan="3">Free Boar</th>
+                </tr>
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell">╲</td>
+                <td class="chuRulesLargeDiagramTableCell">&#160;</td>
+                <td class="chuRulesLargeDiagramTableCell">╱</td>
+                </tr>
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell">―</td>
+                <td class="chuRulesLargeDiagramTableCell" translate="no"><i>猪</i></td>
+                <td class="chuRulesLargeDiagramTableCell">―</td>
+                </tr>
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell">╱</td>
+                <td class="chuRulesLargeDiagramTableCell">&#160;</td>
+                <td class="chuRulesLargeDiagramTableCell">╲</td>
+                </tr>
+                </table>
+            </td>
+            <td>
+                <table class="chuRulesDiagramTable">
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell" colspan="3">Flying Ox</th>
+                </tr>
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell">╲</td>
+                <td class="chuRulesLargeDiagramTableCell">│</td>
+                <td class="chuRulesLargeDiagramTableCell">╱</td>
+                </tr>
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell">&#160;</td>
+                <td class="chuRulesLargeDiagramTableCell" translate="no"><i>牛</i></td>
+                <td class="chuRulesLargeDiagramTableCell">&#160;</td>
+                </tr>
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell">╱</td>
+                <td class="chuRulesLargeDiagramTableCell">│</td>
+                <td class="chuRulesLargeDiagramTableCell">╲</td>
+                </tr>
+                </table>
+            </td>
+            </tr>
+            </table>
+            <table style="width:254px;">
+            <tr>
+            <td>
+                <table class="chuRulesDiagramTable">
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell" colspan="5">Phoenix</th>
+                </tr>
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell">●</td>
+                <td class="chuRulesLargeDiagramTableCell">&#160;</td>
+                <td class="chuRulesLargeDiagramTableCell">&#160;</td>
+                <td class="chuRulesLargeDiagramTableCell">&#160;</td>
+                <td class="chuRulesLargeDiagramTableCell">●</td>
+                </tr>
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell">&#160;</td>
+                <td class="chuRulesLargeDiagramTableCell">&#160;</td>
+                <td class="chuRulesLargeDiagramTableCell">●</td>
+                <td class="chuRulesLargeDiagramTableCell">&#160;</td>
+                <td class="chuRulesLargeDiagramTableCell">&#160;</td>
+                </tr>
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell">&#160;</td>
+                <td class="chuRulesLargeDiagramTableCell">●</td>
+                <td class="chuRulesLargeDiagramTableCell" translate="no">鳳</td>
+                <td class="chuRulesLargeDiagramTableCell">●</td>
+                <td class="chuRulesLargeDiagramTableCell">&#160;</td>
+                </tr>
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell">&#160;</td>
+                <td class="chuRulesLargeDiagramTableCell">&#160;</td>
+                <td class="chuRulesLargeDiagramTableCell">●</td>
+                <td class="chuRulesLargeDiagramTableCell">&#160;</td>
+                <td class="chuRulesLargeDiagramTableCell">&#160;</td>
+                </tr>
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell">●</td>
+                <td class="chuRulesLargeDiagramTableCell">&#160;</td>
+                <td class="chuRulesLargeDiagramTableCell">&#160;</td>
+                <td class="chuRulesLargeDiagramTableCell">&#160;</td>
+                <td class="chuRulesLargeDiagramTableCell">●</td>
+                </tr>
+                </table>
+            </td>
+            <td>
+                <table class="chuRulesDiagramTable">
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell" colspan="5">Kirin</th>
+                </tr>
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell">&#160;</td>
+                <td class="chuRulesLargeDiagramTableCell">&#160;</td>
+                <td class="chuRulesLargeDiagramTableCell">●</td>
+                <td class="chuRulesLargeDiagramTableCell">&#160;</td>
+                <td class="chuRulesLargeDiagramTableCell">&#160;</td>
+                </tr>
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell">&#160;</td>
+                <td class="chuRulesLargeDiagramTableCell">●</td>
+                <td class="chuRulesLargeDiagramTableCell">&#160;</td>
+                <td class="chuRulesLargeDiagramTableCell">●</td>
+                <td class="chuRulesLargeDiagramTableCell">&#160;</td>
+                </tr>
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell">●</td>
+                <td class="chuRulesLargeDiagramTableCell">&#160;</td>
+                <td class="chuRulesLargeDiagramTableCell" translate="no">麒</td>
+                <td class="chuRulesLargeDiagramTableCell">&#160;</td>
+                <td class="chuRulesLargeDiagramTableCell">●</td>
+                </tr>
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell">&#160;</td>
+                <td class="chuRulesLargeDiagramTableCell">●</td>
+                <td class="chuRulesLargeDiagramTableCell">&#160;</td>
+                <td class="chuRulesLargeDiagramTableCell">●</td>
+                <td class="chuRulesLargeDiagramTableCell">&#160;</td>
+                </tr>
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell">&#160;</td>
+                <td class="chuRulesLargeDiagramTableCell">&#160;</td>
+                <td class="chuRulesLargeDiagramTableCell">●</td>
+                <td class="chuRulesLargeDiagramTableCell">&#160;</td>
+                <td class="chuRulesLargeDiagramTableCell">&#160;</td>
+                </tr>
+                </table>
+            </td>
+            </tr>
+            <tr>
+            <td>
+                <table class="chuRulesDiagramTable">
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell" colspan="5">Horned Falcon</th>
+                </tr>
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell">╲</td>
+                <td class="chuRulesLargeDiagramTableCell">&#160;</td>
+                <td class="chuRulesLargeDiagramTableCell">●</td>
+                <td class="chuRulesLargeDiagramTableCell">&#160;</td>
+                <td class="chuRulesLargeDiagramTableCell">╱</td>
+                </tr>
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell">&#160;</td>
+                <td class="chuRulesLargeDiagramTableCell">╲</td>
+                <td class="chuRulesLargeDiagramTableCell">‡</td>
+                <td class="chuRulesLargeDiagramTableCell">╱</td>
+                <td class="chuRulesLargeDiagramTableCell">&#160;</td>
+                </tr>
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell">―</td>
+                <td class="chuRulesLargeDiagramTableCell">―</td>
+                <td class="chuRulesLargeDiagramTableCell" translate="no"><i>鷹</i></td>
+                <td class="chuRulesLargeDiagramTableCell">―</td>
+                <td class="chuRulesLargeDiagramTableCell">―</td>
+                </tr>
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell">&#160;</td>
+                <td class="chuRulesLargeDiagramTableCell">╱</td>
+                <td class="chuRulesLargeDiagramTableCell">│</td>
+                <td class="chuRulesLargeDiagramTableCell">╲</td>
+                <td class="chuRulesLargeDiagramTableCell">&#160;</td>
+                </tr>
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell">╱</td>
+                <td class="chuRulesLargeDiagramTableCell">&#160;</td>
+                <td class="chuRulesLargeDiagramTableCell">│</td>
+                <td class="chuRulesLargeDiagramTableCell">&#160;</td>
+                <td class="chuRulesLargeDiagramTableCell">╲</td>
+                </tr>
+                </table>
+            </td>
+            <td>
+                <table class="chuRulesDiagramTable">
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell" colspan="5">Soaring Eagle</th>
+                </tr>
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell">●</td>
+                <td class="chuRulesLargeDiagramTableCell">&#160;</td>
+                <td class="chuRulesLargeDiagramTableCell">│</td>
+                <td class="chuRulesLargeDiagramTableCell">&#160;</td>
+                <td class="chuRulesLargeDiagramTableCell">●</td>
+                </tr>
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell">&#160;</td>
+                <td class="chuRulesLargeDiagramTableCell">‡</td>
+                <td class="chuRulesLargeDiagramTableCell">│</td>
+                <td class="chuRulesLargeDiagramTableCell">‡</td>
+                <td class="chuRulesLargeDiagramTableCell">&#160;</td>
+                </tr>
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell">―</td>
+                <td class="chuRulesLargeDiagramTableCell">―</td>
+                <td class="chuRulesLargeDiagramTableCell" translate="no"><i>鷲</i></td>
+                <td class="chuRulesLargeDiagramTableCell">―</td>
+                <td class="chuRulesLargeDiagramTableCell">―</td>
+                </tr>
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell">&#160;</td>
+                <td class="chuRulesLargeDiagramTableCell">╱</td>
+                <td class="chuRulesLargeDiagramTableCell">│</td>
+                <td class="chuRulesLargeDiagramTableCell">╲</td>
+                <td class="chuRulesLargeDiagramTableCell">&#160;</td>
+                </tr>
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell">╱</td>
+                <td class="chuRulesLargeDiagramTableCell">&#160;</td>
+                <td class="chuRulesLargeDiagramTableCell">│</td>
+                <td class="chuRulesLargeDiagramTableCell">&#160;</td>
+                <td class="chuRulesLargeDiagramTableCell">╲</td>
+                </tr>
+                </table>
+            </td>
+            </tr>
+            <tr>
+            <td colspan="2">
+                <table class="chuRulesDiagramTable">
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell" colspan="5">Lion</th>
+                </tr>
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell">●</td>
+                <td class="chuRulesLargeDiagramTableCell">●</td>
+                <td class="chuRulesLargeDiagramTableCell">●</td>
+                <td class="chuRulesLargeDiagramTableCell">●</td>
+                <td class="chuRulesLargeDiagramTableCell">●</td>
+                </tr>
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell">●</td>
+                <td class="chuRulesLargeDiagramTableCell"><b>※</b></td>
+                <td class="chuRulesLargeDiagramTableCell"><b>※</b></td>
+                <td class="chuRulesLargeDiagramTableCell"><b>※</b></td>
+                <td class="chuRulesLargeDiagramTableCell">●</td>
+                </tr>
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell">●</td>
+                <td class="chuRulesLargeDiagramTableCell"><b>※</b></td>
+                <td class="chuRulesLargeDiagramTableCell" translate="no">獅</td>
+                <td class="chuRulesLargeDiagramTableCell"><b>※</b></td>
+                <td class="chuRulesLargeDiagramTableCell">●</td>
+                </tr>
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell">●</td>
+                <td class="chuRulesLargeDiagramTableCell"><b>※</b></td>
+                <td class="chuRulesLargeDiagramTableCell"><b>※</b></td>
+                <td class="chuRulesLargeDiagramTableCell"><b>※</b></td>
+                <td class="chuRulesLargeDiagramTableCell">●</td>
+                </tr>
+                <tr>
+                <td class="chuRulesLargeDiagramTableCell">●</td>
+                <td class="chuRulesLargeDiagramTableCell">●</td>
+                <td class="chuRulesLargeDiagramTableCell">●</td>
+                <td class="chuRulesLargeDiagramTableCell">●</td>
+                <td class="chuRulesLargeDiagramTableCell">●</td>
+                </tr>
+                </table>
+            </td>
+            </tr>
+            </table>
+            <h4>Promotion</h4>
+            <p>The player's promotion zone consists of the farthest four ranks of the board. A piece can be promoted if:</p>
+            <ul>
+            <li>it enters the zone (starts outside, ends within).</li>
+            <li>it starts inside the zone and captures something.</li>
+            <li>it is a Pawn${(this.config.trappedLancePromotion ? " or Lance" : "")} moving to the last rank.</li>
+            </ul>
+            <p>Promoted pieces have their kanji italicized to indicatea their promoted status.</p>
+            <p>The King, Queen, and Lion do not promote, nor can already promoted pieces promote further.</p>
+            <h4>Lion-Trading Rules</h4>
+            <p>Lions cannot be captured in situations where this would in general trade two Lions out of the game.</p>
+            <p>These rules do not differentiate between Lions and promoted Kirins, nor do they apply recursively in the
+case of multiple Lions.</p>
+            <ul>
+            <li>Bridge-capture - A Lion cannot capture another Lion unless:
+                <ul>
+                <li>The two Lions stand on orthogonally or diagonally adjacent squares.</li>
+                <li>The moving Lion is not exposed to capture on the next turn${this.config.midpointProtection ? ", including from other pieces it captures during the move" : ""}.</li>
+                <li>The moving Lion first captures a piece other than a Pawn or Go-Between.</li>
+                </ul>
+            </li>
+            </ul>
+            <ul>
+            <li>A non-Lion cannot capture a Lion when in the immediately preceding turn a Lion
+was captured by a non-Lion on another square.
+                <ul>
+                <li>This includes double moves from Horned Falcons and Soaring Eagles.</li>
+                <li>The stipulation “another square” means that if a Kirin captures a Lion, it can always be
+captured, even if it had simultaneously promoted to Lion.</li>
+                </ul>
+            </li>
+            </ul>
+            <h4>Repetition</h4>
+            <p>${this.getRepetitionRuleText()}</p>
+            <h4>Illegal Move</h4>
+            <p>A player who makes an illegal move loses immediately. This rule may be relaxed in casual games, where
+the offending player can take back the move and make a legal move.</p>
+            <h4>Check and Mate</h4>
+            <p>A player is in check when all their royal pieces (Kings and Princes) could be captured on the opponent’s next move. Players are not required to keep their royal(s) out of check, and can even move into check, though this is almost always a blunder.</p>
+            <p>A player with two royals (i.e. a King and a Prince) may sacrifice one of them without losing the game.</p>
+            <p>If a player has no legal moves that will keep at least one of their Kings out of check, regardless of whether they are in check or not, that player is mated and has effectively lost the game.</p>
+            <h4>End of the Game</h4>
+            <p>A player wins when they capture all their opponent’s royal pieces (Kings and Princes).</p>
+            <h4>Resignation</h4>
+            <p>At any time, a player may resign, and their opponent wins the game.</p>
+            <h4>Draw</h4>
+            <p>At any time, the players may agree to a draw. In positions where the winning condition is practically
+impossible to fulfill for either player, the game is considered a draw.</p>
           </div>
         </div>
       `;
+        }
+
+        getRepetitionRuleText() {
+            if(this.config.repetitionHandling === "lenient") {
+                return "Repeating the same board position four times with the same player to move (including the original position) is forbidden, but this does not apply to a player who is in check (see Check and Mate for more information).";
+            }
+            if(this.config.repetitionHandling === "relaxed") {
+                return "Repeating the same board position four times with the same player to move (including the original position) is considered a draw.";
+            }
+            return "Repeating the same board position two times with the same player to move (including the original position) is forbidden, but this does not apply to a player who is in check (see Check and Mate for more information).";
         }
 
         generateHelpPanel() {
@@ -2471,7 +3426,7 @@ piece, which moves as a King up to twice per turn.</p>
                 <li>⚙️ Settings: Shows available settings${isViewOnly ? " (some settings are restricted in view-only mode)" : ""}</li>
                 <li>⇅ Export/Import: Allows for games to be exported to plaintext${!isViewOnly ? (isFixedStart ? " and imported from plaintext (imports restricted to same starting position)" : " and imported from plaintext") : " (Game imports not available in viewOnly mode)"}${isPuzzle ? " and has a 'View Solution' button to reveal the complete puzzle answer" : ""}</li>
                 ${!isViewOnly && !isFixedStart && !isPuzzle ? "<li>✏️ Edit: Allows the board to be edited without importing a game</li>" : ""}
-                <li>ℹ️ Rules: Explains the rules of Chu Shogi</li>
+                <li>ℹ️ Rules: Explains the rules of Chu Shogi and displays the current Rules settings</li>
                 <li>❓ Help: This help window</li>
               </ul>
               ${
@@ -9830,8 +10785,8 @@ piece, which moves as a King up to twice per turn.</p>
                 if (turnText) {
                     turnText.textContent =
                         this.currentPlayer === "b"
-                            ? "Black (先手)"
-                            : "White (後手)";
+                            ? "Black"
+                            : "White";
                 }
 
                 if (!this.isBatchImporting) {
