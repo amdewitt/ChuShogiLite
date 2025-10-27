@@ -3489,10 +3489,10 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                 </ul>
                 </li>
                 <li>🔄 Flip View: Flips the board view</li>
-                <li>|&lt;: navigates to starting position</li>
-                <li>&lt;: navigates one move backward</li>
-                <li>>: navigates one move forward</li>
-                <li>>|: navigates to current position</li>
+                <li>|&lt; or ↑ key: navigates to starting position</li>
+                <li>&lt; or ← key: navigates one move backward</li>
+                <li>> or → key: navigates one move forward</li>
+                <li>>| or ↓ key: navigates to current position</li>
                 ${!isViewOnly ? "<li>↶: undoes the last move</li>" : ""}
                 ${!isViewOnly ? "<li>⌫: starts a new game</li>" : ""}
                 ${!isPuzzle ? "<li>⟳: resets the board to its original state</li>" : ""}
