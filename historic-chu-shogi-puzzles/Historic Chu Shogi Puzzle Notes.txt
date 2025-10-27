@@ -64,7 +64,7 @@ A25 (MSM D55): OK. Mate in 12.
 
 A26 (MSM D57): OK. Mate in 8.
 
-A27 (MSM D59): The original puzzle had a Gote Whale on 11f, which made the puzzle unsolvable due to said Whale protecting 6a and preventing a Kirin promotion. Replacing the puzzleatic Whale with a Gote White Horse repairs the puzzle but also speeds up the solution a bit, resulting in a mate in 14.
+A27 (MSM D59): The original puzzle had a Gote Whale on 11f, which made the puzzle unsolvable due to said Whale protecting 6a and preventing a Kirin promotion. Replacing this Whale with a Gote White Horse repairs the puzzle but also speeds up the solution a bit, resulting in a mate in 14.
 
 A28 (MSM D60): OK. Mate in 21.
 
