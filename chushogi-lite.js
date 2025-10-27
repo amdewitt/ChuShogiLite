@@ -7,7 +7,7 @@
     "use strict";
 
     // Version Number
-    const version = "beta";
+    const version = "v1.0";
 
     // Debug system
     const showDebugOutput = false;
