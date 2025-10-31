@@ -1489,7 +1489,7 @@
                 const html = this.generateHTML();
                 console.log("Setting innerHTML");
                 this.container.innerHTML = html;
-                this.container.className = `chushogi-container ${this.config.boardSize}`;
+                this.container.className = `chuShogiLite chushogi-container ${this.config.boardSize}`;
                 console.log("HTML set successfully");
 
                 // Restore drawings after render if they existed
@@ -2147,11 +2147,11 @@
           <div class="chushogi-setting-group">
             <h4>Position Setup</h4>
             <div class="chushogi-edit-controls">
-              <button class="chushogi-btn-edit" onclick="this.closest('.chushogi-container').chuShogiInstance.clearBoard()">
+              <button class="chushogi-btn-primary" onclick="this.closest('.chushogi-container').chuShogiInstance.clearBoard()">
                 🗑️ Clear Board
               </button>
 
-              <button class="chushogi-btn-edit" onclick="this.closest('.chushogi-container').chuShogiInstance.confirmSetStartPosition()">
+              <button class="chushogi-btn-primary" onclick="this.closest('.chushogi-container').chuShogiInstance.confirmSetStartPosition()">
                 📍 Set Start Position
               </button>
 
