@@ -9,21 +9,113 @@
 }
 
 .chuShogiLite {
+  /* ===== CSS VARIABLES FOR EASY CUSTOMIZATION ===== */
+
+  /* Primary Text Colors */
+  --text-color-container: #1f1f1f;
+  --text-color-sidebar: #1f1f1f;
+  --example-code: hsl(210, 20%, 30%);
+  --example-code-inline: hsl(210, 20%, 30%);
+
+  /* Turn Indicator Colors */
+  --turn-indicator-black: #2c2c2c;
+  --turn-indicator-white: #f8f8f8;
+  --turn-indicator-border: #2c2c2c;
+
+  /* Piece Colors */
+  --piece: #2c2c2c; /* Pieces on normal quares */
+  --piece-promoted: #d32f2f;
+  --piece-influence-black: white;
+  --piece-influence-black-promoted: orange;
+  --piece-influence-white: #2c2c2c;
+  --piece-influence-white-promoted: #d32f2f;
+  --piece-influence-contested: #2c2c2c;
+  --piece-influence-contested-promoted: #d32f2f;
+
+  /* Background Colors */
+  --background-container: #ffffff;
+  --background-sidebar: hsl(60, 4.8%, 95.9%);
+  --background-board-square: hsl(45, 45%, 87%);
+  --background-sidebar-field: white;
+  --background-example-code: hsl(210, 40%, 98%);
+  --background-example-code-inline: hsl(210, 40%, 98%);
+
+  /* Border Colors */
+  --border-container: black;
+  --border-board-edge: #2c2c2c;
+  --border-light: hsl(20, 5.9%, 90%);
+  --border-medium: hsl(20, 5.9%, 75%);
+  --border-square: hsl(30, 15%, 65%);
+  --border-checkbox: #ccc;
+
+  /* Button Colors */
+  --container-button-background: hsl(60, 4.8%, 95.9%);
+  --container-button-text-color: #1f1f1f;
+  --container-button-border-color: hsl(20, 5.9%, 90%);
+  --container-button-hover: hsl(20, 5.9%, 90%);
+  --container-button-active: hsl(20, 5.9%, 80%);
+  --sidebar-button-background: hsl(207, 90%, 54%);
+  --sidebar-button-text-color: white;
+  --sidebar-button-hover: hsl(207, 90%, 48%);
+  --sidebar-checkbox-checked: #007bff;
+
+  /* Board Highlight Colors - Backgrounds */
+  --highlight-selected-background: rgba(255, 193, 7, 0.7);
+  --highlight-valid-move-background: rgba(76, 175, 80, 0.3);
+  --highlight-last-move-background: rgba(33, 150, 243, 0.3);
+  --highlight-lion-purple-background: rgba(138, 43, 226, 0.3);
+  --highlight-amber-background: rgba(245, 158, 11, 0.5);
+
+  /* Board Highlight Colors - Dots and Borders */
+  --highlight-valid-move: #4caf50;
+  --highlight-lion-purple: #8a2be2;
+  --highlight-amber: #e77706;
+  --highlight-last-move-border: rgba(33, 200, 243, 0.8);
+
+  /* Influence Colors */
+  --influence-white-background: rgba(248, 248, 248, 0.9);
+  --influence-black-background: rgba(70, 70, 70, 0.8);
+  --influence-contested-background: rgba(185, 185, 185, 0.7);
+
+  /* Promotion Zone Colors */
+  --promotion-zone-white-border: rgba(33, 150, 243, 0.5);
+  --promotion-zone-white-background: rgba(33, 150, 243, 0.1);
+  --promotion-zone-black-border: rgba(244, 67, 54, 0.5);
+  --promotion-zone-black-background: rgba(244, 67, 54, 0.1);
+
+  /* Active Tab Bottom Border */
+  --tab-active: hsl(207, 90%, 54%);
+
+  /* Move History Colors */
+  --move-current-background: hsl(207, 90%, 54%);
+  --move-selected-background: hsl(25, 95%, 53%);
+
+  /* Scrollbar Colors */
+  --scrollbar-track: hsl(20, 5.9%, 90%);
+  --scrollbar-thumb: hsl(20, 5.9%, 70%);
+  --scrollbar-thumb-hover: hsl(20, 5.9%, 60%);
+
+  /* Utility Colors */
+  --shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  --overlay-dark: rgba(0, 0, 0, 0.5);
+
+  /* ===== END OF CSS VARIABLES ===== */
+
   /* Reset potential inherited styles from parent page */
   font-family: 'Roboto', 'Helvetica Neue', Arial, sans-serif !important;
   font-size: 14px !important;
   line-height: 1.4 !important;
-  color: #1f1f1f !important;
+  color: var(--text-color-sidebar) !important;
   text-align: left !important;
   direction: ltr !important;
 }
 
 .chushogi-container {
   font-family: 'Roboto', 'Helvetica Neue', Arial, sans-serif !important;
-  background: #ffffff !important;
-  border: 1px solid black !important;
+  background: var(--background-container) !important;
+  border: 1px solid var(--border-container) !important;
   border-radius: 8px !important;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
+  box-shadow: var(--shadow-sm) !important;
   overflow: auto !important;
   display: inline-block !important;
   width: fit-content !important;
@@ -100,14 +192,14 @@
   gap: 8px !important;
   margin-left: 0 !important;
   font-family: inherit !important;
-  color: hsl(25, 5.3%, 44.7%) !important;
+  color: var(--text-color-container) !important;
   text-decoration: none !important;
 }
 
 .chushogi-credit {
   font-size: 14px !important;
   font-weight: 500 !important;
-  color: hsl(25, 5.3%, 44.7%) !important;
+  color: var(--text-color-container) !important;
 }
 
 .chushogi-controls {
@@ -121,7 +213,7 @@
 .chushogi-turn-label {
   font-size: 14px !important;
   font-weight: 500 !important;
-  color: hsl(25, 5.3%, 44.7%) !important;
+  color: var(--text-color-container) !important;
   font-family: inherit !important;
   text-decoration: none !important;
 }
@@ -139,13 +231,13 @@
   width: 12px !important;
   height: 12px !important;
   border-radius: 50% !important;
-  background-color: #2c2c2c !important;
-  border: 1px solid #2c2c2c !important;
+  background-color: var(--turn-indicator-black) !important;
+  border: 1px solid var(--turn-indicator-border) !important;
   display: inline-block !important;
 }
 
 .chushogi-turn-indicator.white {
-  background-color: #f8f8f8 !important;
+  background-color: var(--turn-indicator-white) !important;
 }
 
 .chushogi-turn-text {
@@ -161,7 +253,7 @@
   gap: 8px !important;
   align-items: center !important;
   font-family: inherit !important;
-  color: black !important;
+  color: var(--border-container) !important;
   text-decoration: none !important;
 }
 
@@ -179,7 +271,7 @@
   appearance: auto !important;
   -webkit-appearance: checkbox !important;
   -moz-appearance: checkbox !important;
-  border: 1px solid #ccc !important;
+  border: 1px solid var(--border-checkbox) !important;
   background: white !important;
   margin: 0 !important;
   padding: 0 !important;
@@ -190,27 +282,27 @@
   padding: 2px 8px !important;
   height: 32px !important;
   font-size: 16px !important;
-  background: hsl(60, 4.8%, 95.9%) !important;
-  border: 1px solid hsl(20, 5.9%, 90%) !important;
+  background: var(--container-button-background) !important;
+  border: 1px solid var(--container-button-border-color) !important;
   border-radius: 4px !important;
   cursor: pointer !important;
   transition: background-color 0.2s !important;
   box-sizing: border-box !important;
   user-select: none !important;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
-  color: inherit !important;
+  color: var(--container-button-text-color) !important;
   text-decoration: none !important;
   display: inline-block !important;
   vertical-align: middle !important;
 }
 
 .chushogi-btn:hover {
-  background: hsl(20, 5.9%, 90%) !important;
+  background: var(--container-button-hover) !important;
 }
 
 .chushogi-btn:active,
 .chushogi-btn.holding {
-  background: hsl(20, 5.9%, 80%) !important;
+  background: var(--container-button-active) !important;
   transform: translateY(1px) !important;
 }
 
@@ -224,8 +316,8 @@
 .chushogi-btn-edit {
   width: 100% !important;
   padding: 8px 16px !important;
-  background: hsl(207, 90%, 54%) !important;
-  color: white !important;
+  background: var(--sidebar-button-background) !important;
+  color: var(--sidebar-button-text-color) !important;
   border: none !important;
   border-radius: 4px !important;
   font-size: 16px !important;
@@ -235,7 +327,7 @@
 }
 
 .chushogi-btn-edit:hover {
-  background: hsl(207, 90%, 48%) !important;
+  background: var(--sidebar-button-hover) !important;
 }
 
 .chushogi-game {
@@ -282,7 +374,7 @@
   text-align: center !important;
   font-size: 12px !important;
   font-family: 'Roboto Mono', monospace !important;
-  color: hsl(25, 5.3%, 44.7%) !important;
+  color: var(--text-color-container) !important;
   padding: 2px !important;
   user-select: none !important;
   -webkit-user-select: none !important;
@@ -324,7 +416,7 @@
   width: 24px !important;
   font-size: 12px !important;
   font-family: 'Roboto Mono', monospace !important;
-  color: hsl(25, 5.3%, 44.7%) !important;
+  color: var(--text-color-container) !important;
   user-select: none !important;
   -webkit-user-select: none !important;
   -moz-user-select: none !important;
@@ -336,9 +428,8 @@
   grid-template-columns: repeat(12, 1fr) !important;
   grid-template-rows: repeat(12, 1fr) !important;
   gap: 0 !important;
-  border: 2px solid #2c2c2c !important;
-  /*  background: hsl(45, 29%, 87%) !important; */
-  background: hsl(45, 45%, 87%) !important;
+  border: 2px solid var(--border-board-edge) !important;
+  background: var(--background-board-square) !important;
   position: relative !important;
 }
 
@@ -371,7 +462,7 @@
 }
 
 .chushogi-square {
-  border: 1px solid hsl(30, 15%, 65%) !important;
+  border: 1px solid var(--border-square) !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
@@ -382,48 +473,48 @@
 
 /* Influence highlighting - lower priority than game highlights */
 .chushogi-square.influence-white {
-  background-color: rgba(248, 248, 248, 0.9) !important;
+  background-color: var(--influence-white-background) !important;
   /* Near white - white controls */
 }
 
 /* Make unpromoted pieces visible on light influence backgrounds - only when no other highlights are present */
 .chushogi-square.influence-white:not(.selected):not(.valid-move):not(.repeat-promotion-move):not(.valid-illegal-move):not(.lion-first-move):not(.lion-double-origin):not(.lion-double-midpoint):not(.lion-king-move):not(.lion-return-choice):not(.promotion-choice):not(.promotion-source):not(.promotion-origin-covered):not(.promotion-midpoint) .chushogi-piece:not(.promoted) {
-  color: #2c2c2c !important;
+  color: var(--piece-influence-white) !important;
 }
 
 /* Make promoted pieces visible on light influence backgrounds - only when no other highlights are present */
 .chushogi-square.influence-white:not(.selected):not(.valid-move):not(.repeat-promotion-move):not(.valid-illegal-move):not(.lion-first-move):not(.lion-double-origin):not(.lion-double-midpoint):not(.lion-king-move):not(.lion-return-choice):not(.promotion-choice):not(.promotion-source):not(.promotion-origin-covered):not(.promotion-midpoint) .chushogi-piece.promoted {
-  color: #d32f2f !important;
+  color: var(--piece-influence-white-promoted) !important;
 }
 
 .chushogi-square.influence-black {
-  background-color: rgba(70, 70, 70, 0.8) !important;
+  background-color: var(--influence-black-background) !important;
   /* Dark grey - black controls */
 }
 
 /* Make unpromoted pieces visible on dark influence backgrounds - only when no other highlights are present */
 .chushogi-square.influence-black:not(.selected):not(.valid-move):not(.repeat-promotion-move):not(.valid-illegal-move):not(.lion-first-move):not(.lion-double-origin):not(.lion-double-midpoint):not(.lion-king-move):not(.lion-return-choice):not(.promotion-choice):not(.promotion-source):not(.promotion-origin-covered):not(.promotion-midpoint) .chushogi-piece:not(.promoted) {
-  color: white !important;
+  color: var(--piece-influence-black) !important;
 }
 
 /* Make promoted pieces visible on dark influence backgrounds - only when no other highlights are present */
 .chushogi-square.influence-black:not(.selected):not(.valid-move):not(.repeat-promotion-move):not(.valid-illegal-move):not(.lion-first-move):not(.lion-double-origin):not(.lion-double-midpoint):not(.lion-king-move):not(.lion-return-choice):not(.promotion-choice):not(.promotion-source):not(.promotion-origin-covered):not(.promotion-midpoint) .chushogi-piece.promoted {
-  color: orange !important;
+  color: var(--piece-influence-black-promoted) !important;
 }
 
 .chushogi-square.influence-contested {
-  background-color: rgba(185, 185, 185, 0.7) !important;
+  background-color: var(--influence-contested-background) !important;
   /* Light grey - both sides control */
 }
 
 /* Make unpromoted pieces visible on contested influence backgrounds - only when no other highlights are present */
 .chushogi-square.influence-contested:not(.selected):not(.valid-move):not(.repeat-promotion-move):not(.valid-illegal-move):not(.lion-first-move):not(.lion-double-origin):not(.lion-double-midpoint):not(.lion-king-move):not(.lion-return-choice):not(.promotion-choice):not(.promotion-source):not(.promotion-origin-covered):not(.promotion-midpoint) .chushogi-piece:not(.promoted) {
-  color: #2c2c2c !important;
+  color: var(--piece-influence-contested) !important;
 }
 
 /* Make promoted pieces visible on contested influence backgrounds - only when no other highlights are present */
 .chushogi-square.influence-contested:not(.selected):not(.valid-move):not(.repeat-promotion-move):not(.valid-illegal-move):not(.lion-first-move):not(.lion-double-origin):not(.lion-double-midpoint):not(.lion-king-move):not(.lion-return-choice):not(.promotion-choice):not(.promotion-source):not(.promotion-origin-covered):not(.promotion-midpoint) .chushogi-piece.promoted {
-  color: #d32f2f !important;
+  color: var(--piece-influence-contested-promoted) !important;
 }
 
 /* Mouse hover highlighting completely removed per user request */
@@ -431,17 +522,17 @@
 /* LIH CSS removed per user request */
 
 .chushogi-square.last-move {
-  background-color: rgba(33, 150, 243, 0.3) !important;
+  background-color: var(--highlight-last-move-background) !important;
 }
 
 /* Selected piece highlight should override last move highlight */
 .chushogi-square.selected:not(.chushogi-square.valid-move) {
-  background-color: rgba(255, 193, 7, 0.7) !important;
+  background-color: var(--highlight-selected-background) !important;
 }
 
 /* Valid move highlights should override last move highlights */
 .chushogi-square.valid-move {
-  background-color: rgba(76, 175, 80, 0.3) !important;
+  background-color: var(--highlight-valid-move-background) !important;
 }
 
 /* Dot highlights for empty squares - shared structure */
@@ -461,7 +552,7 @@
 }
 
 .chushogi-square.valid-move::after {
-  background-color: #4caf50 !important;
+  background-color: var(--highlight-valid-move) !important;
 }
 
 /* Circle highlights for occupied squares - shared structure */
@@ -484,38 +575,38 @@
 
 .chushogi-square.valid-move:has(.chushogi-piece)::after,
 .chushogi-square.lion-double-midpoint.valid-move:has(.chushogi-piece)::after {
-  border: 3px solid #4caf50 !important;
+  border: 3px solid var(--highlight-valid-move) !important;
 }
 
 /* Repeat promotion move highlights - amber to indicate forced promotion */
 .chushogi-square.repeat-promotion-move {
-  background-color: rgba(245, 158, 11, 0.5) !important;
+  background-color: var(--highlight-amber-background) !important;
 }
 
 .chushogi-square.repeat-promotion-move::after {
-  background-color: #e77706 !important;
+  background-color: var(--highlight-amber) !important;
 }
 
 .chushogi-square.repeat-promotion-move:has(.chushogi-piece)::after {
-  border: 3px solid #e77706 !important;
+  border: 3px solid var(--highlight-amber) !important;
 }
 
 /* Illegal move highlights (when allowIllegalMoves is true) - amber to indicate illegal move */
 .chushogi-square.valid-illegal-move {
-  background-color: rgba(245, 158, 11, 0.5) !important;
+  background-color: var(--highlight-amber-background) !important;
 }
 
 .chushogi-square.valid-illegal-move::after {
-  background-color: #e77706 !important;
+  background-color: var(--highlight-amber) !important;
 }
 
 .chushogi-square.valid-illegal-move:has(.chushogi-piece)::after {
-  border: 3px solid #e77706 !important;
+  border: 3px solid var(--highlight-amber) !important;
 }
 
 /* Lion King moves (midpoint selection) - matches valid-move format */
 .chushogi-square.lion-king-move {
-  background-color: rgba(138, 43, 226, 0.3) !important;
+  background-color: var(--highlight-lion-purple-background) !important;
   /* Purple */
   cursor: pointer !important;
 }
@@ -525,7 +616,7 @@
   position: absolute !important;
   width: 8px !important;
   height: 8px !important;
-  background-color: #8a2be2 !important;
+  background-color: var(--highlight-lion-purple) !important;
   border-radius: 50% !important;
   top: 50% !important;
   left: 50% !important;
@@ -538,19 +629,19 @@
 
 /* Lion return prompt highlighting - consolidated */
 .chushogi-square.lion-return-choice {
-  background-color: rgba(245, 158, 11, 0.5) !important;
+  background-color: var(--highlight-amber-background) !important;
   cursor: pointer !important;
 }
 
 /* Promotion prompt highlighting - consolidated */
 .chushogi-square.promotion-choice {
-  background-color: rgba(245, 158, 11, 0.5) !important;
-  box-shadow: inset 0 0 0 3px #e77706 !important;
+  background-color: var(--highlight-amber-background) !important;
+  box-shadow: inset 0 0 0 3px var(--highlight-amber) !important;
   cursor: pointer !important;
 }
 
 .chushogi-square.promotion-source {
-  background-color: rgba(255, 193, 7, 0.7) !important;
+  background-color: var(--highlight-selected-background) !important;
   cursor: pointer !important;
 }
 
@@ -560,7 +651,7 @@
   position: absolute !important;
   width: 100% !important;
   height: 100% !important;
-  border: 4px solid rgba(33, 200, 243, 0.8) !important;
+  border: 4px solid var(--highlight-last-move-border) !important;
   /*border-radius: 50% !important;*/
   background: none !important;
   opacity: 1 !important;
@@ -588,36 +679,36 @@
 
 /* Lion first move highlighting (historical purple) */
 .chushogi-square.lion-first-move {
-  background-color: rgba(138, 43, 226, 0.3) !important;
+  background-color: var(--highlight-lion-purple-background) !important;
 }
 
 .chushogi-square.lion-first-move::after {
-  background-color: #8a2be2 !important;
+  background-color: var(--highlight-lion-purple) !important;
 }
 
 .chushogi-square.lion-first-move:has(.chushogi-piece)::after,
 .chushogi-square.lion-king-move:has(.chushogi-piece)::after {
-  border: 3px solid #8a2be2 !important;
+  border: 3px solid var(--highlight-lion-purple) !important;
 }
 
 /* Lion double move state highlighting */
 .chushogi-square.lion-double-origin {
-  background-color: rgba(255, 193, 7, 0.7) !important;
+  background-color: var(--highlight-selected-background) !important;
 }
 
 /* Override amber with green when origin is a valid destination */
 .chushogi-square.lion-double-origin.valid-move {
-  background-color: rgba(76, 175, 80, 0.3) !important;
+  background-color: var(--highlight-valid-move-background) !important;
 }
 
 .chushogi-square.lion-double-midpoint {
-  background-color: rgba(245, 158, 11, 0.5) !important;
-  box-shadow: inset 0 0 0 3px #e77706 !important;
+  background-color: var(--highlight-amber-background) !important;
+  box-shadow: inset 0 0 0 3px var(--highlight-amber) !important;
 }
 
 /* Override amber with green when midpoint is a valid move */
 .chushogi-square.lion-double-midpoint.valid-move {
-  background-color: rgba(76, 175, 80, 0.3) !important;
+  background-color: var(--highlight-valid-move-background) !important;
   box-shadow: none !important;
 }
 
@@ -626,7 +717,7 @@
   position: absolute !important;
   width: 30% !important;
   height: 30% !important;
-  background-color: #4caf50 !important;
+  background-color: var(--highlight-valid-move) !important;
   border-radius: 50% !important;
   opacity: 1 !important;
 }
@@ -635,13 +726,13 @@
 
 .chushogi-piece {
   font-weight: bold !important;
-  color: #2c2c2c !important;
+  color: var(--piece) !important;
   user-select: none !important;
   pointer-events: none !important;
 }
 
 .chushogi-piece.promoted {
-  color: #d32f2f !important;
+  color: var(--piece-promoted) !important;
   font-style: italic !important;
   /* Red color for promoted pieces */
 }
@@ -682,8 +773,8 @@
   position: absolute !important;
   left: 0 !important;
   right: 0 !important;
-  border: 2px dashed rgba(33, 150, 243, 0.5) !important;
-  background-color: rgba(33, 150, 243, 0.1) !important;
+  border: 2px dashed var(--promotion-zone-white-border) !important;
+  background-color: var(--promotion-zone-white-background) !important;
   pointer-events: none !important;
   box-sizing: border-box !important;
 }
@@ -691,7 +782,7 @@
 .chushogi-promotion-zone.white {
   top: 0 !important;
   height: 33.75% !important;
-  border-bottom: 2px dashed rgba(33, 150, 243, 0.5) !important;
+  border-bottom: 2px dashed var(--promotion-zone-white-border) !important;
   border-top: none !important;
   border-left: none !important;
   border-right: none !important;
@@ -700,9 +791,9 @@
 .chushogi-promotion-zone.black {
   bottom: 0 !important;
   height: 33.75% !important;
-  border-color: rgba(244, 67, 54, 0.5) !important;
-  background-color: rgba(244, 67, 54, 0.1) !important;
-  border-top: 2px dashed rgba(244, 67, 54, 0.5) !important;
+  border-color: var(--promotion-zone-black-border) !important;
+  background-color: var(--promotion-zone-black-background) !important;
+  border-top: 2px dashed var(--promotion-zone-black-border) !important;
   border-bottom: none !important;
   border-left: none !important;
   border-right: none !important;
@@ -721,7 +812,7 @@
 
 .chushogi-sidebar {
   width: 100% !important;
-  background: hsl(60, 4.8%, 95.9%) !important;
+  background: var(--background-sidebar) !important;
   padding: 12px 24px 24px 24px !important;
   box-sizing: border-box !important;
   overflow: visible !important;
@@ -776,7 +867,7 @@
 .chushogi-status h3 {
   font-size: 18px !important;
   font-weight: 600 !important;
-  color: hsl(20, 14.3%, 4.1%) !important;
+  color: var(--text-color-sidebar) !important;
   margin-bottom: 12px !important;
 }
 
@@ -793,24 +884,12 @@
 
 .chushogi-status-label {
   font-size: 14px !important;
-  color: hsl(25, 5.3%, 44.7%) !important;
+  color: var(--text-color-container) !important;
 }
 
 .chushogi-status-value {
   font-size: 14px !important;
   font-weight: 500 !important;
-}
-
-.chushogi-status-value.safe {
-  color: #388e3c !important;
-}
-
-.chushogi-status-value.check {
-  color: #f57f17 !important;
-}
-
-.chushogi-status-value.danger {
-  color: #d32f2f !important;
 }
 
 .chushogi-tabs {
@@ -819,7 +898,7 @@
 
 .chushogi-tab-list {
   display: flex !important;
-  border-bottom: 1px solid hsl(20, 5.9%, 90%) !important;
+  border-bottom: 1px solid var(--border-light) !important;
 }
 
 .chushogi-tab {
@@ -827,20 +906,15 @@
   padding: 8px 4px !important;
   font-size: 18px !important;
   font-weight: 500 !important;
-  color: hsl(25, 5.3%, 44.7%) !important;
+  color: var(--text-color-sidebar) !important;
   border-bottom: 2px solid transparent !important;
   cursor: pointer !important;
   transition: color 0.2s, border-color 0.2s !important;
   text-align: center !important;
 }
 
-.chushogi-tab:hover {
-  color: hsl(20, 14.3%, 4.1%) !important;
-}
-
 .chushogi-tab.active {
-  color: hsl(207, 90%, 54%) !important;
-  border-bottom-color: hsl(207, 90%, 54%) !important;
+  border-bottom-color: var(--tab-active) !important;
 }
 
 .chushogi-panel {
@@ -863,24 +937,24 @@
 .chushogi-game-log h4 {
   font-size: 16px !important;
   font-weight: 500 !important;
-  color: hsl(20, 14.3%, 4.1%) !important;
+  color: var(--text-color-sidebar) !important;
   margin-bottom: 8px !important;
 }
 
 .chushogi-displayed-position-section {
-  background: white !important;
-  border: 1px solid hsl(20, 5.9%, 90%) !important;
-  border-bottom: 2px solid hsl(20, 5.9%, 75%) !important;
+  background: var(--background-sidebar-field) !important;
+  border: 1px solid var(--border-light) !important;
+  border-bottom: 2px solid var(--border-medium) !important;
   border-radius: 4px 4px 0 0 !important;
   padding: 0 !important;
   flex-shrink: 0 !important;
 }
 
 .chushogi-sfen-section {
-  background: white !important;
-  border-left: 1px solid hsl(20, 5.9%, 90%) !important;
-  border-right: 1px solid hsl(20, 5.9%, 90%) !important;
-  border-bottom: 2px solid hsl(20, 5.9%, 75%) !important;
+  background: var(--background-sidebar-field) !important;
+  border-left: 1px solid var(--border-light) !important;
+  border-right: 1px solid var(--border-light) !important;
+  border-bottom: 2px solid var(--border-medium) !important;
   border-top: none !important;
   border-radius: 0 !important;
   padding: 0 !important;
@@ -888,8 +962,8 @@
 }
 
 .chushogi-move-list {
-  background: white !important;
-  border: 1px solid hsl(20, 5.9%, 90%) !important;
+  background: var(--background-sidebar-field) !important;
+  border: 1px solid var(--border-light) !important;
   border-top: none !important;
   border-radius: 0 0 4px 4px !important;
   height: 160px !important;
@@ -905,7 +979,7 @@
 .chushogi-displayed-position h4 {
   font-size: 16px !important;
   font-weight: 500 !important;
-  color: hsl(20, 14.3%, 4.1%) !important;
+  color: var(--text-color-sidebar) !important;
   margin-bottom: 8px !important;
   font-family: inherit !important;
   text-decoration: none !important;
@@ -924,7 +998,7 @@
   line-height: 1.4 !important;
   white-space: pre-wrap !important;
   resize: none !important;
-  color: hsl(20, 14.3%, 4.1%) !important;
+  color: var(--text-color-sidebar) !important;
   width: 100% !important;
   box-sizing: border-box !important;
   text-decoration: none !important;
@@ -950,7 +1024,7 @@
   white-space: pre-wrap !important;
   resize: none !important;
   word-break: break-all !important;
-  color: hsl(20, 14.3%, 4.1%) !important;
+  color: var(--text-color-sidebar) !important;
   width: 100% !important;
   box-sizing: border-box !important;
   text-decoration: none !important;
@@ -962,7 +1036,7 @@
 .chushogi-move-item-inline {
   font-family: 'Roboto Mono', monospace !important;
   font-size: 14px !important;
-  color: hsl(20, 14.3%, 4.1%) !important;
+  color: var(--text-color-sidebar) !important;
   padding: 2px 4px !important;
   border-radius: 2px !important;
   cursor: pointer !important;
@@ -979,18 +1053,18 @@
 
 .chushogi-move-item:hover,
 .chushogi-move-item-inline:hover {
-  background: hsl(60, 4.8%, 95.9%) !important;
+  background: var(--background-sidebar) !important;
 }
 
 .chushogi-move-item.current,
 .chushogi-move-item-inline.current {
-  background: hsl(207, 90%, 54%) !important;
+  background: var(--move-current-background) !important;
   color: white !important;
 }
 
 .chushogi-move-item.selected,
 .chushogi-move-item-inline.selected {
-  background: hsl(25, 95%, 53%) !important;
+  background: var(--move-selected-background) !important;
   color: white !important;
 }
 
@@ -1001,18 +1075,18 @@
 .chushogi-last-move h4 {
   font-size: 16px !important;
   font-weight: 500 !important;
-  color: hsl(20, 14.3%, 4.1%) !important;
+  color: var(--text-color-sidebar) !important;
   margin-bottom: 8px !important;
 }
 
 .chushogi-last-move-display {
-  background: white !important;
-  border: 1px solid hsl(20, 5.9%, 90%) !important;
+  background: var(--background-sidebar-field) !important;
+  border: 1px solid var(--border-light) !important;
   border-radius: 4px !important;
   padding: 12px !important;
   font-family: 'Roboto Mono', monospace !important;
   font-size: 14px !important;
-  color: hsl(25, 5.3%, 44.7%) !important;
+  color: var(--text-color-container) !important;
 }
 
 .chushogi-actions {
@@ -1024,8 +1098,8 @@
 .chushogi-btn-primary {
   width: 100% !important;
   padding: 8px 16px !important;
-  background: hsl(207, 90%, 54%) !important;
-  color: white !important;
+  background: var(--sidebar-button-background) !important;
+  color: var(--sidebar-button-text-color) !important;
   border: none !important;
   border-radius: 4px !important;
   font-size: 16px !important;
@@ -1035,24 +1109,7 @@
 }
 
 .chushogi-btn-primary:hover {
-  background: hsl(207, 90%, 48%) !important;
-}
-
-.chushogi-btn-secondary {
-  width: 100% !important;
-  padding: 8px 16px !important;
-  background: hsl(32, 95%, 44%) !important;
-  color: white !important;
-  border: none !important;
-  border-radius: 4px !important;
-  font-size: 16px !important;
-  font-weight: 500 !important;
-  cursor: pointer !important;
-  transition: background-color 0.2s !important;
-}
-
-.chushogi-btn-secondary:hover {
-  background: hsl(32, 95%, 38%) !important;
+  background: var(--sidebar-button-hover) !important;
 }
 
 .chushogi-settings {
@@ -1064,7 +1121,7 @@
 .chushogi-setting-group h4 {
   font-size: 16px !important;
   font-weight: 500 !important;
-  color: hsl(20, 14.3%, 4.1%) !important;
+  color: var(--text-color-sidebar) !important;
   margin-bottom: 8px !important;
   font-family: inherit !important;
   text-decoration: none !important;
@@ -1075,7 +1132,7 @@
 .chushogi-setting-group>label {
   font-size: 14px !important;
   font-weight: 500 !important;
-  color: hsl(20, 14.3%, 4.1%) !important;
+  color: var(--text-color-sidebar) !important;
   margin-bottom: 4px !important;
   display: block !important;
   font-family: inherit !important;
@@ -1096,7 +1153,7 @@
 .chushogi-help-text {
   font-size: 14px !important;
   line-height: 1.5 !important;
-  color: hsl(20, 14.3%, 4.1%) !important;
+  color: var(--text-color-sidebar) !important;
   margin: 8px 0 0 0 !important;
   padding: 0 !important;
   font-weight: normal !important;
@@ -1121,20 +1178,20 @@
   appearance: auto !important;
   -webkit-appearance: checkbox !important;
   -moz-appearance: checkbox !important;
-  border: 1px solid #ccc !important;
+  border: 1px solid var(--border-checkbox) !important;
   border-radius: 2px !important;
   background: white !important;
   vertical-align: middle !important;
 }
 
 .chushogi-checkbox input:checked {
-  background: #007bff !important;
-  border-color: #007bff !important;
+  background: var(--sidebar-checkbox-checked) !important;
+  border-color: var(--sidebar-checkbox-checked) !important;
 }
 
 .chushogi-checkbox label {
   font-size: 14px !important;
-  color: hsl(20, 14.3%, 4.1%) !important;
+  color: var(--text-color-sidebar) !important;
   cursor: pointer !important;
   font-weight: normal !important;
   text-decoration: none !important;
@@ -1146,11 +1203,11 @@
 .chushogi-select {
   width: 100% !important;
   padding: 8px 12px !important;
-  border: 1px solid hsl(20, 5.9%, 90%) !important;
+  border: 1px solid var(--border-light) !important;
   border-radius: 4px !important;
   font-size: 14px !important;
-  background: white !important;
-  color: hsl(20, 14.3%, 4.1%) !important;
+  background: var(--background-sidebar-field) !important;
+  color: var(--text-color-sidebar) !important;
   font-family: inherit !important;
   line-height: normal !important;
   box-sizing: border-box !important;
@@ -1161,7 +1218,7 @@
 
 /* Dropdown option styling - protect from external CSS interference */
 .chushogi-select option {
-  color: hsl(20, 14.3%, 4.1%) !important;
+  color: var(--text-color-sidebar) !important;
   font-size: 14px !important;
   font-family: inherit !important;
   font-weight: normal !important;
@@ -1170,7 +1227,7 @@
 .chushogi-textarea {
   width: 100% !important;
   padding: 12px !important;
-  border: 1px solid hsl(20, 5.9%, 90%) !important;
+  border: 1px solid var(--border-light) !important;
   border-radius: 4px !important;
   font-family: 'Roboto Mono', monospace !important;
   font-size: 12px !important;
@@ -1179,16 +1236,16 @@
   box-sizing: border-box !important;
   overflow-x: auto !important;
   word-wrap: break-word !important;
-  color: hsl(20, 14.3%, 4.1%) !important;
-  background: white !important;
+  color: var(--text-color-sidebar) !important;
+  background: var(--background-sidebar-field) !important;
   line-height: 1.4 !important;
 }
 
 .chushogi-textarea.chushogi-code {
-  background: hsl(210, 40%, 98%) !important;
+  background: var(--background-example-code) !important;
   font-size: 11px !important;
   line-height: 1.4 !important;
-  color: hsl(210, 20%, 30%) !important;
+  color: var(--example-code) !important;
   min-height: 120px !important;
 }
 
@@ -1211,23 +1268,23 @@
 }
 
 .chushogi-help::-webkit-scrollbar-track {
-  background: hsl(20, 5.9%, 90%) !important;
+  background: var(--scrollbar-track) !important;
   border-radius: 3px !important;
 }
 
 .chushogi-help::-webkit-scrollbar-thumb {
-  background: hsl(20, 5.9%, 70%) !important;
+  background: var(--scrollbar-thumb) !important;
   border-radius: 3px !important;
 }
 
 .chushogi-help::-webkit-scrollbar-thumb:hover {
-  background: hsl(20, 5.9%, 60%) !important;
+  background: var(--scrollbar-thumb-hover) !important;
 }
 
 .chushogi-help-content {
   font-size: 14px !important;
   line-height: 1.5 !important;
-  color: hsl(20, 14.3%, 4.1%) !important;
+  color: var(--text-color-sidebar) !important;
   width: 100% !important;
   overflow-wrap: break-word !important;
 }
@@ -1248,12 +1305,12 @@
 }
 
 .chushogi-help-content code {
-  background: hsl(210, 40%, 95%) !important;
+  background: var(--background-example-code-inline) !important;
   padding: 2px 4px !important;
   border-radius: 3px !important;
   font-family: 'Roboto Mono', monospace !important;
   font-size: 12px !important;
-  color: hsl(210, 30%, 40%) !important;
+  color: var(--example-code-inline) !important;
   word-break: break-word !important;
 }
 
@@ -1270,7 +1327,7 @@
   left: 0 !important;
   right: 0 !important;
   bottom: 0 !important;
-  background: rgba(0, 0, 0, 0.5) !important;
+  background: var(--overlay-dark) !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
@@ -1282,7 +1339,7 @@
 }
 
 .chushogi-modal-content {
-  background: white !important;
+  background: var(--background-sidebar-field) !important;
   border-radius: 8px !important;
   padding: 24px !important;
   max-width: 400px !important;
@@ -1301,7 +1358,7 @@
 .chushogi-modal-header h3 {
   font-size: 18px !important;
   font-weight: 600 !important;
-  color: hsl(20, 14.3%, 4.1%) !important;
+  color: var(--text-color-sidebar) !important;
   margin: 0 !important;
 }
 
@@ -1310,7 +1367,7 @@
   border: none !important;
   font-size: 24px !important;
   font-weight: bold !important;
-  color: hsl(25, 5.3%, 44.7%) !important;
+  color: var(--text-color-container) !important;
   cursor: pointer !important;
   padding: 4px 8px !important;
   border-radius: 4px !important;
@@ -1319,20 +1376,20 @@
 }
 
 .chushogi-modal-close:hover {
-  background: hsl(20, 5.9%, 90%) !important;
-  color: hsl(20, 14.3%, 4.1%) !important;
+  background: var(--container-button-hover) !important;
+  color: var(--text-color-sidebar) !important;
 }
 
 .chushogi-modal h3 {
   font-size: 18px !important;
   font-weight: 600 !important;
-  color: hsl(20, 14.3%, 4.1%) !important;
+  color: var(--text-color-sidebar) !important;
   margin-bottom: 16px !important;
 }
 
 .chushogi-modal p {
   font-size: 14px !important;
-  color: hsl(25, 5.3%, 44.7%) !important;
+  color: var(--text-color-container) !important;
   margin-bottom: 16px !important;
 }
 
@@ -1349,16 +1406,16 @@
 
 .chushogi-piece-guide {
   margin-top: 32px !important;
-  background: white !important;
+  background: var(--background-sidebar-field) !important;
   border-radius: 8px !important;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
+  box-shadow: var(--shadow-sm) !important;
   padding: 24px !important;
 }
 
 .chushogi-piece-guide h3 {
   font-size: 20px !important;
   font-weight: 600 !important;
-  color: hsl(20, 14.3%, 4.1%) !important;
+  color: var(--text-color-sidebar) !important;
   margin-bottom: 16px !important;
 }
 
@@ -1373,19 +1430,19 @@
   align-items: center !important;
   gap: 12px !important;
   padding: 12px !important;
-  border: 1px solid hsl(20, 5.9%, 90%) !important;
+  border: 1px solid var(--border-light) !important;
   border-radius: 4px !important;
   transition: background-color 0.2s !important;
 }
 
 .chushogi-piece-item:hover {
-  background: hsl(60, 4.8%, 95.9%) !important;
+  background: var(--background-sidebar) !important;
 }
 
 .chushogi-piece-character {
   font-size: 24px !important;
   font-weight: bold !important;
-  color: #2c2c2c !important;
+  color: var(--piece) !important;
   font-family: serif !important;
 }
 
@@ -1396,12 +1453,12 @@
 .chushogi-piece-name {
   font-size: 14px !important;
   font-weight: 500 !important;
-  color: hsl(20, 14.3%, 4.1%) !important;
+  color: var(--text-color-sidebar) !important;
 }
 
 .chushogi-piece-reading {
   font-size: 12px !important;
-  color: hsl(25, 5.3%, 44.7%) !important;
+  color: var(--text-color-container) !important;
 }
 
 /* Responsive adjustments for small boards */
@@ -1441,8 +1498,8 @@
 .chushogi-selector-table {
   display: inline-flex !important;
   flex-direction: column !important;
-  border: 2px solid #2c2c2c !important;
-  background: hsl(45, 45%, 87%) !important;
+  border: 2px solid var(--border-board-edge) !important;
+  background: var(--background-board-square) !important;
   overflow: hidden !important;
   width: fit-content !important;
 }
@@ -1454,10 +1511,10 @@
 .chushogi-selector-square {
   width: 32px !important;
   height: 32px !important;
-  border-top: 1px solid hsl(30, 15%, 65%) !important;
-  border-left: 1px solid hsl(30, 15%, 65%) !important;
-  border-right: 1px solid hsl(30, 15%, 65%) !important;
-  border-bottom: 1px solid hsl(30, 15%, 65%) !important;
+  border-top: 1px solid var(--border-square) !important;
+  border-left: 1px solid var(--border-square) !important;
+  border-right: 1px solid var(--border-square) !important;
+  border-bottom: 1px solid var(--border-square) !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
@@ -1467,10 +1524,10 @@
   /* Disabled to prevent interference with selected highlighting */
   user-select: none !important;
   position: relative !important;
-  background: hsl(45, 45%, 87%) !important;
+  background: var(--background-board-square) !important;
   box-sizing: border-box !important;
   font-family: serif !important;
-  color: #2c2c2c !important;
+  color: var(--piece) !important;
   font-weight: bold !important;
   text-decoration: none !important;
   line-height: 1 !important;
@@ -1479,17 +1536,17 @@
 /* Piece selector hover highlighting completely removed per user request */
 
 .chushogi-selector-square.empty {
-  background: hsl(45, 45%, 87%) !important;
+  background: var(--background-board-square) !important;
   cursor: default !important;
   font-family: serif !important;
-  color: #2c2c2c !important;
+  color: var(--piece) !important;
   font-weight: bold !important;
   text-decoration: none !important;
   line-height: 1 !important;
 }
 
 .chushogi-selector-square.selected {
-  background-color: rgba(255, 193, 7, 0.7) !important;
+  background-color: var(--highlight-selected-background) !important;
   transition: none !important;
   position: relative !important;
   z-index: 10 !important;
@@ -1512,7 +1569,7 @@
 
 .chushogi-edit-row label {
   font-weight: 500 !important;
-  color: hsl(25, 5.3%, 53%) !important;
+  color: var(--text-color-container) !important;
   white-space: nowrap !important;
 }
 
@@ -1542,7 +1599,7 @@
   left: 10% !important;
   right: 10% !important;
   bottom: 10% !important;
-  border: 3px solid var(--circle-color, #00af0e) !important;
+  border: 3px solid !important;
   border-radius: 50% !important;
   pointer-events: none !important;
   z-index: 8 !important;
@@ -1566,11 +1623,11 @@
 
 /* Counter-strike highlight styling - circle with dark amber border */
 .chushogi-square.counterstrike-highlight {
-  background-color: rgba(245, 158, 11, 0.5) !important;
+  background-color: var(--highlight-amber-background) !important;
   /* Amber for remove square */
-  color: #1f2937 !important;
+  color: var(--piece) !important;
   /* Dark text instead of white for visibility */
-  box-shadow: inset 0 0 0 3px #e77706 !important;
+  box-shadow: inset 0 0 0 3px var(--highlight-amber) !important;
   position: relative !important;
   z-index: 10 !important;
 }
@@ -1588,11 +1645,11 @@
 }
 
 .chushogi-selector-square.counterstrike-highlight {
-  background-color: rgba(245, 158, 11, 0.5) !important;
+  background-color: var(--highlight-amber-background) !important;
   /* Amber for remove square */
-  color: #1f2937 !important;
+  color: var(--piece) !important;
   /* Dark text instead of white for visibility */
-  box-shadow: inset 0 0 0 3px #e77706 !important;
+  box-shadow: inset 0 0 0 3px var(--highlight-amber) !important;
   position: relative !important;
   z-index: 10 !important;
 }
