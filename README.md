@@ -62,7 +62,7 @@ A Game Export string is a string containing an SFEN string followed by a series 
 
 ## Custom Styling
 
-The 'chushogi-lite.css' file comes with many different variables found at the top of the file that can be customized, allowing for a variety of styling options. However, these must be customized within the file itself or by using &lt;style> tags, like so.
+The 'chushogi-lite.css' file comes with many different variables found at the top of the file that can be customized, allowing for a variety of styling options. However, these must be customized within the file itself (or altered in a copy which is used for the desired applets) or by using &lt;style> tags, like so.
 
 __&lt;style><br>
 .chuShogiLite {<br>
