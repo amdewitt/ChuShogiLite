@@ -47,7 +47,7 @@ __&lt;!-- Include files --><br>
 
 The include files should be included once per page, but the chuShogiLite &lt;div class="chuShogiLite"></div> tags can be included as many times as desired, each will create its own self-contained applet.
 
-The __daga-config__ attribute can be used to set the applet's various settings, whose defaults are shown above. It's value is a JSON string with the key-value pairs shown above. Most of these key-value pairs have boolean values (i.e. they can be true or false), with the following being exceptions:
+The __daga-config__ attribute can be used to set the applet's various settings, whose defaults are shown above. It's value is a JSON string with the key-value pairs shown above. Settings that use their default values can be left out of the JSON string. If the default applet is desired the __daga-config__ attribute can be left out entirely. Most of the key-value pairs in the JSON string have boolean values (i.e. they can be true or false), with the following being exceptions:
 
 * __"appletMode"__ - Can be "sandbox", "fixedStart", "fixedRules", "fixedSettings", "fixedStartAndRules", "fixedStartAndSettings", "puzzle", or "viewOnly"
 * __"startGame"__ - Can be any Game Export string ("SFEN USIMove1 USIMove2..." or "USIMove1 USIMove2...") or null
