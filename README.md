@@ -22,7 +22,7 @@ To set up the applet onto your own site, do the following:
 
 ## Embedding the applet in a web page
 
-To embed the applet in a webpage, simply embed the following code into the page's HTML:
+To embed the applet in a webpage, simply embed the following code into the page's HTML. Make sure JavaScript is enabled, or the applet will not run.
 
 __&lt;!-- Include files (Embed these once per page) --><br>
 &lt;link rel="stylesheet" href="chushogi-lite.css"><br>
@@ -55,6 +55,6 @@ Most of the key-value pairs in the JSON string have boolean values (i.e. they ca
 * __"boardSize"__ - Can be "small", "medium", or "large"
 * __"repetitionHandling"__ - Can be "strict", "lenient", or "relaxed"
 
-<a href="https://en.wikipedia.org/wiki/Shogi_notation#SFEN">SFEN (Shogi Forsyth-Edwards Notation)</a> is a string encoding of the position of the game. ChuShogiLite uses a version of SFEN specifically adapted for Chu Shogi, which is the same one used by <a href="https://lishogi.org/analysis/chushogi">Lishogi</a>. The only difference from normal SFEN is that the field that would normally contain pieces in hand now has a board coordinate indicating the state of the game's Counter-strike rule.
+<a href="https://en.wikipedia.org/wiki/Shogi_notation#SFEN">SFEN (Shogi Forsyth-Edwards Notation)</a> is a string encoding of the position of the game. ChuShogiLite uses a version of SFEN specifically adapted for Chu Shogi, which is the same one used by <a href="https://lishogi.org/analysis/chushogi">Lishogi</a> for Chu Shogi games.
 
 USI (Universal Shogi Interface) is a dialect of <a href="https://en.wikipedia.org/wiki/Shogi_notation#SFEN">UCI (Universal Chess Interface)</a> which uses western alpha-numeric Shogi notation and appends a plus sign for promotion moves (i.e. __7g7f__ or 7g7c+__), but is otherwise the same. ChuShogiLite also allows three coordinates to be strung together (i.e. __7g7f7e__) to account for double moves.
