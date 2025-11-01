@@ -51,14 +51,26 @@ The __daga-config__ attribute can be used to set the applet's various settings, 
 
 Most of the key-value pairs in the JSON string have boolean values (i.e. they can be true or false), with the following being exceptions:
 * __"appletMode"__ - Can be "sandbox", "fixedStart", "fixedRules", "fixedSettings", "fixedStartAndRules", "fixedStartAndSettings", "puzzle", or "viewOnly"
-* __"startGame"__ - Can be any Game Export string ("SFEN USIMove1 USIMove2..." or "USIMove1 USIMove2...") or null
+* __"startGame"__ - Can be any Game Export string* or null
 * __"boardSize"__ - Can be "small", "medium", or "large"
 * __"repetitionHandling"__ - Can be "strict", "lenient", or "relaxed"
 
+A Game Export string is a string containing an SFEN string followed by a series of moves in USI, all separated by spaces
+
 <a href="https://en.wikipedia.org/wiki/Shogi_notation#SFEN">SFEN (Shogi Forsyth-Edwards Notation)</a> is a string encoding of the position of the game. ChuShogiLite uses a version of SFEN specifically adapted for Chu Shogi, which is the same one used by <a href="https://lishogi.org/analysis/chushogi">Lishogi</a> for Chu Shogi games.
 
-USI (Universal Shogi Interface) is a dialect of <a href="https://en.wikipedia.org/wiki/Shogi_notation#SFEN">UCI (Universal Chess Interface)</a> adapted for Shogi (i.e. 7g7f, 7g7c+, or P*7d). ChuShogiLite uses a version adapted specifically for Chu Shogi which allows three coordinates to be strung together to account for double moves (i.e. 7g7f7e), which is the same one used by <a href="https://lishogi.org/analysis/chushogi">Lishogi</a> for Chu Shogi games.
+USI (Universal Shogi Interface) is a dialect of <a href="https://en.wikipedia.org/wiki/Shogi_notation#SFEN">UCI (Universal Chess Interface)</a> adapted for Shogi (i.e. 7g7f or 7g7c+). ChuShogiLite uses a version adapted specifically for Chu Shogi which allows three coordinates to be strung together to account for double moves (i.e. 7g7f7e), which is the same one used by <a href="https://lishogi.org/analysis/chushogi">Lishogi</a> for Chu Shogi games.
 
 ## Custom Styling
 
-The 'chushogi-lite.css' file comes with many different variables found at the top of the file that can be customized, allowing for a variety of styling options. However, these must be customized within the file itself or by using &lt;style> tags.
+The 'chushogi-lite.css' file comes with many different variables found at the top of the file that can be customized, allowing for a variety of styling options. However, these must be customized within the file itself or by using &lt;style> tags, like so.
+
+__&lt;style><br>
+.chuShogiLite {
+&nbsp; --text-color-container: #1f1f1f;
+&nbsp; --background-board-square: hsl(45, 45%, 87%);
+&nbsp; --border-light: hsl(20, 5.9%, 90%);
+&nbsp; --sidebar-button-text-color: white;
+...
+}
+&lt;/style>__
