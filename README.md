@@ -47,7 +47,7 @@ __&lt;!-- Include files (Embed these once per page) --><br>
 
 ## Applet Settings
 
-The __daga-config__ attribute can be used to set the applet's various settings, whose defaults are shown above. It's value is a JSON string with the key-value pairs shown above. Settings that use their default values can be left out of the JSON string. If the default applet is desired the __daga-config__ attribute can be left out entirely.
+The __daga-config__ attribute can be used to set the applet's various settings, whose defaults are shown above. It's value is a JSON string of key-value pairs, with their defaults shown above. Settings that use their default values can be left out of the JSON string, and if the default applet is desired the __daga-config__ attribute can be left out entirely.
 
 Most of the key-value pairs in the JSON string have boolean values (i.e. they can be true or false), with the following being exceptions:
 * __"appletMode"__ - Can be "sandbox", "fixedStart", "fixedRules", "fixedSettings", "fixedStartAndRules", "fixedStartAndSettings", "puzzle", or "viewOnly"
@@ -58,3 +58,7 @@ Most of the key-value pairs in the JSON string have boolean values (i.e. they ca
 <a href="https://en.wikipedia.org/wiki/Shogi_notation#SFEN">SFEN (Shogi Forsyth-Edwards Notation)</a> is a string encoding of the position of the game. ChuShogiLite uses a version of SFEN specifically adapted for Chu Shogi, which is the same one used by <a href="https://lishogi.org/analysis/chushogi">Lishogi</a> for Chu Shogi games.
 
 USI (Universal Shogi Interface) is a dialect of <a href="https://en.wikipedia.org/wiki/Shogi_notation#SFEN">UCI (Universal Chess Interface)</a> adapted for Shogi (i.e. 7g7f, 7g7c+, or P*7d). ChuShogiLite uses a version adapted specifically for Chu Shogi which allows three coordinates to be strung together to account for double moves (i.e. 7g7f7e), which is the same one used by <a href="https://lishogi.org/analysis/chushogi">Lishogi</a> for Chu Shogi games.
+
+## Custom Styling
+
+The 'chushogi-lite.css' file comes with many different variables found at the top of the file that can be customized, allowing for a variety of styling options. However, these must be customized within the file itself or by using &lt;style> tags.
