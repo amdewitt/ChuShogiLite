@@ -43,8 +43,7 @@ __&lt;!-- Include files --><br>
 &nbsp; "midpointProtection": false,<br>
 &nbsp; "trappedLancePromotion": false,<br>
 &nbsp; "repetitionHandling": "strict"<br>
-}'>
-&lt;/div>__
+}'>&lt;/div>__
 
 The include files should be included once per page, but the chuShogiLite &lt;div class="chuShogiLite"></div> tags can be included as many times as desired, each will create its own self-contained applet.
 
