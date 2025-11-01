@@ -47,9 +47,15 @@ __&lt;!-- Include files --><br>
 
 The include files should be included once per page, but the chuShogiLite &lt;div class="chuShogiLite"></div> tags can be included as many times as desired, each will create its own self-contained applet.
 
+## Applet Settings
+
 The __daga-config__ attribute can be used to set the applet's various settings, whose defaults are shown above. It's value is a JSON string with the key-value pairs shown above. Settings that use their default values can be left out of the JSON string. If the default applet is desired the __daga-config__ attribute can be left out entirely. Most of the key-value pairs in the JSON string have boolean values (i.e. they can be true or false), with the following being exceptions:
 
 * __"appletMode"__ - Can be "sandbox", "fixedStart", "fixedRules", "fixedSettings", "fixedStartAndRules", "fixedStartAndSettings", "puzzle", or "viewOnly"
 * __"startGame"__ - Can be any Game Export string ("SFEN USIMove1 USIMove2..." or "USIMove1 USIMove2...") or null
 * __"boardSize"__ - Can be "small", "medium", or "large"
 * __"repetitionHandling"__ - Can be "strict", "lenient", or "relaxed"
+
+A <a href="https://en.wikipedia.org/wiki/Shogi_notation#SFEN">SFEN (Shogi Forsyth-Edwards Notation)</a> is a string encoding of the position of the game. ChuShogiLite uses a version of SFEN specifically adapted for Chu Shogi, which is the same one used by <a href="https://lishogi.org/analysis/chushogi">Lishogi</a>.
+
+USI (Universal Shogi Interface) is a dialect of <a href="<a href="https://en.wikipedia.org/wiki/Shogi_notation#SFEN">">UCI (Universal Chess Interface)</a> which uses western alpha-numeric Shogi notation and appends a plus sign for promotion moves (i.e. __7g7f__ or 7g7c+__), but is otherwise the same. ChuShogiLite also allows three coordinates to be strung together (i.e. __7g7f7e__) to account for double moves.
