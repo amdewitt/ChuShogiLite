@@ -26,11 +26,11 @@ To set up the applet onto your own site, do the following:
 
 To embed the applet in a webpage, simply embed the following code into the page's HTML:
 
-&lt;!-- Include files -->
-&lt;link rel="stylesheet" href="chushogi-lite.css">
-&lt;script src="chushogi-lite.js">&lt;/script>
-&lt;!-- Game container -->
-&lt;div class="chuShogiLite">
+&lt;!-- Include files --><br>
+&lt;link rel="stylesheet" href="chushogi-lite.css"><br>
+&lt;script src="chushogi-lite.js">&lt;/script><br>
+&lt;!-- Game container --><br>
+&lt;div class="chuShogiLite"><br>
 &lt;/div>
 
 The include files should be included once per page, but the chuShogiLite &lt;div class="chuShogiLite"></div> tags can be included as many times as desired, each will create its own self-contained applet which will not inter
