@@ -1,7 +1,7 @@
 # ChuShogiLite - Embeddable Chu Shogi Web Applet
 This is a piece of Chu Shogi infrastructure that can be very easily embedded in websites, and be embedded multiple times per page. It is based on the DHTML Chu Shogi Board found at https://toybox.a.la9.jp/chushogi/dhtmlchu/, but improves it in many key ways, including, but not limited to:
 
-* A much simpler setup method
+* A much simpler setup method, which can be used multiple times per page
 * Rule enforcement, with several settings to account for the most common rule variations
 * Legal move highlights for selected pieces with 100% accuracy
 * The ability to draw circles and arrows on the board with right-clicks
