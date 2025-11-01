@@ -7,6 +7,10 @@ To set up the applet onto your own site, do the following:
 
 1. Go to the following website:
    * https://github.com/amdewitt/ChuShogiLite
-3. Click the < > Code button, then click Download ZIP.
-4. Extract the files, and put the 'chushogi-lite.js' and 'chushogi-lite.css' files into the desired location.
-   * Ideally both files should be put in the same locaton.
+3. Click the < > Code button, then click Download ZIP and extract the files.
+   * If you only want the files necessary to run the applet, just download the 'chushogi-lite.js' and 'chushogi-lite.css' files.
+5. Put the 'chushogi-lite.js' and 'chushogi-lite.css' files into the desired location.
+   * Ideally both files should be in the same folder.
+6. The applet is now ready to be used.
+
+## Embedding the applet in a web page
