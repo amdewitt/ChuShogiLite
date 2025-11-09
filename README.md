@@ -6,7 +6,7 @@ This is a piece of Chu Shogi infrastructure that can be very easily embedded in 
 * Legal move highlights for selected pieces with 100% accuracy
 * The ability to draw circles and arrows on the board with right-clicks
 * Easy exports and imports for games (albeit to a simplistic plaintext that fits everything in a single line)
-* Easy editing of all aspects of the board positionw with the mouse
+* Easy editing of all aspects of the board position with the mouse
 * As a bonus, a collection of tsume puzzles and a couple of helpful tools are included.
 
 ## Setting up ChuShogiLite a Website
