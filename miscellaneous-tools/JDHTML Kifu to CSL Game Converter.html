@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html>
+<body>
+<h1>ChuShogiLite JDHTML Chu Shogi Board Kifu Converter</h1>
+
+<script>
+const shokiToCSLMap = {
+    "hyoko": "P",
+    "chuunin": "I",
+    "dou": "C",
+    "gin": "S",
+    "kin": "G",
+    "hyou": "F",
+    "tora": "T",
+    "zou": "E",
+    "houou": "X",
+    "kirin": "O",
+    "yari": "L",
+    "hensha": "A",
+    "yoko": "M",
+    "tate": "V",
+    "kaku": "B",
+    "hisha": "R",
+    "mma": "H",
+    "ryuu": "D",
+    "hon_ou": "Q",
+    "shishi": "N",
+    "gyoku": "K",
+    "ousan": "K",
+    "tokin2": "+P",
+    "zou2": "+I",
+    "yoko2": "+C",
+    "tate2": "+S",
+    "kimbisha2": "+G",
+    "choro2": "+F",
+    "shika2": "+T",
+    "taishi2": "+E",
+    "hon_ou2": "+X",
+    "shishi2": "+O",
+    "hakku2": "+L",
+    "kujira2": "+A",
+    "ino2": "+M",
+    "ushi2": "+V",
+    "mma2": "+B",
+    "ryuu2": "+R",
+    "taka2": "+H",
+    "washi2": "+D"
+};
+
+function convertJDHTMLSFEN(originalString, isGoteToMove) {
+    let sfenText = '';
+    if (!originalString) return sfenText;
+
+    // Normalize CR/LF and extract the contents inside the 12 parentheses pairs.
+    const normalized = originalString.replace(/\r/g, '');
+    const matches = [...normalized.matchAll(/\(([^)]*)\)/g)];
+    if (matches.length !== 12) {
+        // Not the format we expect; bail out with empty result.
+        return sfenText;
+    }
+
+    const columnArray = matches.map(m => m[1]);
+    const sfenArray = [];
+
+    for (let i = 0; i < 12; ++i) {
+        sfenArray.push([]);
+        for (let j = 11; j >= 0; --j) {
+            // Remove spaces and apostrophes, split into entries for this column
+            const col = columnArray[j].toString().replace(/ /g, '').replace(/'/g, '').split(',');
+            const key = col[i];
+            const mapKey = key.startsWith('_') ? key.substring(1) : key;
+            const sfenIDUnfiltered = shokiToCSLMap[mapKey] || '.'; // use '.' when unknown/empty
+            const sfenID = (key.startsWith('_')) ? sfenIDUnfiltered.toLowerCase() : sfenIDUnfiltered;
+            sfenArray[i].push(sfenID);
+        }
+    }
+
+    let emptyCount = 0;
+    for(let i = 0; i < 12; ++i) {
+        emptyCount = 0;
+        for(let j = 0; j < 12; ++j) {
+            if(sfenArray[i][j] === '.') {
+                ++emptyCount;
+            } else {
+                if(emptyCount > 0) {
+                    sfenText += emptyCount;
+                    emptyCount = 0;
+                }
+                sfenText += sfenArray[i][j];
+            }
+        }
+        if(emptyCount > 0) {
+            sfenText += emptyCount;
+            emptyCount = 0;
+        }
+        if(i < 11) {
+            sfenText += '/';
+        }
+    }
+
+    sfenText += isGoteToMove ? ' w' : ' b';
+    let antiTradeCoordinate = document.getElementById('antiTradeCoordinate').value;
+    if(/^([2-9]|1[0-2]?)([a-l])$/.test(antiTradeCoordinate)) sfenText += ' ' + antiTradeCoordinate;
+    else sfenText += ' -'
+    sfenText += ' 1';
+    return sfenText;
+}
+
+function convertJDHTMLGame(originalString) {
+  let newStringArray = originalString.split('\n');
+  let newString = '';
+  let firstApostropheIndex = -1;
+  let secondApostropheIndex = -1;
+  let moveText = '';
+
+    for (let i = 0; i < newStringArray.length; ++i) {
+        firstApostropheIndex = newStringArray[i].indexOf("'");
+        if (firstApostropheIndex !== -1) {
+            secondApostropheIndex = newStringArray[i].indexOf("'", firstApostropheIndex + 1);
+            if (secondApostropheIndex !== -1) {
+                moveText = newStringArray[i].substring(firstApostropheIndex + 1, secondApostropheIndex);
+                console.log(moveText);
+            } else {
+                return newString;
+            }
+        } else {
+            return newString;
+        }
+
+        if (moveText.length > 0) {
+            if (moveText.length < 8) return newString; // Invalid move
+
+            if (moveText.startsWith('i') || moveText.startsWith('n')) { // double moves stored in JDHTML Game as two separate moves beginning with i and n, in that order
+                newString += parseInt(moveText.substring(1, 3)).toString();
+                newString += String.fromCharCode(parseInt(moveText.substring(3, 5)) + 96);
+                ++i;
+                moveText = newStringArray[i].substring(firstApostropheIndex + 1, secondApostropheIndex); // get second part of move
+                newString += parseInt(moveText.substring(1, 3)).toString();
+                newString += String.fromCharCode(parseInt(moveText.substring(3, 5)) + 96);
+                newString += parseInt(moveText.substring(5, 7)).toString();
+                newString += String.fromCharCode(parseInt(moveText.substring(7, 9)) + 96);
+                if (moveText.charAt(8) == 'N') newString += '+' // promotion
+            } else { // normal move
+                newString += parseInt(moveText.substring(0, 2)).toString();
+                newString += String.fromCharCode(parseInt(moveText.substring(2, 4)) + 96);
+                newString += parseInt(moveText.substring(4, 6)).toString();
+                newString += String.fromCharCode(parseInt(moveText.substring(6, 8)) + 96);
+                if (moveText.charAt(8) == 'N') newString += '+' // promotion
+            }
+            if (i < (newStringArray.length - 1)) newString += ' ';
+        }
+    }
+
+  return newString;
+} // '01011212'
+
+function convertJDHTMLShoki() {
+  document.getElementById("demo1").innerHTML = "X";
+    document.getElementById("demo1").innerHTML = convertJDHTMLSFEN(document.getElementById('sfenInput').value, document.getElementById('sfenStartPlayer').checked);
+  document.getElementById('sfenInput').value = '';
+}
+
+function convertJDHTMLSk() {
+  document.getElementById("demo2").innerHTML = "X";
+    document.getElementById("demo2").innerHTML = convertJDHTMLGame(document.getElementById('gameInput').value);
+  document.getElementById('gameInput').value = '';
+}
+</script>
+
+<textarea id="sfenInput" placeholder="Paste shoki[] Array here"></textarea>
+<input type="checkbox" id="sfenStartPlayer">
+<label for="sfenStartPlayer">Player To Move (Unchecked = b, Checked = w)</label>
+<br>
+<input type="text" id="antiTradeCoordinate" placeholder="Anti-Trade coord here">&nbsp;&nbsp;Anti-trade coordinate in USI format (i.e. 7f), blank = N/A
+<br>
+<br>
+<input type="button" value="Convert JDHTML Shoki (Board Setup)" onclick="convertJDHTMLShoki()">
+<p id="demo1">No JDHTML SFEN converted yet</p>
+    <p>On any JDHTML Chu Board, like <a href="https://www.asahi-net.or.jp/~xr9s-ymgc/tume/tumechu1.html">this one</a>, use Ctrl+U or its equivalent to view the source, then copy the shoki array. Paste the copied array into the text box above and then press 'Convert JDHTML Shoki (Board Setup)' to get a CSL-compatible SFEN.</p>
+</body>
+<textarea id="gameInput" placeholder="Paste sk[] Array here"></textarea>
+<br>
+<br>
+<input type="button" value="Convert JDHTML SK (Game)" onclick="convertJDHTMLSk()">
+<p id="demo2">No JDHTML Game converted yet</p>
+    <p>On any JDHTML Chu Board, like <a href="https://www.asahi-net.or.jp/~xr9s-ymgc/tume/tumechu1.html">this one</a>, use Ctrl+U or its equivalent to view the source, then copy the sk array. Paste the copied array into the text box above and then press 'Convert JDHTML SK (Game)' to get a CSL-compatible Game string.</p>
+</body>
+</html> 
