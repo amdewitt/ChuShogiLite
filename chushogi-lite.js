@@ -962,26 +962,22 @@
                     gameData,
                 );
 
-                // Parse the game data using existing import logic
-                const parts = gameData.trim().split(/\s+/);
-                let sfen, moves;
+                // Use unified loader to parse game data (same logic as importGame)
+                const loadResult = this.loadGame(gameData);
 
-                if (parts.length === 0) {
-                    console.error("Puzzle: Empty game data");
+                if (!loadResult.success) {
+                    console.error("Puzzle: Load error:", loadResult.error);
                     return false;
                 }
 
-                // Use same logic as importGame to parse SFEN and moves
-                if (parts[0].includes("/") && parts.length >= 4) {
-                    // Full SFEN provided
-                    sfen = parts.slice(0, 4).join(" ");
-                    moves = parts.slice(4);
-                } else {
-                    // Only moves provided, use default starting position
-                    const defaultSFEN =
-                        "lfcsgekgscfl/a1b1txot1b1a/mvrhdqndhrvm/pppppppppppp/3i4i3/12/12/3I4I3/PPPPPPPPPPPP/MVRHDNQDHRVM/A1B1TOXT1B1A/LFCSGKEGSCFL b - 1";
-                    sfen = defaultSFEN;
-                    moves = parts;
+                const { sfen, moves, startingComment, moveComments, commentOnly, hasNoData } = loadResult;
+
+                // Reject comment-only or empty input for puzzle mode
+                if (commentOnly || hasNoData) {
+                    console.error(
+                        "Puzzle: Invalid data - puzzles require SFEN and moves",
+                    );
+                    return false;
                 }
 
                 // Store the complete solution without preprocessing disambiguation
@@ -995,6 +991,16 @@
                     "...",
                 );
 
+                // Store comments for the puzzle (normalize to prevent undefined errors)
+                this.startingComment = startingComment || "";
+                this.puzzleSolutionComments = Array.isArray(moveComments) ? moveComments : [];
+                console.log(
+                    "Puzzle: Stored",
+                    this.puzzleSolutionComments.length,
+                    "move comments and starting comment:",
+                    this.startingComment ? `"${this.startingComment.substring(0, 50)}..."` : "(none)",
+                );
+
                 // Load only the starting position (without moves)
                 if (!this.loadSFEN(sfen)) {
                     console.error("Puzzle: Failed to load starting position");
@@ -1005,6 +1011,7 @@
                 this.puzzleSolver = this.currentPlayer;
                 this.puzzleOpponent = this.puzzleSolver === "b" ? "w" : "b";
                 this.puzzleOpponentThinking = false; // Initialize blocking state
+                this.puzzleWaitingForAdvance = false; // Initialize pause state for comments
                 console.log(
                     "Puzzle: Solver is",
                     this.puzzleSolver,
@@ -1024,6 +1031,7 @@
                 return true;
             } catch (error) {
                 console.error("Puzzle: Error initializing puzzle:", error);
+                console.error("Puzzle: Error stack:", error.stack);
                 return false;
             }
         }
@@ -1201,6 +1209,25 @@
                 // Restore import mode state
                 this.isImporting = wasImporting;
 
+                // In puzzle mode, attach the comment from the solution
+                if (result && this.config.appletMode === "puzzle" && this.puzzleSolutionComments) {
+                    const lastMoveIndex = this.moveHistory.length - 1;
+                    if (lastMoveIndex >= 0 && lastMoveIndex < this.puzzleSolutionComments.length) {
+                        this.moveHistory[lastMoveIndex].comment = this.puzzleSolutionComments[lastMoveIndex];
+                        console.log(
+                            "Puzzle: Attached comment to opponent move",
+                            lastMoveIndex,
+                            ":",
+                            this.puzzleSolutionComments[lastMoveIndex] ? `"${this.puzzleSolutionComments[lastMoveIndex].substring(0, 30)}..."` : "(none)"
+                        );
+                        // Update display to show the newly attached comment
+                        if (!this.isBatchImporting) {
+                            console.log("Puzzle: Updating display after attaching comment");
+                            this.updateDisplay();
+                        }
+                    }
+                }
+
                 return result;
             } catch (error) {
                 console.error("Error executing opponent move:", error);
@@ -1265,8 +1292,17 @@
                 const isPuzzleOpponentThinking =
                     this.config.appletMode === "puzzle" &&
                     this.puzzleOpponentThinking;
+                const isPuzzleWaitingForAdvance =
+                    this.config.appletMode === "puzzle" &&
+                    this.puzzleWaitingForAdvance;
 
+                // Block all navigation in edit mode or during opponent thinking
                 if (isEditMode || isPuzzleOpponentThinking) {
+                    return;
+                }
+
+                // During pause, only allow forward (next) navigation
+                if (isPuzzleWaitingForAdvance && buttonType !== "next") {
                     return;
                 }
 
@@ -3528,7 +3564,8 @@ impossible to fulfill for either player, the game is considered a draw.</p>
               <p><strong>How the Puzzle Works:</strong></p>
               <ul>
                 <li>Play moves as the solving player (highlighted in the turn indicator)</li>
-                <li>The opponent's responses are played automatically according to the solution</li>
+                <li>The opponent's responses are usually played automatically according to the solution</li>
+                <li>If your move has commentary, the opponent will wait until you press the > or → key to play the next move.</li>
                 <li>Your moves must match the expected solution sequence to progress</li>
                 <li>Incorrect moves will be rejected and deselect the moving piece</li>
                 <li>The Info tab shows your progress: current position / total solution length</li>
@@ -3651,7 +3688,7 @@ impossible to fulfill for either player, the game is considered a draw.</p>
               </ul>
               <p>Comments have three special escape characters used to encode certain characters within the Game Export String:</p>
               <ul>
-              <li><strong>\\}</strong>: } curly bracket within comment</li>
+              <li><strong>\\}</strong>: } closing curly bracket within comment</li>
               <li><strong>\\\\</strong>: \\ backslash</li>
               <li><strong>\\n</strong>: newline character</li>
               </ul>
@@ -3856,6 +3893,17 @@ impossible to fulfill for either player, the game is considered a draw.</p>
             ) {
                 console.log(
                     "Board clicks blocked during puzzle opponent response",
+                );
+                return;
+            }
+
+            // Block all interactions during puzzle pause (waiting for manual advance)
+            if (
+                this.config.appletMode === "puzzle" &&
+                this.puzzleWaitingForAdvance
+            ) {
+                console.log(
+                    "Board clicks blocked - press > or → to continue",
                 );
                 return;
             }
@@ -6359,8 +6407,28 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                 this.moveHistory.push(moveRecord);
                 this.lastMove = moveRecord;
 
-                // Handle puzzle mode - execute opponent response after solver's move
+                // Handle puzzle mode - attach comment and execute opponent response
                 if (this.config.appletMode === "puzzle") {
+                    // Attach comment to the move just added
+                    const lastMoveIndex = this.moveHistory.length - 1;
+                    if (
+                        !this.isImporting &&
+                        this.puzzleSolutionComments &&
+                        lastMoveIndex >= 0 &&
+                        lastMoveIndex < this.puzzleSolutionComments.length
+                    ) {
+                        this.moveHistory[lastMoveIndex].comment =
+                            this.puzzleSolutionComments[lastMoveIndex];
+                        console.log(
+                            "Puzzle: Attached comment to player move",
+                            lastMoveIndex,
+                            ":",
+                            this.puzzleSolutionComments[lastMoveIndex]
+                                ? `"${this.puzzleSolutionComments[lastMoveIndex].substring(0, 30)}..."`
+                                : "(none)",
+                        );
+                    }
+
                     // Check if solver just made a move (before player switch)
                     const wasSolverMove = piece.color === this.puzzleSolver;
                     console.log(
@@ -6372,23 +6440,34 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                         piece.color,
                     );
                     if (wasSolverMove) {
-                        console.log(
-                            "Puzzle: Scheduling opponent response in 500ms",
-                        );
-                        // Block all user interactions during opponent response
-                        this.puzzleOpponentThinking = true;
-                        this.updateButtonStates(); // Disable navigation buttons
-
-                        // Solver just made a move, schedule opponent's response after player switch
-                        setTimeout(() => {
+                        const lastMove = this.moveHistory[this.moveHistory.length - 1];
+                        const moveHasComment = lastMove?.comment && lastMove.comment.trim().length > 0;
+                        
+                        if (moveHasComment) {
+                            // Move has a comment - pause and wait for manual advancement
+                            console.log("Puzzle: Paused - waiting for player to press > or →");
+                            this.puzzleWaitingForAdvance = true;
+                            this.updateButtonStates(); // Enable forward navigation button
+                        } else {
+                            // No comment - proceed with automatic opponent response
                             console.log(
-                                "Puzzle: Timeout triggered, executing opponent response",
+                                "Puzzle: Scheduling opponent response in 500ms",
                             );
-                            this.executeOpponentResponseInPuzzle();
-                            // Re-enable interactions after opponent move
-                            this.puzzleOpponentThinking = false;
-                            this.updateButtonStates(); // Re-enable navigation buttons
-                        }, 500); // Small delay for visual feedback
+                            // Block all user interactions during opponent response
+                            this.puzzleOpponentThinking = true;
+                            this.updateButtonStates(); // Disable navigation buttons
+
+                            // Solver just made a move, schedule opponent's response after player switch
+                            setTimeout(() => {
+                                console.log(
+                                    "Puzzle: Timeout triggered, executing opponent response",
+                                );
+                                this.executeOpponentResponseInPuzzle();
+                                // Re-enable interactions after opponent move
+                                this.puzzleOpponentThinking = false;
+                                this.updateButtonStates(); // Re-enable navigation buttons
+                            }, 500); // Small delay for visual feedback
+                        }
                     }
                 }
 
@@ -6409,7 +6488,7 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                 // Reset navigation state to current position after making a move
                 // Skip this during import - state will be set correctly after import completes
                 if (!this.isImporting) {
-                    this.currentNavigationIndex = this.moveHistory.length - 1;
+                    this.currentNavigationIndex = null; // null = at current position
                     this.isNavigating = false;
                 }
 
@@ -7372,6 +7451,17 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                     ) {
                         console.log(
                             "EventManager: Board clicks blocked during puzzle opponent response",
+                        );
+                        return;
+                    }
+
+                    // Block all interactions during puzzle pause (waiting for manual advance)
+                    if (
+                        this.config.appletMode === "puzzle" &&
+                        this.puzzleWaitingForAdvance
+                    ) {
+                        console.log(
+                            "EventManager: Board clicks blocked - press > or → to continue",
                         );
                         return;
                     }
@@ -10583,6 +10673,17 @@ impossible to fulfill for either player, the game is considered a draw.</p>
             const isPuzzleOpponentThinking =
                 this.config.appletMode === "puzzle" &&
                 this.puzzleOpponentThinking;
+            const isPuzzleWaitingForAdvance =
+                this.config.appletMode === "puzzle" &&
+                this.puzzleWaitingForAdvance;
+
+            // Check if undo should be blocked in puzzle mode during navigation
+            // Match the condition used in undoPuzzleMove() - check currentNavigationIndex only
+            let isPuzzleUndoBlocked = false;
+            if (this.config.appletMode === "puzzle" && this.currentNavigationIndex !== null) {
+                const positionPlayer = this.getPlayerAtPosition(this.currentNavigationIndex);
+                isPuzzleUndoBlocked = positionPlayer === this.puzzleOpponent;
+            }
 
             // Get the control buttons
             const undoBtn = this.container.querySelector(
@@ -10609,61 +10710,111 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                 "[data-view-solution-btn]",
             );
 
-            // Determine if buttons should be disabled
-            const shouldDisableButtons = isEditTab || isPuzzleOpponentThinking;
+            // When paused waiting for advance, enable only forward navigation
+            if (isPuzzleWaitingForAdvance) {
+                // Disable most buttons during pause
+                [undoBtn, newGameBtn, goToStartBtn, goBackBtn, goToCurrentBtn].forEach((btn) => {
+                    if (btn) {
+                        btn.disabled = true;
+                        btn.style.setProperty("opacity", "0.5", "important");
+                        btn.style.setProperty("cursor", "not-allowed", "important");
+                    }
+                });
+                
+                // Enable forward button to allow manual advancement
+                if (goForwardBtn) {
+                    goForwardBtn.disabled = false;
+                    goForwardBtn.style.setProperty("opacity", "1", "important");
+                    goForwardBtn.style.setProperty("cursor", "pointer", "important");
+                }
+                
+                // Disable View Solution button during pause
+                if (viewSolutionBtn) {
+                    viewSolutionBtn.disabled = true;
+                    viewSolutionBtn.style.setProperty("opacity", "0.5", "important");
+                    viewSolutionBtn.style.setProperty("cursor", "not-allowed", "important");
+                }
+                
+                if (resetBtn) {
+                    resetBtn.disabled = true;
+                    resetBtn.style.setProperty("opacity", "0.5", "important");
+                    resetBtn.style.setProperty("cursor", "not-allowed", "important");
+                }
+                
+                // Return early to prevent subsequent logic from re-enabling buttons
+                return;
+            } else {
+                // Normal behavior for non-pause states
+                const shouldDisableButtons = isEditTab || isPuzzleOpponentThinking;
 
-            // Disable/enable buttons based on edit mode or puzzle opponent thinking
-            [
-                undoBtn,
-                newGameBtn,
-                goToStartBtn,
-                goBackBtn,
-                goForwardBtn,
-                goToCurrentBtn,
-            ].forEach((btn) => {
-                if (btn) {
-                    btn.disabled = shouldDisableButtons;
-                    btn.style.setProperty(
+                // Handle undo button separately to account for puzzle navigation blocking
+                if (undoBtn) {
+                    const shouldDisableUndo = shouldDisableButtons || isPuzzleUndoBlocked;
+                    undoBtn.disabled = shouldDisableUndo;
+                    undoBtn.style.setProperty(
                         "opacity",
-                        shouldDisableButtons ? "0.5" : "1",
+                        shouldDisableUndo ? "0.5" : "1",
                         "important",
                     );
-                    btn.style.setProperty(
+                    undoBtn.style.setProperty(
                         "cursor",
-                        shouldDisableButtons ? "not-allowed" : "pointer",
+                        shouldDisableUndo ? "not-allowed" : "pointer",
                         "important",
                     );
                 }
-            });
 
-            // View Solution button should only be disabled during puzzle opponent thinking (not edit mode)
-            if (viewSolutionBtn) {
-                viewSolutionBtn.disabled = isPuzzleOpponentThinking;
-                viewSolutionBtn.style.setProperty(
-                    "opacity",
-                    isPuzzleOpponentThinking ? "0.5" : "1",
-                    "important",
-                );
-                viewSolutionBtn.style.setProperty(
-                    "cursor",
-                    isPuzzleOpponentThinking ? "not-allowed" : "pointer",
-                    "important",
-                );
-            }
+                // Disable/enable other buttons based on edit mode or puzzle opponent thinking
+                [
+                    newGameBtn,
+                    goToStartBtn,
+                    goBackBtn,
+                    goForwardBtn,
+                    goToCurrentBtn,
+                ].forEach((btn) => {
+                    if (btn) {
+                        btn.disabled = shouldDisableButtons;
+                        btn.style.setProperty(
+                            "opacity",
+                            shouldDisableButtons ? "0.5" : "1",
+                            "important",
+                        );
+                        btn.style.setProperty(
+                            "cursor",
+                            shouldDisableButtons ? "not-allowed" : "pointer",
+                            "important",
+                        );
+                    }
+                });
 
-            // Reset button stays enabled in edit mode with different functionality, but disabled during puzzle opponent thinking
-            if (resetBtn) {
-                resetBtn.disabled = isPuzzleOpponentThinking;
-                resetBtn.style.setProperty(
-                    "opacity",
-                    isPuzzleOpponentThinking ? "0.5" : "1",
-                    "important",
-                );
-                resetBtn.style.setProperty(
-                    "cursor",
-                    isPuzzleOpponentThinking ? "not-allowed" : "pointer",
-                    "important",
-                );
+                // View Solution button should only be disabled during puzzle opponent thinking (not edit mode)
+                if (viewSolutionBtn) {
+                    viewSolutionBtn.disabled = isPuzzleOpponentThinking;
+                    viewSolutionBtn.style.setProperty(
+                        "opacity",
+                        isPuzzleOpponentThinking ? "0.5" : "1",
+                        "important",
+                    );
+                    viewSolutionBtn.style.setProperty(
+                        "cursor",
+                        isPuzzleOpponentThinking ? "not-allowed" : "pointer",
+                        "important",
+                    );
+                }
+
+                // Reset button stays enabled in edit mode with different functionality, but disabled during puzzle opponent thinking
+                if (resetBtn) {
+                    resetBtn.disabled = isPuzzleOpponentThinking;
+                    resetBtn.style.setProperty(
+                        "opacity",
+                        isPuzzleOpponentThinking ? "0.5" : "1",
+                        "important",
+                    );
+                    resetBtn.style.setProperty(
+                        "cursor",
+                        isPuzzleOpponentThinking ? "not-allowed" : "pointer",
+                        "important",
+                    );
+                }
             }
         }
 
@@ -11234,7 +11385,11 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                             sfenExport.readOnly = true; // SFEN is always readonly
                         } else {
                             // Show comment when checkbox is unchecked (default)
-                            sfenExport.placeholder = "(No Comment)" + (this.config.allowCustomComments ? " - Click to add" : "");
+                            sfenExport.placeholder =
+                                "(No Comment)" +
+                                (this.config.allowCustomComments
+                                    ? " - Click to add"
+                                    : "");
                             const comment = this.getNavigationDisplayComment();
                             sfenExport.value = comment || "";
                             sfenExport.readOnly =
@@ -12567,6 +12722,24 @@ impossible to fulfill for either player, the game is considered a draw.</p>
         }
 
         goForwardOneMove() {
+            // Check if we're paused in puzzle mode waiting for advancement
+            // Only trigger opponent response if we're at the current position (not browsing history)
+            if (
+                this.config.appletMode === "puzzle" &&
+                this.puzzleWaitingForAdvance &&
+                this.currentNavigationIndex === null
+            ) {
+                console.log("Puzzle: Resuming from pause, executing opponent response");
+                this.puzzleWaitingForAdvance = false;
+                this.puzzleOpponentThinking = true;
+                this.updateButtonStates(); // Disable navigation during opponent thinking
+                this.executeOpponentResponseInPuzzle();
+                // Re-enable interactions after opponent move
+                this.puzzleOpponentThinking = false;
+                this.updateButtonStates(); // Re-enable navigation buttons
+                return;
+            }
+
             if (
                 this.currentNavigationIndex === null ||
                 this.currentNavigationIndex === this.moveHistory.length - 1
@@ -12883,6 +13056,12 @@ impossible to fulfill for either player, the game is considered a draw.</p>
         newGame() {
             // Use centralized state management for complete new game reset
             this.gameStateManager.resetGameState();
+
+            // Clear puzzle pause state when starting new game
+            if (this.config.appletMode === "puzzle" && this.puzzleWaitingForAdvance) {
+                console.log("Puzzle: Clearing pause state due to new game");
+                this.puzzleWaitingForAdvance = false;
+            }
 
             // Clear edit mode state
             this.gameStateManager.updateGameState({
@@ -13493,6 +13672,18 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                 return;
             }
 
+            // Block undo during puzzle pause (waiting for manual advance)
+            if (this.config.appletMode === "puzzle" && this.puzzleWaitingForAdvance) {
+                console.log("Undo blocked during puzzle pause - press > or → to continue");
+                return;
+            }
+
+            // Block undo during puzzle opponent thinking
+            if (this.config.appletMode === "puzzle" && this.puzzleOpponentThinking) {
+                console.log("Undo blocked during puzzle opponent response");
+                return;
+            }
+
             // Special undo behavior for puzzle mode
             if (this.config.appletMode === "puzzle") {
                 return this.undoPuzzleMove();
@@ -13964,6 +14155,7 @@ impossible to fulfill for either player, the game is considered a draw.</p>
             let targetIndex = null;
             let logMessage = "";
 
+            // Determine target position
             if (target === "start" || target === -1) {
                 // Navigate to starting position
                 targetSFEN = this.startingSFEN;
@@ -14005,15 +14197,29 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                 return;
             }
 
+            // Determine if this resolves to the live position
+            const livePositionIndex = this.moveHistory.length > 0 ? this.moveHistory.length - 1 : -1;
+            const resolvesToLivePosition = 
+                (target === "current" || target === null) ||
+                (typeof target === "number" && target === livePositionIndex);
+
+            // Clear puzzle pause state only when navigating away from live position
+            if (this.config.appletMode === "puzzle" && this.puzzleWaitingForAdvance && !resolvesToLivePosition) {
+                console.log("Puzzle: Clearing pause state due to navigation away from current position");
+                this.puzzleWaitingForAdvance = false;
+            }
+
             if (targetSFEN) {
                 console.log(logMessage, "SFEN:", targetSFEN);
 
+                // Set navigation state - use null index when at live position
+                const navIndex = resolvesToLivePosition ? null : targetIndex;
+                const isNav = !resolvesToLivePosition;
+
                 // Set navigation state BEFORE applying position using centralized management
                 this.gameStateManager.updateGameState({
-                    currentNavigationIndex: targetIndex,
-                    isNavigating:
-                        targetIndex !== null &&
-                        targetIndex !== this.moveHistory.length - 1,
+                    currentNavigationIndex: navIndex,
+                    isNavigating: isNav,
                 });
 
                 // Load the SFEN position
@@ -14035,6 +14241,9 @@ impossible to fulfill for either player, the game is considered a draw.</p>
 
                 // Force update square highlights to reflect the new navigation state
                 this.updateSquareHighlights();
+                
+                // Update button states to reflect the new navigation state
+                this.updateButtonStates();
             }
         }
 
@@ -14081,9 +14290,11 @@ impossible to fulfill for either player, the game is considered a draw.</p>
 
         getNavigationDisplayComment() {
             // Return the comment for the currently displayed position
+            let comment = "";
+            
             if (this.currentNavigationIndex === -1) {
                 // At starting position
-                return this.startingComment;
+                comment = this.startingComment;
             } else if (
                 this.currentNavigationIndex !== null &&
                 this.currentNavigationIndex >= 0 &&
@@ -14091,15 +14302,22 @@ impossible to fulfill for either player, the game is considered a draw.</p>
             ) {
                 // At a specific move position - use the stored comment from that move
                 const move = this.moveHistory[this.currentNavigationIndex];
-                return move && move.comment ? move.comment : "";
+                comment = move && move.comment ? move.comment : "";
             } else if (this.moveHistory.length > 0) {
                 // At current position (null navigation index) - show last move's comment
                 const lastMove = this.moveHistory[this.moveHistory.length - 1];
-                return lastMove && lastMove.comment ? lastMove.comment : "";
+                comment = lastMove && lastMove.comment ? lastMove.comment : "";
             } else {
                 // No moves yet, show starting comment
-                return this.startingComment;
+                comment = this.startingComment;
             }
+
+            // Add instruction prefix when in puzzle pause state
+            if (this.config.appletMode === "puzzle" && this.puzzleWaitingForAdvance && comment) {
+                return "(Press > or → key to proceed)\n" + comment;
+            }
+
+            return comment;
         }
 
         updateMoveHistoryHighlight() {
@@ -14323,25 +14541,15 @@ impossible to fulfill for either player, the game is considered a draw.</p>
             return result;
         }
 
-        // Import game in USI format (SFEN + space-separated moves, or just moves)
-        importGame(gameString) {
-            // Parse game string to extract comments
-            const parsed = this.parseGameStringWithComments(gameString.trim());
-
-            if (parsed.error) {
-                alert("Import error: " + parsed.error);
-                return false;
-            }
-
-            // Reconstruct game string without comments and map comments to text positions
-            // In PGN format, comments appear AFTER the thing they annotate
-            let cleanGameString = "";
-            const textParts = []; // Track each text part separately
+        // Extract text parts and comment map from parsed tokens
+        // Helper for unified game loading
+        extractTextAndComments(tokens) {
+            const textParts = [];
             let partIndex = 0;
-            const commentMap = new Map(); // Maps part index to comment
+            const commentMap = new Map();
 
-            for (let i = 0; i < parsed.tokens.length; i++) {
-                const token = parsed.tokens[i];
+            for (let i = 0; i < tokens.length; i++) {
+                const token = tokens[i];
 
                 if (token.type === "text") {
                     // Split this text into individual parts (space-separated)
@@ -14349,8 +14557,6 @@ impossible to fulfill for either player, the game is considered a draw.</p>
 
                     for (const part of parts) {
                         if (part) {
-                            if (cleanGameString) cleanGameString += " ";
-                            cleanGameString += part;
                             textParts.push(part);
                             partIndex++;
                         }
@@ -14363,21 +14569,204 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                 }
             }
 
-            // Now parse the clean game string (without comments)
-            const parts = textParts;
+            const commentOnly = textParts.length === 0 && commentMap.size > 0;
+            return { textParts, commentMap, commentOnly };
+        }
 
-            // Special case: If only a comment was provided (no text parts)
-            // This is allowed and should set the starting position comment
+        // Parse SFEN and moves from text parts with simplified logic:
+        // If first field is a position (not a move), always use first 4 fields as SFEN
+        parseSfenFromParts(parts, commentMap = new Map()) {
+            const defaultSFEN =
+                "lfcsgekgscfl/a1b1txot1b1a/mvrhdqndhrvm/pppppppppppp/3i4i3/12/12/3I4I3/PPPPPPPPPPPP/MVRHDNQDHRVM/A1B1TOXT1B1A/LFCSGKEGSCFL b - 1";
+
+            // Handle empty input
             if (parts.length === 0) {
-                const startingComment = commentMap.get(-1);
-                if (startingComment !== undefined) {
-                    // Only a comment was provided - set it as the starting comment
-                    this.startingComment = startingComment;
+                const startingComment = commentMap.get(-1) || "";
+                return {
+                    sfen: this.startingSFEN || defaultSFEN,
+                    moves: [],
+                    startingComment,
+                    moveComments: [],
+                    sfenParts: 0,
+                };
+            }
+
+            // Check if first field looks like a position (contains "/" and letters)
+            const firstPart = parts[0];
+            const looksLikeSFEN =
+                firstPart.includes("/") && /[a-zA-Z]/.test(firstPart);
+
+            if (looksLikeSFEN && parts.length >= 4) {
+                // Check if 4th field is a valid turn number (just digits, possibly with +/- sign)
+                const fourthField = parts[3];
+                const isTurnNumber = /^[+-]?\d+$/.test(fourthField);
+
+                if (isTurnNumber) {
+                    // 4-field SFEN: position, player, lionCapture, turnNumber
+                    const position = parts[0];
+                    const player = parts[1];
+                    const lionCapture = parts[2];
+                    const turnNumberField = parts[3];
+
+                    // Parse turn number (normalize to positive integer)
+                    const parsedNumber = parseInt(turnNumberField, 10);
+                    const turnNumber = Math.abs(Math.trunc(parsedNumber));
+
+                    // Construct SFEN with normalized turn number
+                    const sfen = `${position} ${player} ${lionCapture} ${turnNumber}`;
+
+                    // All fields after the 4th are moves
+                    const moves = parts.slice(4);
+                    const sfenParts = 4;
+
+                    // Extract starting comment (after last SFEN part or before any parts)
+                    const startingComment =
+                        commentMap.get(sfenParts - 1) ||
+                        commentMap.get(-1) ||
+                        "";
+
+                    // Extract move comments
+                    const moveComments = moves.map((move, index) => {
+                        const partIndex = sfenParts + index;
+                        return commentMap.get(partIndex) || "";
+                    });
+
                     console.log(
-                        `Import: Set starting comment: "${startingComment}"`,
+                        `parseSfenFromParts: Parsed 4-field SFEN="${sfen}", move count=${moves.length}, starting comment="${startingComment}"`,
                     );
 
-                    // Update display to show the new comment
+                    return {
+                        sfen,
+                        moves,
+                        startingComment,
+                        moveComments,
+                        sfenParts,
+                    };
+                } else {
+                    // 4th field is not a turn number - treat as 3-field SFEN followed by move/comment
+                    // Fall through to 3-field case
+                }
+            }
+
+            if (looksLikeSFEN && parts.length >= 3) {
+                // SFEN with only 3 fields - add default turn number
+                const position = parts[0];
+                const player = parts[1];
+                const lionCapture = parts[2];
+                const sfen = `${position} ${player} ${lionCapture} 1`;
+                const moves = parts.slice(3);
+                const sfenParts = 3;
+
+                const startingComment =
+                    commentMap.get(sfenParts - 1) || commentMap.get(-1) || "";
+                const moveComments = moves.map((move, index) => {
+                    return commentMap.get(sfenParts + index) || "";
+                });
+
+                console.log(
+                    `parseSfenFromParts: Parsed 3-field SFEN="${sfen}", move count=${moves.length}`,
+                );
+
+                return {
+                    sfen,
+                    moves,
+                    startingComment,
+                    moveComments,
+                    sfenParts,
+                };
+            } else {
+                // Moves-only format: use current game's starting position
+                console.log(
+                    "parseSfenFromParts: Detected moves-only format, using current game's starting position",
+                );
+                const sfen = this.startingSFEN || defaultSFEN;
+                const moves = parts; // All parts are moves
+
+                const startingComment = commentMap.get(-1) || "";
+                const moveComments = moves.map((move, index) => {
+                    return commentMap.get(index) || "";
+                });
+
+                return {
+                    sfen,
+                    moves,
+                    startingComment,
+                    moveComments,
+                    sfenParts: 0,
+                };
+            }
+        }
+
+        // Unified game loading - parses game string and returns normalized data
+        // Does NOT mutate state - callers handle loadSFEN, move execution, etc.
+        loadGame(gameString) {
+            // Parse game string to extract comments
+            const parsed = this.parseGameStringWithComments(gameString.trim());
+
+            if (parsed.error) {
+                return { success: false, error: parsed.error };
+            }
+
+            // Extract text parts and comment map
+            const { textParts, commentMap, commentOnly } =
+                this.extractTextAndComments(parsed.tokens);
+
+            // Parse SFEN and moves from text parts
+            const { sfen, moves, startingComment, moveComments } =
+                this.parseSfenFromParts(textParts, commentMap);
+
+            // Return normalized payload
+            return {
+                success: true,
+                sfen,
+                moves,
+                startingComment,
+                moveComments,
+                commentOnly,
+                hasNoData: textParts.length === 0 && !startingComment,
+            };
+        }
+
+        // Import game in USI format (SFEN + space-separated moves, or just moves)
+        importGame(gameString) {
+            // Use unified loader to parse game data
+            const loadResult = this.loadGame(gameString);
+
+            if (!loadResult.success) {
+                alert("Import error: " + loadResult.error);
+                return false;
+            }
+
+            const {
+                sfen,
+                moves,
+                startingComment,
+                moveComments,
+                commentOnly,
+                hasNoData,
+            } = loadResult;
+
+            // Special case: If only a comment was provided (no text parts)
+            // This should clear all moves and reset to starting position
+            if (commentOnly) {
+                if (startingComment !== undefined && startingComment !== "") {
+                    // Reset to starting position and clear all moves
+                    const resetSFEN =
+                        this.startingSFEN ||
+                        "lfcsgekgscfl/a1b1txot1b1a/mvrhdqndhrvm/pppppppppppp/3i4i3/12/12/3I4I3/PPPPPPPPPPPP/MVRHDNQDHRVM/A1B1TOXT1B1A/LFCSGKEGSCFL b - 1";
+
+                    if (!this.loadSFEN(resetSFEN)) {
+                        alert("Failed to reset position.");
+                        return false;
+                    }
+
+                    // Set the starting comment
+                    this.startingComment = startingComment;
+                    console.log(
+                        `Import: Cleared moves and set starting comment: "${startingComment}"`,
+                    );
+
+                    // Update display to show the new comment and cleared moves
                     this.updateDisplay();
                     return true;
                 } else {
@@ -14387,106 +14776,8 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                 }
             }
 
-            let sfen,
-                moves,
-                moveComments = [];
-
-            // Check if input starts with a valid SFEN or is just moves
-            // SFEN format: position player lion-capture move-number
-            // First part should be the board position (contains slashes and letters)
-            const firstPart = parts[0];
-            const looksLikeSFEN =
-                firstPart.includes("/") && /[a-zA-Z]/.test(firstPart);
-
-            if (looksLikeSFEN && parts.length >= 3) {
-                // SFEN detected - parse position, player, and lion-capture
-                const position = parts[0];
-                const player = parts[1];
-                const lionCapture = parts[2];
-
-                // Check if 4th field exists and determine its type
-                let turnNumber = 1; // Default turn number
-                let sfenParts = 3; // How many parts to use for SFEN
-
-                if (parts.length >= 4) {
-                    const fourthField = parts[3];
-
-                    // Check if it's a valid move (pattern: digits + letter + digits + letter, optionally ending with +)
-                    const movePattern = /^\d+[a-l]\d+[a-l]\+?$/;
-                    const isValidMove = movePattern.test(fourthField);
-
-                    if (isValidMove) {
-                        // 4th field is a move - treat as first move, turn number = 1
-                        console.log(
-                            "Import: 4th field is a valid move, setting turn number to 1",
-                        );
-                        turnNumber = 1;
-                        sfenParts = 3; // Only use first 3 parts for SFEN
-                    } else {
-                        // Try to parse as number
-                        const parsedNumber = parseInt(fourthField, 10);
-                        if (!isNaN(parsedNumber)) {
-                            // 4th field is a number - make it positive whole number
-                            turnNumber = Math.abs(Math.trunc(parsedNumber));
-                            console.log(
-                                `Import: 4th field is a number, using turn number: ${turnNumber}`,
-                            );
-                            sfenParts = 4; // Use all 4 parts for SFEN
-                        } else {
-                            // 4th field is neither a valid move nor a number - default to 1
-                            console.log(
-                                "Import: 4th field is invalid, defaulting turn number to 1",
-                            );
-                            turnNumber = 1;
-                            sfenParts = 3; // Only use first 3 parts for SFEN
-                        }
-                    }
-                }
-
-                // Construct SFEN with the determined turn number
-                sfen = `${position} ${player} ${lionCapture} ${turnNumber}`;
-
-                // Moves start after the SFEN parts we used
-                moves = parts.slice(sfenParts);
-
-                // Extract starting comment (comment after last SFEN part or before any parts)
-                // Check for comment at index sfenParts-1 (last SFEN part) or -1 (before any parts)
-                const startingComment =
-                    commentMap.get(sfenParts - 1) || commentMap.get(-1) || "";
-
-                // Extract move comments
-                moveComments = moves.map((move, index) => {
-                    const partIndex = sfenParts + index;
-                    return commentMap.get(partIndex) || "";
-                });
-
-                console.log(
-                    `Import: Parsed SFEN="${sfen}", move count=${moves.length}, starting comment="${startingComment}"`,
-                );
-
-                // Store starting comment
-                this.startingComment = startingComment;
-            } else {
-                // Moves-only format: use current game's starting position
-                console.log(
-                    "Detected moves-only format, using current game's starting position",
-                );
-                sfen =
-                    this.startingSFEN ||
-                    "lfcsgekgscfl/a1b1txot1b1a/mvrhdqndhrvm/pppppppppppp/3i4i3/12/12/3I4I3/PPPPPPPPPPPP/MVRHDNQDHRVM/A1B1TOXT1B1A/LFCSGKEGSCFL b - 1";
-                moves = parts; // All parts are moves
-
-                // Extract starting comment (comment before any parts or after last non-move part)
-                const startingComment = commentMap.get(-1) || "";
-
-                // Extract move comments
-                moveComments = moves.map((move, index) => {
-                    return commentMap.get(index) || "";
-                });
-
-                // Store starting comment
-                this.startingComment = startingComment;
-            }
+            // Store starting comment
+            this.startingComment = startingComment;
 
             // fixedStart mode restriction: only allow imports with same starting position
             if (
@@ -14585,10 +14876,10 @@ impossible to fulfill for either player, the game is considered a draw.</p>
             // After batch import, need to refresh board visual state
             this.updateBoard(); // Regenerate board HTML and reattach listeners
             this.updateMoveHistoryHighlight();
-            
+
             // Force update square highlights to show last move BEFORE state update
             this.updateSquareHighlights();
-            
+
             // Reset navigation state to current position after import using centralized state management
             // When not navigating, currentNavigationIndex should be null to indicate we're at the current position
             // IMPORTANT: Must be called AFTER updateBoard() and updateSquareHighlights() so the DOM and highlights are ready
@@ -14596,7 +14887,7 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                 currentNavigationIndex: null,
                 isNavigating: false,
             });
-            
+
             // Force update display to refresh comment panel
             // The gameStateManager.updateGameState call above may be a no-op if state is already null,
             // so we need to explicitly call updateDisplay() to ensure the comment textarea is updated
@@ -16238,9 +16529,14 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                 return;
             }
 
-            // Block if opponent is thinking
+            // Block if opponent is thinking or waiting for manual advance
             if (this.puzzleOpponentThinking) {
                 console.log("View Solution: Blocked during opponent thinking");
+                return;
+            }
+
+            if (this.puzzleWaitingForAdvance) {
+                console.log("View Solution: Blocked during pause - press > to continue");
                 return;
             }
 

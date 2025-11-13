@@ -661,8 +661,8 @@
   cursor: pointer !important;
 }
 
-/* Display X on promotion alternate squares (deselection option) - only on empty squares */
-.chushogi-square.promotion-source:not(:has(.chushogi-piece))::after {
+/* Display X on promotion alternate squares (deselection option) */
+.chushogi-square.promotion-source::after {
   content: '×' !important;
   position: absolute !important;
   top: 50% !important;
