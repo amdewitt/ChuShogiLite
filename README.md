@@ -30,20 +30,24 @@ __&lt;!-- Include files (Embed these once per page) --><br>
 &lt;script src="&lt;FILE PATH HERE>/chushogi-lite.js">&lt;/script><br>
 &lt;!-- Game container (Embed as many of these as desired)--><br>
 &lt;div class="chuShogiLite" data-config='{<br>
-&nbsp; "appletMode": "sandbox",<br>
-&nbsp; "startGame": null,<br>
-&nbsp; "flipView": false,<br>
-&nbsp; "useInlineNotation": false,<br>
-&nbsp; "boardSize": "large",<br>
-&nbsp; "showCoordinates": true,<br>
-&nbsp; "showLegalMoves": true,<br>
-&nbsp; "showLastMove": true,<br>
-&nbsp; "showPromotionZones": false,<br>
-&nbsp; "showInfluenceDisplay": false,<br>
-&nbsp; "allowIllegalMoves": false,<br>
-&nbsp; "midpointProtection": false,<br>
-&nbsp; "trappedLancePromotion": false,<br>
-&nbsp; "repetitionHandling": "strict"<br>
+&nbsp; "appletMode": "sandbox",
+&nbsp;  "startGame": null,
+&nbsp;  "allowCustomComments": true,
+&nbsp;  "flipView": false,
+&nbsp;  "displaySFEN": false,
+&nbsp;  "displayInlineNotation": false,
+&nbsp;  "boardSize": "large",
+&nbsp;  "showCoordinates": true,
+&nbsp;  "showMoveablePieces": true,
+&nbsp;  "showLegalMoves": true,
+&nbsp;  "showLastMove": true,
+&nbsp;  "showPromotionZones": false,
+&nbsp;  "showInfluenceDisplay": false,
+&nbsp;  "allowIllegalMoves": false,
+&nbsp;  "allowCustomComments": true,
+&nbsp;  "midpointProtection": false,
+&nbsp;  "trappedLancePromotion": false,
+&nbsp;  "repetitionHandling": "strict"
 }'>&lt;/div>__
 
 ## Applet Settings
