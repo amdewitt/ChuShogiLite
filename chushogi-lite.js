@@ -311,6 +311,7 @@
                 "lion-king-move",
                 "lion-return-choice",
                 "promotion-source",
+                "promotion-origin-highlight",
                 "promotion-choice",
                 "promotion-midpoint",
                 "counterstrike-highlight",
@@ -712,6 +713,7 @@
             this.config = {
                 boardSize: "large",
                 showCoordinates: true,
+                showMoveablePieces: true,
                 allowIllegalMoves: false,
                 showLegalMoves: true,
                 showLastMove: true,
@@ -723,10 +725,15 @@
                 midpointProtection: false, // Enhanced bridge-capture: Pawn/Go-Between as sole defender prevents Lion capture
                 trappedLancePromotion: false, // Lishogi rule: allows Lances to promote on last rank on non-capture (like Pawns under historic rules)
                 repetitionHandling: "strict", // "strict" (ban first repeat), "lenient" (ban third repeat), or "relaxed" (allow all repeats)
-                showSFEN: false, // Display SFEN instead of comment in the SFEN/comment display
-                useInlineNotation: false, // Display move history in a single line instead of individual rows
+                displaySFEN: false, // Display SFEN instead of comment in the SFEN/comment display
+                displayInlineNotation: false, // Display move history in a single line instead of individual rows
                 ...config,
             };
+
+            // Backward compatibility: migrate showSFEN to displaySFEN
+            if (!("displaySFEN" in config) && "showSFEN" in config) {
+                this.config.displaySFEN = config.showSFEN;
+            }
 
             // Force allowCustomComments to false for viewOnly/puzzle modes (fixed setting, cannot be overridden)
             if (
@@ -970,7 +977,14 @@
                     return false;
                 }
 
-                const { sfen, moves, startingComment, moveComments, commentOnly, hasNoData } = loadResult;
+                const {
+                    sfen,
+                    moves,
+                    startingComment,
+                    moveComments,
+                    commentOnly,
+                    hasNoData,
+                } = loadResult;
 
                 // Reject comment-only or empty input for puzzle mode
                 if (commentOnly || hasNoData) {
@@ -993,12 +1007,16 @@
 
                 // Store comments for the puzzle (normalize to prevent undefined errors)
                 this.startingComment = startingComment || "";
-                this.puzzleSolutionComments = Array.isArray(moveComments) ? moveComments : [];
+                this.puzzleSolutionComments = Array.isArray(moveComments)
+                    ? moveComments
+                    : [];
                 console.log(
                     "Puzzle: Stored",
                     this.puzzleSolutionComments.length,
                     "move comments and starting comment:",
-                    this.startingComment ? `"${this.startingComment.substring(0, 50)}..."` : "(none)",
+                    this.startingComment
+                        ? `"${this.startingComment.substring(0, 50)}..."`
+                        : "(none)",
                 );
 
                 // Load only the starting position (without moves)
@@ -1210,19 +1228,31 @@
                 this.isImporting = wasImporting;
 
                 // In puzzle mode, attach the comment from the solution
-                if (result && this.config.appletMode === "puzzle" && this.puzzleSolutionComments) {
+                if (
+                    result &&
+                    this.config.appletMode === "puzzle" &&
+                    this.puzzleSolutionComments
+                ) {
                     const lastMoveIndex = this.moveHistory.length - 1;
-                    if (lastMoveIndex >= 0 && lastMoveIndex < this.puzzleSolutionComments.length) {
-                        this.moveHistory[lastMoveIndex].comment = this.puzzleSolutionComments[lastMoveIndex];
+                    if (
+                        lastMoveIndex >= 0 &&
+                        lastMoveIndex < this.puzzleSolutionComments.length
+                    ) {
+                        this.moveHistory[lastMoveIndex].comment =
+                            this.puzzleSolutionComments[lastMoveIndex];
                         console.log(
                             "Puzzle: Attached comment to opponent move",
                             lastMoveIndex,
                             ":",
-                            this.puzzleSolutionComments[lastMoveIndex] ? `"${this.puzzleSolutionComments[lastMoveIndex].substring(0, 30)}..."` : "(none)"
+                            this.puzzleSolutionComments[lastMoveIndex]
+                                ? `"${this.puzzleSolutionComments[lastMoveIndex].substring(0, 30)}..."`
+                                : "(none)",
                         );
                         // Update display to show the newly attached comment
                         if (!this.isBatchImporting) {
-                            console.log("Puzzle: Updating display after attaching comment");
+                            console.log(
+                                "Puzzle: Updating display after attaching comment",
+                            );
                             this.updateDisplay();
                         }
                     }
@@ -1941,12 +1971,12 @@
         <div class="chushogi-game-log">
           <h4>Game Log</h4>
           <div class="chushogi-checkbox" style="margin-bottom: 8px;">
-            <input type="checkbox" id="show-sfen-${this.instanceId}" ${this.config.showSFEN ? "checked" : ""}>
+            <input type="checkbox" id="show-sfen-${this.instanceId}" ${this.config.displaySFEN ? "checked" : ""}>
             <label for="show-sfen-${this.instanceId}">Display SFEN</label>
           </div>
           <div class="chushogi-checkbox" style="margin-bottom: 8px;">
-            <input type="checkbox" id="use-inline-notation-${this.instanceId}" ${this.config.useInlineNotation ? "checked" : ""}>
-            <label for="use-inline-notation-${this.instanceId}">Display inline</label>
+            <input type="checkbox" id="use-inline-notation-${this.instanceId}" ${this.config.displayInlineNotation ? "checked" : ""}>
+            <label for="use-inline-notation-${this.instanceId}">Display inline notation</label>
           </div>
           <div class="chushogi-displayed-position-section">
             <div class="chushogi-position-display" translate="no" data-position-display>
@@ -1990,6 +2020,10 @@
               <div class="chushogi-checkbox">
                 <input type="checkbox" id="show-coords-${this.instanceId}" ${this.config.showCoordinates ? "checked" : ""}>
                 <label for="show-coords-${this.instanceId}">Show coordinates</label>
+              </div>
+              <div class="chushogi-checkbox">
+                <input type="checkbox" id="show-moveable-pieces-${this.instanceId}" ${this.config.showMoveablePieces ? "checked" : ""}>
+                <label for="show-moveable-pieces-${this.instanceId}">Show moveable pieces</label>
               </div>
               ${
                   !isViewOnly
@@ -3565,7 +3599,7 @@ impossible to fulfill for either player, the game is considered a draw.</p>
               <ul>
                 <li>Play moves as the solving player (highlighted in the turn indicator)</li>
                 <li>The opponent's responses are usually played automatically according to the solution</li>
-                <li>If your move has commentary, the opponent will wait until you press the > or → key to play the next move.</li>
+                <li>If your move has commentary, the opponent will wait until you press the > button or → key to play the next move.</li>
                 <li>Your moves must match the expected solution sequence to progress</li>
                 <li>Incorrect moves will be rejected and deselect the moving piece</li>
                 <li>The Info tab shows your progress: current position / total solution length</li>
@@ -3632,8 +3666,8 @@ impossible to fulfill for either player, the game is considered a draw.</p>
               <p><strong>Info:</strong></p>
               <p>The 📋 Info tab shows all information relative to the game.</p>
               <ul>
-              <li><strong>Display inline:</strong> checkbox - puts all moves in the Game Log on a single line if checked</li>
-              <li><strong>Display inline:</strong> checkbox - shows the current SFEN instead of the current comment if checked</li>
+              <li><strong>Display SFEN:</strong> checkbox - shows the current SFEN instead of the current comment if checked</li>
+              <li><strong>Display inline notation:</strong> checkbox - puts all moves in the Game Log on a single line if checked</li>
               </ul>
               ${this.config.allowCustomComments ? "<p>When comments are shown, the current coomment can be edited by typing in the comment display window.</p>" : ""}
               ${
@@ -3643,6 +3677,7 @@ impossible to fulfill for either player, the game is considered a draw.</p>
               <ul>
                 <li><strong>Board Size:</strong> Small, Medium, Large - Controls the visual size of the board</li>
                 <li><strong>Show coordinates:</strong> checkbox - Shows file/rank labels around the board if checked</li>
+                <li><strong>Show moveable pieces:</strong> checkbox - Highlights all pieces that can be moved when no piece is selected if checked</li>
                 <li><strong>Show legal moves:</strong> checkbox - Highlights valid moves when a piece is selected if checked</li>
                 <li><strong>Show last move:</strong> checkbox - Highlights the squares involved in the last move if checked</li>
                 <li><strong>Show promotion zones:</strong> checkbox - Highlights the promotion zones for both players if checked</li>
@@ -3665,6 +3700,7 @@ impossible to fulfill for either player, the game is considered a draw.</p>
               <ul>
                 <li><strong>Board Size:</strong> Small, Medium, Large - Controls the visual size of the board</li>
                 <li><strong>Show coordinates:</strong> checkbox - Shows file/rank labels around the board if checked</li>
+                <li><strong>Show moveable pieces:</strong> checkbox - Highlights all pieces that can be moved. Pieces that were last moved show a border outline instead of background highlight if checked</li>
                 <li><strong>Show last move:</strong> checkbox - Highlights the squares involved in the last move if checked</li>
                 <li><strong>Show promotion zones:</strong> checkbox - Highlights the promotion zones for both players if checked</li>
                 <li><strong>Show influence display:</strong> checkbox - Shows attack patterns and piece influence on the board if checked</li>
@@ -3737,9 +3773,11 @@ impossible to fulfill for either player, the game is considered a draw.</p>
   "startGame": null,
   "allowCustomComments": true,
   "flipView": false,
-  "useInlineNotation": false,
+  "displaySFEN": false,
+  "displayInlineNotation": false,
   "boardSize": "large",
   "showCoordinates": true,
+  "showMoveablePieces": true,
   "showLegalMoves": true,
   "showLastMove": true,
   "showPromotionZones": false,
@@ -3764,9 +3802,11 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                     </ul>
                 </li>
                 <li><strong>flipView:</strong> true/<span style="text-decoration:underline">false</span></li>
-                <li><strong>useInlineNotation:</strong> true/<span style="text-decoration:underline">false</span></li>
+                <li><strong>displaySFEN:</strong> true/<span style="text-decoration:underline">false</span></li>
+                <li><strong>displayInlineNotation:</strong> true/<span style="text-decoration:underline">false</span></li>
                 <li><strong>boardSize:</strong> "small", "medium", <span style="text-decoration:underline">"large"</span></li>
                 <li><strong>showCoordinates:</strong> <span style="text-decoration:underline">true</span>/false</li>
+                <li><strong>showMoveablePieces:</strong> <span style="text-decoration:underline">true</span>/false</li>
                 <li><strong>showLegalMoves:</strong> <span style="text-decoration:underline">true</span>/false</li>
                 <li><strong>showLastMove:</strong> <span style="text-decoration:underline">true</span>/false</li>
                 <li><strong>showPromotionZones:</strong> true/<span style="text-decoration:underline">false</span></li>
@@ -3902,9 +3942,7 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                 this.config.appletMode === "puzzle" &&
                 this.puzzleWaitingForAdvance
             ) {
-                console.log(
-                    "Board clicks blocked - press > or → to continue",
-                );
+                console.log("Board clicks blocked - press > or → to continue");
                 return;
             }
 
@@ -4565,6 +4603,58 @@ impossible to fulfill for either player, the game is considered a draw.</p>
         // Legacy function - use moveValidator.calculateValidMoves directly
         calculateValidMoves(squareId) {
             return this.moveValidator.calculateValidMoves(squareId);
+        }
+
+        // Get all pieces that can move for the current player (with caching)
+        getMoveablePieces() {
+            // Create cache key based on current game state
+            // Include allowIllegalMoves in cache key since it affects which pieces are moveable
+            const cacheKey = `${this.currentPlayer}_${this.moveHistory.length}_${this.config.allowIllegalMoves}`;
+
+            // Return cached result if available
+            if (
+                this.moveablePiecesCache &&
+                this.moveablePiecesCache.key === cacheKey
+            ) {
+                return this.moveablePiecesCache.pieces;
+            }
+
+            const moveablePieces = new Set();
+
+            // Loop through all squares on the board
+            for (let rank = 0; rank < 12; rank++) {
+                for (let file = 0; file < 12; file++) {
+                    const squareId = this.getSquareId(rank, file);
+                    const piece = utils.board.getPieceAt(this.board, squareId);
+
+                    if (piece) {
+                        // When allowIllegalMoves is true, highlight ALL pieces from both sides
+                        // since turn order is ignored
+                        if (this.config.allowIllegalMoves) {
+                            moveablePieces.add(squareId);
+                        } else if (piece.color === this.currentPlayer) {
+                            // Normal mode: only highlight current player's pieces with legal moves
+                            const validMoves =
+                                this.moveValidator.calculateValidMoves(
+                                    squareId,
+                                );
+
+                            // If piece has at least one legal move, it's moveable
+                            if (validMoves && validMoves.length > 0) {
+                                moveablePieces.add(squareId);
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Cache the result
+            this.moveablePiecesCache = {
+                key: cacheKey,
+                pieces: moveablePieces,
+            };
+
+            return moveablePieces;
         }
 
         // Calculate all squares attacked by a given piece (for influence display)
@@ -5321,6 +5411,7 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                 "lion-return-choice",
                 "promotion-choice",
                 "promotion-source",
+                "promotion-origin-highlight",
                 "promotion-midpoint",
                 "influence-white",
                 "influence-black",
@@ -5395,6 +5486,14 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                     ? "last-move-outline"
                     : "last-move";
 
+                // Pre-calculate moveable pieces if setting is enabled (not during edit or navigation)
+                const moveablePieces =
+                    this.config.showMoveablePieces &&
+                    this.currentTab !== "edit" &&
+                    this.currentNavigationIndex === null
+                        ? this.getMoveablePieces()
+                        : null;
+
                 squares.forEach((square) => {
                     const squareId = square.dataset.square;
                     const currentClasses = Array.from(square.classList);
@@ -5405,6 +5504,10 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                         "valid-illegal-move",
                         "last-move",
                         "last-move-outline",
+                        "moveable-piece",
+                        "moveable-piece-outline",
+                        "moveable-last-moved",
+                        "moveable-last-moved-outline",
                         "lion-first-move",
                         "lion-double-origin",
                         "lion-double-midpoint",
@@ -5412,6 +5515,7 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                         "lion-return-choice",
                         "promotion-choice",
                         "promotion-source",
+                        "promotion-origin-highlight",
                         "influence-black",
                         "influence-white",
                         "influence-contested",
@@ -5430,16 +5534,72 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                             shouldHaveHighlights.push(influenceClass);
                     }
 
-                    // Last move highlighting
-                    if (displayMove) {
-                        if (
-                            squareId === displayMove.from ||
+                    // Check if this square is a last move square
+                    const isLastMoveSquare =
+                        displayMove &&
+                        (squareId === displayMove.from ||
                             squareId === displayMove.to ||
                             (displayMove.midpoint &&
-                                squareId === displayMove.midpoint)
-                        ) {
-                            shouldHaveHighlights.push(lastMoveClass);
+                                squareId === displayMove.midpoint));
+
+                    // Moveable piece highlighting (only when no piece is selected)
+                    if (
+                        moveablePieces &&
+                        moveablePieces.has(squareId) &&
+                        !this.selectedSquare
+                    ) {
+                        // Determine if this square has influence highlighting
+                        const hasInfluence = shouldHaveHighlights.some(
+                            (cls) =>
+                                cls === "influence-white" ||
+                                cls === "influence-black" ||
+                                cls === "influence-contested",
+                        );
+
+                        // Determine appropriate moveable highlight class based on context:
+                        let moveableClass;
+
+                        if (this.config.showInfluenceDisplay && hasInfluence) {
+                            // Influence mode with influenced square
+                            if (isLastMoveSquare) {
+                                // Combined border: blue (top/left) + yellow (bottom/right)
+                                moveableClass = "moveable-last-moved-outline";
+                            } else {
+                                // Yellow border outline
+                                moveableClass = "moveable-piece-outline";
+                            }
+                        } else {
+                            // Non-influence mode or plain square
+                            moveableClass = "moveable-piece";
+
+                            // In non-influence mode, add blue border for last-moved pieces
+                            if (
+                                isLastMoveSquare &&
+                                !this.config.showInfluenceDisplay
+                            ) {
+                                shouldHaveHighlights.push(
+                                    "moveable-last-moved",
+                                );
+                            }
                         }
+
+                        shouldHaveHighlights.push(moveableClass);
+                    }
+
+                    // Last move highlighting (only if not already handled by combined moveable-last-moved-outline)
+                    if (
+                        isLastMoveSquare &&
+                        !(
+                            moveablePieces &&
+                            moveablePieces.has(squareId) &&
+                            !this.selectedSquare &&
+                            this.config.showInfluenceDisplay &&
+                            shouldHaveHighlights.some(
+                                (cls) => cls === "moveable-last-moved-outline",
+                            )
+                        )
+                    ) {
+                        shouldHaveHighlights.push(lastMoveClass);
                     }
 
                     // Selection highlighting
@@ -5579,9 +5739,15 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                         if (squareId === this.promotionAlternateSquare) {
                             shouldHaveHighlights.push("promotion-source");
                         }
+                        // Origin square gets selection highlight (for deselection) but NOT the × symbol
+                        // Only apply after destination and deferral squares are set to avoid premature highlighting
                         if (
                             this.promotionMove &&
-                            squareId === this.promotionMove.from
+                            squareId === this.promotionMove.from &&
+                            this.promotionDestinationSquare !== null &&
+                            this.promotionDestinationSquare !== undefined &&
+                            this.promotionDeferralSquare !== null &&
+                            this.promotionDeferralSquare !== undefined
                         ) {
                             const isCoveredByDestination =
                                 squareId === this.promotionDestinationSquare;
@@ -5591,7 +5757,10 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                                 !isCoveredByDestination &&
                                 !isCoveredByDeferral
                             ) {
-                                shouldHaveHighlights.push("promotion-source");
+                                // Use dedicated class for highlight without × symbol
+                                shouldHaveHighlights.push(
+                                    "promotion-origin-highlight",
+                                );
                             }
                         }
                     }
@@ -6440,12 +6609,17 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                         piece.color,
                     );
                     if (wasSolverMove) {
-                        const lastMove = this.moveHistory[this.moveHistory.length - 1];
-                        const moveHasComment = lastMove?.comment && lastMove.comment.trim().length > 0;
-                        
+                        const lastMove =
+                            this.moveHistory[this.moveHistory.length - 1];
+                        const moveHasComment =
+                            lastMove?.comment &&
+                            lastMove.comment.trim().length > 0;
+
                         if (moveHasComment) {
                             // Move has a comment - pause and wait for manual advancement
-                            console.log("Puzzle: Paused - waiting for player to press > or →");
+                            console.log(
+                                "Puzzle: Paused - waiting for player to press > or →",
+                            );
                             this.puzzleWaitingForAdvance = true;
                             this.updateButtonStates(); // Enable forward navigation button
                         } else {
@@ -7727,7 +7901,7 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                 commentBlur: (event) => {
                     // Only save when showing comments (not SFEN) and custom comments are allowed
                     if (
-                        !this.config.showSFEN &&
+                        !this.config.displaySFEN &&
                         this.config.allowCustomComments
                     ) {
                         const newComment = event.target.value;
@@ -8100,13 +8274,14 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                         newSettings.showLastMove !== undefined ||
                         newSettings.showInfluenceDisplay !== undefined ||
                         newSettings.showLegalMoves !== undefined ||
+                        newSettings.showMoveablePieces !== undefined ||
                         newSettings.allowIllegalMoves !== undefined ||
                         newSettings.midpointProtection !== undefined ||
                         newSettings.trappedLancePromotion !== undefined ||
                         newSettings.repetitionHandling !== undefined ||
                         newSettings.showCoordinates !== undefined ||
-                        newSettings.showSFEN !== undefined ||
-                        newSettings.useInlineNotation !== undefined
+                        newSettings.displaySFEN !== undefined ||
+                        newSettings.displayInlineNotation !== undefined
                     ) {
                         // Handle showCoordinates with CSS class toggle (more efficient than full re-render)
                         if (newSettings.showCoordinates !== undefined) {
@@ -8136,13 +8311,13 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                         }
 
                         // Update move history display when inline notation setting changes
-                        if (newSettings.useInlineNotation !== undefined) {
+                        if (newSettings.displayInlineNotation !== undefined) {
                             this.updateMoveHistory();
                             this.updateMoveHistoryHighlight();
                         }
 
-                        // Update SFEN/Comment display when showSFEN setting changes
-                        if (newSettings.showSFEN !== undefined) {
+                        // Update SFEN/Comment display when displaySFEN setting changes
+                        if (newSettings.displaySFEN !== undefined) {
                             this.updateDisplay();
                         }
 
@@ -10582,6 +10757,12 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                 currentTab: tabName,
             });
 
+            // Invalidate moveable pieces cache when leaving edit mode
+            // Edit mode can mutate the board without changing moveHistory.length or currentPlayer
+            if (previousTab === "edit" || tabName === "edit") {
+                this.moveablePiecesCache = null;
+            }
+
             // Clear piece selections and close active prompts when switching tabs
             // This ensures a clean state when changing sidebar tabs
             this.clearSelection();
@@ -10680,8 +10861,13 @@ impossible to fulfill for either player, the game is considered a draw.</p>
             // Check if undo should be blocked in puzzle mode during navigation
             // Match the condition used in undoPuzzleMove() - check currentNavigationIndex only
             let isPuzzleUndoBlocked = false;
-            if (this.config.appletMode === "puzzle" && this.currentNavigationIndex !== null) {
-                const positionPlayer = this.getPlayerAtPosition(this.currentNavigationIndex);
+            if (
+                this.config.appletMode === "puzzle" &&
+                this.currentNavigationIndex !== null
+            ) {
+                const positionPlayer = this.getPlayerAtPosition(
+                    this.currentNavigationIndex,
+                );
                 isPuzzleUndoBlocked = positionPlayer === this.puzzleOpponent;
             }
 
@@ -10713,43 +10899,71 @@ impossible to fulfill for either player, the game is considered a draw.</p>
             // When paused waiting for advance, enable only forward navigation
             if (isPuzzleWaitingForAdvance) {
                 // Disable most buttons during pause
-                [undoBtn, newGameBtn, goToStartBtn, goBackBtn, goToCurrentBtn].forEach((btn) => {
+                [
+                    undoBtn,
+                    newGameBtn,
+                    goToStartBtn,
+                    goBackBtn,
+                    goToCurrentBtn,
+                ].forEach((btn) => {
                     if (btn) {
                         btn.disabled = true;
                         btn.style.setProperty("opacity", "0.5", "important");
-                        btn.style.setProperty("cursor", "not-allowed", "important");
+                        btn.style.setProperty(
+                            "cursor",
+                            "not-allowed",
+                            "important",
+                        );
                     }
                 });
-                
+
                 // Enable forward button to allow manual advancement
                 if (goForwardBtn) {
                     goForwardBtn.disabled = false;
                     goForwardBtn.style.setProperty("opacity", "1", "important");
-                    goForwardBtn.style.setProperty("cursor", "pointer", "important");
+                    goForwardBtn.style.setProperty(
+                        "cursor",
+                        "pointer",
+                        "important",
+                    );
                 }
-                
+
                 // Disable View Solution button during pause
                 if (viewSolutionBtn) {
                     viewSolutionBtn.disabled = true;
-                    viewSolutionBtn.style.setProperty("opacity", "0.5", "important");
-                    viewSolutionBtn.style.setProperty("cursor", "not-allowed", "important");
+                    viewSolutionBtn.style.setProperty(
+                        "opacity",
+                        "0.5",
+                        "important",
+                    );
+                    viewSolutionBtn.style.setProperty(
+                        "cursor",
+                        "not-allowed",
+                        "important",
+                    );
                 }
-                
+
                 if (resetBtn) {
                     resetBtn.disabled = true;
                     resetBtn.style.setProperty("opacity", "0.5", "important");
-                    resetBtn.style.setProperty("cursor", "not-allowed", "important");
+                    resetBtn.style.setProperty(
+                        "cursor",
+                        "not-allowed",
+                        "important",
+                    );
                 }
-                
+
                 // Return early to prevent subsequent logic from re-enabling buttons
                 return;
             } else {
                 // Normal behavior for non-pause states
-                const shouldDisableButtons = isEditTab || isPuzzleOpponentThinking;
+                const shouldDisableButtons =
+                    isEditTab || isPuzzleOpponentThinking;
 
                 // Handle undo button separately to account for puzzle navigation blocking
                 if (undoBtn) {
-                    const shouldDisableUndo = shouldDisableButtons || isPuzzleUndoBlocked;
+                    const shouldDisableUndo =
+                        shouldDisableButtons || isPuzzleUndoBlocked;
                     undoBtn.disabled = shouldDisableUndo;
                     undoBtn.style.setProperty(
                         "opacity",
@@ -10849,9 +11063,11 @@ impossible to fulfill for either player, the game is considered a draw.</p>
   "startGame": null,
   "allowCustomComments": true,
   "flipView": false,
-  "useInlineNotation": false,
+  "displaySFEN": false,
+  "displayInlineNotation": false,
   "boardSize": "large",
   "showCoordinates": true,
+  "showMoveablePieces": true,
   "showLegalMoves": true,
   "showLastMove": true,
   "showPromotionZones": false,
@@ -10933,6 +11149,8 @@ impossible to fulfill for either player, the game is considered a draw.</p>
             // Handle different setting types using base IDs
             if (baseId === "show-coords") {
                 newSettings.showCoordinates = checked;
+            } else if (baseId === "show-moveable-pieces") {
+                newSettings.showMoveablePieces = checked;
             } else if (baseId === "allow-illegal") {
                 newSettings.allowIllegalMoves = checked;
                 // Clear selection when toggling rule settings
@@ -10946,9 +11164,9 @@ impossible to fulfill for either player, the game is considered a draw.</p>
             } else if (baseId === "show-influence-display") {
                 newSettings.showInfluenceDisplay = checked;
             } else if (baseId === "show-sfen") {
-                newSettings.showSFEN = checked;
+                newSettings.displaySFEN = checked;
             } else if (baseId === "use-inline-notation") {
-                newSettings.useInlineNotation = checked;
+                newSettings.displayInlineNotation = checked;
             } else if (baseId === "midpoint-protection") {
                 newSettings.midpointProtection = checked;
                 // Clear selection when toggling rule settings
@@ -11377,7 +11595,7 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                 );
                 if (sfenExport) {
                     try {
-                        if (this.config.showSFEN) {
+                        if (this.config.displaySFEN) {
                             // Show SFEN when checkbox is checked
                             sfenExport.placeholder = "Loading...";
                             sfenExport.value =
@@ -11423,7 +11641,7 @@ impossible to fulfill for either player, the game is considered a draw.</p>
         updateMoveHistory() {
             const moveList = this.container.querySelector("[data-move-list]");
             if (moveList) {
-                if (this.config.useInlineNotation) {
+                if (this.config.displayInlineNotation) {
                     // Inline notation: display all moves in a single line using spans
                     const startingSpan =
                         '<span class="chushogi-move-item-inline clickable" data-move="start">Starting Position</span>';
@@ -11516,6 +11734,9 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                     preEditCounterStrike: this.editMode.preEditCounterStrike, // Preserve if set
                 },
             });
+
+            // Invalidate moveable pieces cache when board state changes
+            this.moveablePiecesCache = null;
 
             // Update related state variables
             this.lastLionCapture = lionCapture === "-" ? null : lionCapture;
@@ -12729,7 +12950,9 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                 this.puzzleWaitingForAdvance &&
                 this.currentNavigationIndex === null
             ) {
-                console.log("Puzzle: Resuming from pause, executing opponent response");
+                console.log(
+                    "Puzzle: Resuming from pause, executing opponent response",
+                );
                 this.puzzleWaitingForAdvance = false;
                 this.puzzleOpponentThinking = true;
                 this.updateButtonStates(); // Disable navigation during opponent thinking
@@ -13058,7 +13281,10 @@ impossible to fulfill for either player, the game is considered a draw.</p>
             this.gameStateManager.resetGameState();
 
             // Clear puzzle pause state when starting new game
-            if (this.config.appletMode === "puzzle" && this.puzzleWaitingForAdvance) {
+            if (
+                this.config.appletMode === "puzzle" &&
+                this.puzzleWaitingForAdvance
+            ) {
                 console.log("Puzzle: Clearing pause state due to new game");
                 this.puzzleWaitingForAdvance = false;
             }
@@ -13202,6 +13428,9 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                 this.editMode.preEditCounterStrike = this.lastLionCapture;
             }
 
+            // Invalidate moveable pieces cache when board is cleared
+            this.moveablePiecesCache = null;
+
             // Now remove each piece individually by editing them off the board
             for (let rank = 0; rank < 12; rank++) {
                 for (let file = 0; file < 12; file++) {
@@ -13279,6 +13508,8 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                     "This will start a new game with the current starting position. Are you sure?",
                 )
             ) {
+                // Invalidate moveable pieces cache before setting new start position
+                this.moveablePiecesCache = null;
                 this.setStartPosition();
             }
         }
@@ -13360,6 +13591,9 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                 this.editMode.preEditPosition = this.exportSFEN();
                 this.editMode.preEditCounterStrike = this.lastLionCapture;
             }
+
+            // Invalidate moveable pieces cache when setting counter-strike square
+            this.moveablePiecesCache = null;
 
             const [rank, file] = this.parseSquareId(squareId);
             const piece = this.board[rank][file];
@@ -13517,6 +13751,9 @@ impossible to fulfill for either player, the game is considered a draw.</p>
             // Place or remove the piece
             this.board[rank][file] = piece;
 
+            // Invalidate moveable pieces cache when placing/removing pieces
+            this.moveablePiecesCache = null;
+
             // Check if we need to update counter-strike state due to board changes
             this.checkCounterStrikeStateAfterEdit();
 
@@ -13673,13 +13910,21 @@ impossible to fulfill for either player, the game is considered a draw.</p>
             }
 
             // Block undo during puzzle pause (waiting for manual advance)
-            if (this.config.appletMode === "puzzle" && this.puzzleWaitingForAdvance) {
-                console.log("Undo blocked during puzzle pause - press > or → to continue");
+            if (
+                this.config.appletMode === "puzzle" &&
+                this.puzzleWaitingForAdvance
+            ) {
+                console.log(
+                    "Undo blocked during puzzle pause - press > or → to continue",
+                );
                 return;
             }
 
             // Block undo during puzzle opponent thinking
-            if (this.config.appletMode === "puzzle" && this.puzzleOpponentThinking) {
+            if (
+                this.config.appletMode === "puzzle" &&
+                this.puzzleOpponentThinking
+            ) {
                 console.log("Undo blocked during puzzle opponent response");
                 return;
             }
@@ -13781,6 +14026,9 @@ impossible to fulfill for either player, the game is considered a draw.</p>
 
                     // Update display to reflect the new state
                     this.updateDisplay();
+
+                    // Update highlights (including moveable pieces) after bulk undo
+                    this.highlightManager.updateAllIntelligent();
                     return;
                 }
             }
@@ -13825,6 +14073,9 @@ impossible to fulfill for either player, the game is considered a draw.</p>
 
             // Update display to reflect the new state
             this.updateDisplay();
+
+            // Update highlights (including moveable pieces) after undo
+            this.highlightManager.updateAllIntelligent();
         }
 
         undoPuzzleMove() {
@@ -13907,6 +14158,9 @@ impossible to fulfill for either player, the game is considered a draw.</p>
 
                     // Update display to reflect the new state
                     this.updateDisplay();
+
+                    // Update highlights (including moveable pieces) after puzzle bulk undo
+                    this.highlightManager.updateAllIntelligent();
                     return;
                 }
             }
@@ -14025,6 +14279,9 @@ impossible to fulfill for either player, the game is considered a draw.</p>
             this.isNavigating = false;
             this.clearAllDrawings();
             this.updateDisplay();
+
+            // Update highlights (including moveable pieces) after standard undo
+            this.highlightManager.updateAllIntelligent();
         }
 
         getPlayerAtPosition(moveIndex) {
@@ -14198,14 +14455,22 @@ impossible to fulfill for either player, the game is considered a draw.</p>
             }
 
             // Determine if this resolves to the live position
-            const livePositionIndex = this.moveHistory.length > 0 ? this.moveHistory.length - 1 : -1;
-            const resolvesToLivePosition = 
-                (target === "current" || target === null) ||
+            const livePositionIndex =
+                this.moveHistory.length > 0 ? this.moveHistory.length - 1 : -1;
+            const resolvesToLivePosition =
+                target === "current" ||
+                target === null ||
                 (typeof target === "number" && target === livePositionIndex);
 
             // Clear puzzle pause state only when navigating away from live position
-            if (this.config.appletMode === "puzzle" && this.puzzleWaitingForAdvance && !resolvesToLivePosition) {
-                console.log("Puzzle: Clearing pause state due to navigation away from current position");
+            if (
+                this.config.appletMode === "puzzle" &&
+                this.puzzleWaitingForAdvance &&
+                !resolvesToLivePosition
+            ) {
+                console.log(
+                    "Puzzle: Clearing pause state due to navigation away from current position",
+                );
                 this.puzzleWaitingForAdvance = false;
             }
 
@@ -14241,7 +14506,7 @@ impossible to fulfill for either player, the game is considered a draw.</p>
 
                 // Force update square highlights to reflect the new navigation state
                 this.updateSquareHighlights();
-                
+
                 // Update button states to reflect the new navigation state
                 this.updateButtonStates();
             }
@@ -14291,7 +14556,7 @@ impossible to fulfill for either player, the game is considered a draw.</p>
         getNavigationDisplayComment() {
             // Return the comment for the currently displayed position
             let comment = "";
-            
+
             if (this.currentNavigationIndex === -1) {
                 // At starting position
                 comment = this.startingComment;
@@ -14313,7 +14578,11 @@ impossible to fulfill for either player, the game is considered a draw.</p>
             }
 
             // Add instruction prefix when in puzzle pause state
-            if (this.config.appletMode === "puzzle" && this.puzzleWaitingForAdvance && comment) {
+            if (
+                this.config.appletMode === "puzzle" &&
+                this.puzzleWaitingForAdvance &&
+                comment
+            ) {
                 return "(Press > or → key to proceed)\n" + comment;
             }
 
@@ -15908,6 +16177,9 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                     originElement.classList.add("promotion-origin");
                 }
             }
+
+            // Note: Origin highlight (promotion-origin-highlight) is applied by updateSquareHighlights()
+            // after promotionDestinationSquare and promotionDeferralSquare are set, not here.
         }
 
         showLionReturnPrompt(from, to, piece, additionalData = {}) {
@@ -16536,7 +16808,9 @@ impossible to fulfill for either player, the game is considered a draw.</p>
             }
 
             if (this.puzzleWaitingForAdvance) {
-                console.log("View Solution: Blocked during pause - press > to continue");
+                console.log(
+                    "View Solution: Blocked during pause - press > to continue",
+                );
                 return;
             }
 
