@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html>
+<body>
+<h1>ChuShogiLite SFEN to Chess Variant Pages Game Courier FEN Converter</h1>
+
+<script>
+// REPLACEMENT MAP
+const replaceMap = {
+    "P": "p",
+    "I": "{gb}",
+    "C": "c",
+    "S": "s",
+    "G": "g",
+    "F": "{fl}",
+    "T": "{bt}",
+    "E": "{de}",
+    "X": "{ph}",
+    "O": "{ky}",
+    "L": "l",
+    "A": "{rc}",
+    "M": "{sm}",
+    "V": "{vm}",
+    "B": "b",
+    "R": "r",
+    "H": "{dh}",
+    "D": "{dk}",
+    "Q": "{fk}",
+    "N": "{ln}",
+    "K": "k",
+    "+P": "{p$}",
+    "+I": "{de$}",
+    "+C": "{sm$}",
+    "+S": "{vm$}",
+    "+G": "{r$}",
+    "+F": "{b$}",
+    "+T": "{fs$}",
+    "+E": "{cp$}",
+    "+X": "{fk$}",
+    "+O": "{ln$}",
+    "+L": "{wh$}",
+    "+A": "{w$}",
+    "+M": "{fb$}",
+    "+V": "{fo$}",
+    "+B": "{dh$}",
+    "+R": "{dk$}",
+    "+H": "{hf$}",
+    "+D": "{se$}",
+    "p": "P",
+    "i": "{GB}",
+    "c": "C",
+    "s": "S",
+    "g": "G",
+    "f": "{FL}",
+    "t": "{BT}",
+    "e": "{DE}",
+    "x": "{PH}",
+    "o": "{KY}",
+    "l": "L",
+    "a": "{RC}",
+    "m": "{SM}",
+    "v": "{VM}",
+    "b": "B",
+    "r": "R",
+    "h": "{DH}",
+    "d": "{DK}",
+    "q": "{FK}",
+    "n": "{LN}",
+    "k": "K",
+    "+p": "{P$}",
+    "+i": "{DE$}",
+    "+c": "{SM$}",
+    "+s": "{VM$}",
+    "+g": "{R$}",
+    "+f": "{B$}",
+    "+t": "{FS$}",
+    "+e": "{CP$}",
+    "+x": "{FK$}",
+    "+o": "{LN$}",
+    "+l": "{WH$}",
+    "+a": "{W$}",
+    "+m": "{FB$}",
+    "+v": "{FO$}",
+    "+b": "{DH$}",
+    "+r": "{DK$}",
+    "+h": "{HF$}",
+    "+d": "{SE$}"
+};
+
+// CONVERSION FUNCTIONS
+
+function convertSFEN(originalString, replacements) {
+  let newStringArray = [];
+  let newString = '';
+
+  for (let i = 0; i < originalString.length; ++i) {
+    char = originalString[i];
+    if(char == '+') {
+      nextChar = (i + 1) < originalString.length ? originalString[(i + 1)] : '';
+      realChar = '+' + nextChar;
+      if (replacements[realChar]) {
+        newStringArray.push(replacements[realChar]);
+      } else {
+        newStringArray.push(realChar);
+      }
+      ++i;
+    } else {
+      if (replacements[char]) {
+        newStringArray.push(replacements[char]);
+      } else {
+        newStringArray.push(char);
+      }
+    }
+  }
+
+  for(let i = 0; i < newStringArray.length; ++i) {
+    newString += newStringArray[i];
+  }
+  return newString;
+}
+
+// REVERSE CONVERSION FUNCTIONS
+
+function getKeyByValue(value) {
+  return getKeyByUniqueValue(replaceMap, value);
+}
+
+function getKeyByUniqueValue(obj, valueToFind) {
+  for (const key in obj) {
+    // Ensure the property belongs to the object itself, not its prototype chain
+    if (Object.prototype.hasOwnProperty.call(obj, key)) {
+      if (obj[key] === valueToFind) {
+        return key; // Return the key as a string
+      }
+    }
+  }
+  return false; // Return undefined if the value is not found
+}
+
+function reverseConvertSFEN(originalString, replacements) {
+  let newStringArray = [];
+  let newString = '';
+
+  for (let i = 0; i < originalString.length; ++i) {
+    char = originalString[i];
+    if(char == '{') {
+      endBrace = originalString.indexOf('}', i);
+      if(endBrace == -1) return newString; // Invalid string detected, exit early
+      realStr = originalString.substring(i, (endBrace + 1));
+      
+      if(realStr.length == 3) {
+        realStr = realStr[1];
+      } // If length is 3, single char inside brackets, remove brackets
+
+      if (getKeyByValue(realStr)) {
+        newStringArray.push(getKeyByValue(realStr));
+      } else {
+        newStringArray.push(realStr);
+      }
+      i += (realStr.length - 1);
+    } else {
+      if (getKeyByValue(char)) {
+        newStringArray.push(getKeyByValue(char));
+      } else {
+        newStringArray.push(char);
+      }
+    }
+  }
+
+  for(let i = 0; i < newStringArray.length; ++i) {
+    newString += newStringArray[i];
+  }
+  return newString;
+}
+
+// HTML FUNCTIONS
+
+function myFunction() {
+  document.getElementById("demo").innerHTML = "X";
+  document.getElementById("demo").innerHTML = convertSFEN(document.getElementById('sfenInput').value.split(' ')[0], replaceMap);
+  document.getElementById('sfenInput').value = '';
+}
+
+function myFunctionReverse() {
+  document.getElementById("demo1").innerHTML = "X";
+  document.getElementById("demo1").innerHTML = reverseConvertSFEN(document.getElementById('sfenInputReverse').value.split(' ')[0], replaceMap);
+  document.getElementById('sfenInputReverse').value = '';
+}
+</script>
+
+
+<input type="text" id="sfenInput" placeholder="Paste CSL SFEN Here">
+<input type="button" value="Convert CSL SFEN" onclick="myFunction()">
+<p id="demo">No CSL SFEN converted yet</p>
+<p>Paste the output SFEN from any ChuShogiLite applet into the field above and then press Convert CSL SFEN. Paste the output into the FEN Code field at <a href="https://www.chessvariants.com/play/pbm/diagram-designer.php?code=L%7BFL%7DCSG%7BDE%7DKGSC%7BFL%7DL%2F%7BRC%7D1B1%7BBT%7D%7BPH%7D%7BKY%7D%7BBT%7D1B1%7BRC%7D%2F%7BSM%7D%7BVM%7DR%7BDH%7D%7BDK%7D%7BFK%7D%7BLN%7D%7BDK%7D%7BDH%7DR%7BVM%7D%7BSM%7D%2FPPPPPPPPPPPP%2F3%7BGB%7D4%7BGB%7D3%2F*%2F*%2F3%7Bgb%7D4%7Bgb%7D3%2Fpppppppppppp%2F%7Bsm%7D%7Bvm%7Dr%7Bdh%7D%7Bdk%7D%7Bln%7D%7Bfk%7D%7Bdk%7D%7Bdh%7Dr%7Bvm%7D%7Bsm%7D%2F%7Brc%7D1b1%7Bbt%7D%7Bky%7D%7Bph%7D%7Bbt%7D1b1%7Brc%7D%2Fl%7Bfl%7Dcsgk%7Bde%7Dgsc%7Bfl%7Dl&shape=square&scale=100&group=Chu+Shogi&set=mnemchushogi&files=12+11+10+9+8+7+6+5+4+3+2+1&ranks=l+k+j+i+h+g+f+e+d+c+b+a&font=Helvetica&point=12&cols=12&newwhite=&newblack=&filemarkers=auto&rankmarkers=auto&board=10.01.&colors=ffcc9c+cf8948&bcolor=000000&tcolor=FFFFFF&bsize=16&bgimage=chuboard.png&nextfile=35+0&nextrank=0+35&submit=Update">this site</a>, and then press Update to get a diagram of the position</p>
+
+<h2>Reverse Conversion (Position Data Only)</h2>
+<input type="text" id="sfenInputReverse" placeholder="Paste CVP GC FEN Here">
+<input type="button" value="Convert CVP GC FEN" onclick="myFunctionReverse()">
+<p id="demo1">No CVP GC FEN reverse-converted yet</p>
+<p>Paste any CVP GC FEN into the field above and then press Convert CVP GC FEN. The FEN in question must be for the game Chu Shogi and the piece set must be one of the sets in the Chu Shogi set group.</p>
+</body>
+</html>

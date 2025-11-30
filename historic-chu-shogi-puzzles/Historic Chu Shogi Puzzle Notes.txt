@@ -1,0 +1,563 @@
+From the fact that different manuscripts often give different solutions for the same puzzle in the MSM, it was already known that the solutions were in general not given by the composers of the puzzles. This has apparently created the situation that the more difficult puzzles were actually too difficult for the authors that incorporated them in their collections, making them produce flawed solutions. The comments given on this in the original source, the 1992 Middle Shogi Manual by George Hodges (MSM for short), are not always justified either, though. H. G. Muller attempted to rectify the MSM remarks in his own works, the MSM Erratas (A, B, C, D, Promotion), which I have used extensively. However, I have also done my own work on certain puzzles, and have found solutions and or repairs that Muller failed to find. These notes are described below.
+
+NOTE: For puzzles that were renamed, their original name is given in parentheses.
+
+NOTE: The puzzle lengths are measured in terms of moves by each player, but the solutions will always have the turn number before every move, which, unlike in Chess, is incremented every turn.
+
+NOTE: In the E-Series, only the first 10 puzzles are from the MSM. E11 and E12 were created by A. M. DeWitt specifically for this collection, E13 is from the Shinan collection (https://toybox.a.la9.jp/chushogi/dhtmlchu/shinan/), and is the only one that was not also included in the MSM. The rest are from the TumeChu collection (https://www.asahi-net.or.jp/~xr9s-ymgc/tume/tumechu_allitiran.html), with the three puzzles that were more than a thousand turns long being put at the very end in order of solution length.
+
+A-SERIES
+
+The first 24 puzzles in this series are from the MSM's A-Series. The remaining 26 are from the MSM's D-Series, which were migrated over to the A-Series to ensure every series had 50 puzzles (not counting different versions of the same puzzle).
+
+A1: OK. Mate in 16.
+
+A2: This puzzle is by far the longest of all the puzzles in the first four series, being a mate in 56, and HaChu would crash long before reaching the solution. However, it seemed to be on the right way, since the PVs from the initial position were very similar if not identical to the beginning half of the actual solution. A defense that the MSM claimed to be superior (6. K 5b-6b) instead results a fast mate, while the best defense (6. G 7c-6c) results in the mate being extremely long, as it forces the Lion to chase the King around the board twice while clearing nearly the entire board of pieces, before finally being able to checkmate in the 1a corner.
+
+A3: OK. Mate in 14.
+
+A4: OK. Mate in 7.
+
+A5: OK. Mate in 18.
+
+A6: OK. Mate in 8.
+
+A7: OK. Mate in 10.
+
+A8: Unlike what Muller states in the MSM Errata A, this puzzle is a mate in 14. This seemingly removes its bearing on the repetition rule, but the Side Mover on 2d is seemingly placed to force a ladder mate, meaning the bearing may still be there. In any case, after K 3b-4a in Muller's original solution, Sente can instead use his Eagle to force the King to the edge two moves faster.
+
+A9: OK. Mate in 11.
+
+A10: OK. Mate in 8.
+
+A11: OK. Mate in 14.
+
+A12: OK. Mate in 20.
+
+A13: This puzzle originally had a Gote Soaring Eagle on 3b. However, this prevented a solution due to the Eagle's diagonal Lion moves. A mate in 6 appears if a Gote Horned Falcon is placed on 3b instead.
+
+A14: OK. Mate in 16.
+
+A15: OK. Mate in 16.
+
+A16: OK. Mate in 16.
+
+A17: The solution in the MSM was completely off, but with Muller's assistance HaChu could find a spectacular mate in 16.
+
+A18: OK. Mate in 9.
+
+A19: In the MSM there was a conflict over whether the Gote Ferocious Leopard on 4b was promoted or not. The puzzle only works with the former case, and is a mate in 24.
+
+A20a: This is the original version of A20, and is a mate in 10.
+
+A20b: Muller stumbled upon this version of A20 while working on the MSM Errata A. This version moves the Gote Pawn on 3f to 3e, and is a mate in 11. The mate takes one move longer due to a sub-optimal defense when the Pawn is on 3f becoming an iron-clad refutation when it is on 3e.
+
+A21: OK. Mate in 10.
+
+A22: OK. Mate in 5.
+
+A23: OK. Mate in 10.
+
+A24: OK. Mate in 7.
+
+A25 (MSM D55): OK. Mate in 12.
+
+A26 (MSM D57): OK. Mate in 8.
+
+A27 (MSM D59): The original puzzle had a Gote Whale on 11f, which made the puzzle unsolvable due to said Whale protecting 6a and preventing a Kirin promotion. Replacing this Whale with a Gote White Horse repairs the puzzle but also speeds up the solution a bit, resulting in a mate in 14.
+
+A28 (MSM D60): OK. Mate in 21.
+
+A29 (MSM D61): OK. Mate in 11.
+
+A30 (MSM D63): This puzzle has a parasitic mate in 8, with almost all pieces on the lower half of the board as well as Gote's Copper General on 12f having no function, making the original SFEN of the puzzle as follows (uses Winboard format):
+
+1+P1i1g6/+A1k1+V3dD2/+l1m1+G1+t5/2r2X6/8+aq2/c11/9p2/1Pt9/1n1+p4+p2+F/4m5NH/7+r+i3/4G7 w - 0 1
+
+The mate can be made non-parasitic by removing these pieces and placing a Gote Promoted Pawn (Gold General) on 3i.
+
+A31 (MSM D65): OK. Mate in 10.
+
+A32 (MSM D66): The original puzzle's SFEN had a wrong color Pawn on 2d, but is otherwise OK. Mate in 12.
+
+A33 (MSM D67): In the MSM there was a conflict over whether the Gote Blind Tiger on 10g was promoted or not. The puzzle only works with the latter case, and is a mate in 13.
+
+A34 (MSM D68): The original puzzle's SFEN had a wrong color Soaring Eagle on 12j, but is otherwise OK. Mate in 15.
+
+A35 (MSM D70): OK. Mate in 11.
+
+A36 (MSM D71): OK. Mate in 19.
+
+A37 (MSM D73): OK. Mate in 21.
+
+A38 (MSM D76): The original puzzle had a Gote Soaring Eagle on 9b. However, this prevented a solution due to the Eagle's diagonal Lion moves. A mate in 12 appears if a Gote Dragon King is placed on 9b instead.
+
+A39 (MSM D77): OK. Mate in 26.
+
+A40 (MSM D78): OK. Mate in 10.
+
+A41 (MSM D80): OK. Mate in 14.
+
+A42 (MSM D81): OK. Mate in 7.
+
+A43 (MSM D82): The original puzzle had a Sente Whale on 11f, a Sente Side Mover on 4i, and a Sente Flying Ox on 6k. This resulted in a parasitic mate in 6. The mate can be made non-parasitic by removing these pieces.
+
+A44 (MSM D83): OK. Mate in 9.
+
+A45 (MSM D84): OK. Mate in 11.
+
+A46 (MSM D86): The original puzzle had a Sente Side Mover on 2a, a Gote Whale on 6c, and a Gote Flying Stag on 2k. This resulted in a parasitic mate in 8 due to the designer overlooking O 12k-11j. The mate could be made non-parasitic by replacing the Whale on 6c with a Rook, but this still allowed the refutation of the pieces on the 2-file and 3-file. Solving this requires replacing Gote's Flying Stag with a Promoted Rook (Dragon King) to prevent Sente from cornering the King on 12l, as well as replacing Sente's Side Mover with a Phoenix, in order to be able to reach the King after 14. R 6c-3c.
+
+A47 (MSM D87): This puzzle originally had a Gote Promoted Rook (Dragon King) on 10h. However, this made the puzzle impossible due to the Dragon King covering key squares. A mate in 6 appears if a Gote Promoted Silver (Vertical Mover) is placed on 10h instead.
+
+A48 (MSM D92): This puzzle originally did not have a Sente Silver General on 9f This resulted in the puzzle having no solution due a fatal interposition by Gote's Free Boar. However, adding the Silver results in a mate in 21.
+
+A49 (MSM D93): OK. Mate in 11.
+
+A50 (MSM D97): OK. Mate in 15.
+
+B-SERIES
+
+B1: OK. Mate in 5.
+
+B2: OK. Mate in 8.
+
+B3: OK. Mate in 7.
+
+B4: OK. Mate in 18.
+
+B5: OK. Mate in 15.
+
+B6: OK. Mate in 7.
+
+B7: OK. Mate in 20.
+
+B8: OK. Mate in 7.
+
+B9: OK. Mate in 11.
+
+B10: OK. Mate in 10.
+
+B11: OK. Mate in 10.
+
+B12: OK. Mate in 13.
+
+B13: OK. Mate in 12.
+
+B14: OK. Mate in 11.
+
+B15: The puzzle's actual solution is a mate in 12 rather than a mate in 5 (which was seemingly implied by Muller), but is otherwise OK.
+
+B16: OK. Mate in 8.
+
+B17: OK. Mate in 18.
+
+B18: OK. Mate in 8.
+
+B19: OK. Mate in 12.
+
+B20: OK. Mate in 20.
+
+B21: OK. Mate in 8.
+
+B22a: The original version of B22 originally had a Gote Gold General on 6c, and the SFEN and diagram in the MSM were conflicted on whether there was a Gote Copper General or Gote Silver General on 6b. In either case, there was no mate, as the Gote could use the Gold General as a permanent shield by shuttling it between 6c and 6d, or blocking a check by moving it 5d or 5e. However, if a Gote Vertical Mover is placed on 6c and a Gote Silver General on 6b, this results in a mate in 14 which uses all pieces, including Sente's Promoted Pawns (Gold Generals) and White Horse.
+
+B22b: This is the original repair Muller stumbled upon while working on his MSM Erratas, which has Gote Silver Generals on 6b and 6c. This results in a mate in 20 where the Sente's Promoted Pawns (Gold Generals) and White Horse are not directly involved, but still serve the purpose of repelling the King away from their section of the board.
+
+B23: This puzzle originally had a Gote Flying Ox on 9i. However, this resulted in the puzzle not having a solution due to said Flying Ox blocking a key diagonal when it is on 9a, allowing Gote to prevent mate with perfect play by forming a fortress with the King, Flying Ox, and Side Mover. A mate in 23 appears if a Gote Whale is placed on 9i instead.
+
+B24: OK. Mate in 8.
+
+B25: OK. Mate in 7.
+
+B26: OK. Mate in 27.
+
+B27: OK. Mate in 8.
+
+B28: OK. Mate in 14.
+
+B29: OK. Mate in 18.
+
+B30: The original puzzle had many additional pieces on the leftmost third of the board as well as a Sente Pawn on 4i, a Gote Silver General on 3j, and a Sente Gold General on 4k that caused a parasitic mate in 8, making the original SFEN of the puzzle as follows (uses Winboard format):
+
+1r3e1g1c1l/+P4t+G2t2/7k1+Pf1/1f+b4pppp1/1p1p+apn5/7P2+OX/T5N1i3/1P10/2+r5P2Q/+g8s2/+M7G3/1F4q5 w - 0 1
+
+The mate can be made non-parasitic by removing these pieces.
+
+B31: OK. Mate in 8.
+
+B32: OK. Mate in 12.
+
+B33: OK. Mate in 5.
+
+B34: OK. Mate in 4.
+
+B35: OK. Mate in 10.
+
+B36: OK. Mate in 16.
+
+B37: OK. Mate in 9.
+
+B38: OK. Mate in 8.
+
+B39: OK. Mate in 12.
+
+B40: OK. Mate in 10.
+
+B41: OK. Mate in 11.
+
+B42: OK. Mate in 10.
+
+B43: OK. Mate in 12.
+
+B44: OK. Mate in 30.
+
+B45: The original puzzle lacked the Sente Pawn on 8j, which prevented a solution due to +R 11k-11h. Adding the Pawn results in a mate in 31. Unlike what Muller states, after the first move by Sente, the King cannot move to 5d due to a fast mate.
+
+B46: The original puzzle had a Gote Flying Stag on 10b, which prevented a solution due to the Flying Stag covering key squares. A mate in 13 appears if a Gote Blind Tiger is placed on 10b instead.
+
+B47: OK. Mate in 16.
+
+B48: OK. Mate in 9.
+
+B49: The original puzzle lacked the Sente Pawn on 8e, which prevented a solution by allowing the King access to 8e. Adding the Pawn results in a mate in 45.
+
+B50a: This is the original version of B50, and is a mate in 18.
+
+B50b: This repair was wrongly attributed to B46 in Muller's Erratas, but is otherwise OK, resulting in a mate in 9.
+
+C-SERIES
+
+C1: OK. Mate in 9.
+
+C2: OK. Mate in 12.
+
+C3: OK. Mate in 13.
+
+C4: OK. Mate in 7.
+
+C5: OK. Mate in 11.
+
+C6: OK. Mate in 7.
+
+C7: OK. Mate in 10.
+
+C8: The original puzzle had a Sente Promoted Pawn on 4b, which prevented a solution due to Sente running out of checks. A mate in 4 appears if a Sente Promoted Go-Between (Drunk Elephant) is placed on 4b instead.
+
+C9: OK. Mate in 7.
+
+C10: This puzzle is the shortest in the entire collection, and is a mate in 3.
+
+C11a: The original puzzle had a Gote Gold General on 7d, which prevented a solution due to Sente running out of checks. A mate in 6 appears if a Copper is placed on 7d instead.
+
+C11b: This is a repair I stumbled upon while trying to fix this puzzle, which places a Gote Gold General on 7d and a Sente Horned Falcon on 10g, which also results in a mate in 6.
+
+C12: OK. Mate in 5.
+
+C13: OK. Mate in 9.
+
+C14: OK. Mate in 12.
+
+C15: OK. Mate in 8.
+
+C16: OK. Mate in 6.
+
+C17: OK. Mate in 10.
+
+C18: OK. Mate in 11.
+
+C19: OK. Mate in 5.
+
+C20: OK. Mate in 8.
+
+C21: This puzzle originally lacked the Pawn on 4e, which prevented a solution due to Sente running out of checks. Adding the Pawn results in a mate in 7.
+
+C22: OK. Mate in 17.
+
+C23: The original puzzle had a Gote Ferocious Leopard on 8b, which prevented a solution due to F 8bx9a. A mate in 5 appears if a Gold General is placed on 8b instead.
+
+C24: OK. Mate in 4.
+
+C25: OK. Mate in 12.
+
+C26: The original puzzle had a Queen on 7a, which prevented a solution due to Sente running out of checks. A mate in 11 appears if a Flying Ox is placed on 7a instead, alongside replacing Gote's Vertical Mover with a Promoted Silver (Vertical Mover).
+
+C27: The original puzzle had a Gote Free Boar on 11a, a Sente Horned Falcon on 10d, and a Sente Soaring Eagle on 7f, which prevented a solution due to Sente running out of checks. A mate in 8 appears if instead a Sente Soaring Eagle is placed on 10d, a Sente Horned Falcon is placed on 7f, and the now-redundant Free Boar on 11a is removed.
+
+C28: OK. Mate in 7.
+
+C29: OK. Mate in 5.
+
+C30: OK. Mate in 10.
+
+C30: OK. Mate in 10.
+
+C31: OK. Mate in 15.
+
+C32: The original puzzle had a redundant Sente Whale on 7h, but is otherwise OK. Mate in 9.
+
+C33: This puzzle has a bearing on the repetition rule. If repeats are strictly forbidden it would be reduced to a parasitic solution involving the repetition ban through use of Sente's Horned Falcon, Promoted Pawn (Gold General), and Free Boar, which leaves out most of the pieces. This means that the puzzle designer assumed that repeats were allowed when the moving player is in check. When this is the case, each piece has significance, and the puzzle becomes a mate in 16.
+
+C34: The original puzzle had a Lion on 5h, which resulted in a very obviously parasitic mate in 2. A mate in 10.
+
+C35: OK. Mate in 11.
+
+C36: OK. Mate in 9.
+
+C37: OK. Mate in 12.
+
+C38: OK. Mate in 6.
+
+C39: OK. Mate in 5.
+
+C40: OK. Mate in 11.
+
+C41: The original puzzle had a Sente White Horse on 3b, a Sente Reverse Chariot on 12h, and a Sente Copper General on 3h, resulting in a parasitic mate in 7. The mate can be made non-parasitic by removing these pieces.
+
+C42: The original puzzle had a Gote Silver General on 4h, which prevented a solution due to Sente running out of checks. A mate in 11 appears if a Gote Go-Between is placed on 4h instead.
+
+C43: The original puzzle had a Gote Promoted Pawn (Gold General) on 5g, and could only be solved if all repeats were strictly forbidden. However, due to evidence from other puzzles, it is now assumed that repeats are allowed for players who are in check. When this is the case, the puzzle has no solution due to +P 5gx6h. A mate in 12 appears if a Gote Pawn is placed on 5g instead.
+
+C44: The original puzzle had many extra pieces on the upper third of the board which caused in a parasitic mate in 36, making the original SFEN of the puzzle as follows (uses Winboard format):
+
+h1+P9/4+I3+P3/+Pmd1g1fe1cm+C/4+I3g3/12/5s4+SP/Q8x2/2f+p8/R3S2O4/+t1+b3n5/1R6GM1+p/1G5k2+i1 w - 0 1
+
+Unlike most parasitic solutions, this one follows the intended solution for a very long time before quickly deviating to a fast mate after about 33 moves. The mate can be made non-parasitic by removing the extra pieces.
+
+C45: OK. Mate in 14.
+
+C46: OK. Mate in 11.
+
+C47: OK. Mate in 9.
+
+C48: OK. Mate in 16.
+
+C49: The original puzzle had many extra pieces on the rightmost 5 ranks of the board which caused in a parasitic mate in 11, making the original SFEN of the puzzle as follows (uses Winboard format):
+
+2v3d+S4/3gm4c2/4+P4+P2/1p4+M1+P3/+P1+P+f2+Ip4/2n2+h4g1/1+e2c1H2C1l/3p3Pf3/3P+hB6/H3T3+R3/3+A1+pTM4/+l3Q1D3VL w - 0 1
+
+The mate can be made non-parasitic by removing the extra pieces, and delayed to a mate in 13 by removing the Gote Copper General on 8g.
+
+C50: The original puzzle had a whole smorgasbord of extra pieces all over the place which prevented a solution due to Sente running out of checks, making the original SFEN of the puzzle as follows (uses Winboard format):
+
++G+m2+Pxs+as+A1q/+L+r3b1CiG1C/+R1nv3+R4/2mg4+A2l/T1V+ct+FH+h+gv2/cD2+p2f+V+r+LM/+pp+l+i2N+TISP1/M+d+F1BtPp4/2D3+pS2k1/+b2+H4E1+p1/3O+d2+p1+h2/3+f1X3+a+p1 w - 0 1
+
+A mate in 8 appears if all of the extra pieces are removed.
+
+D-SERIES
+
+D1 (MSM D2): OK. Mate in 13.
+
+D2 (MSM D3): OK. Mate in 8.
+
+D3 (MSM D4): The original puzzle lacked the Gote Copper General on 6g, which prevented a solution due to Sente running out of checks. Adding the Copper General results in a mate in 14. This puzzle also has a bearing on the repetition rule, where the repair supports the evidence that repeats are allowed while in check, while the original does not. However, the goal of tsumes like these is always to checkmate the opponent, and almost none of these puzzles have intended solutions that use a repetition restriction to force mate. In fact, Muller revealed that with repeats strictly forbidden, many of these puzzles would have parasitic solutions.
+
+D4 (MSM D5): OK. Mate in 13.
+
+D5 (MSM D6): OK. Mate in 13.
+
+D6 (MSM D7): The original puzzle's SFEN had a wrong color Ferocious Leopard on 5d, but is otherwise OK. Mate in 15.
+
+D7 (MSM D8): In the MSM there was a conflict over whether the Gote Vertical Mover on 2k was promoted or not. The puzzle only works with the former case, and is a mate in 15.
+
+D8 (MSM D9): OK. Mate in 12.
+
+D9 (MSM D10): OK. Mate in 7.
+
+D10 (MSM D11): OK. Mate in 14.
+
+D11 (MSM D12): OK. Mate in 15.
+
+D12 (MSM D13): The original puzzle lacked the Sente Pawn on 3d and had the Sente Soaring Eagle on 4c instead of 2c, which resulted in a parasitic mate in 7, likely due to the designer overlooking the Eagle's mobility from 4c. Moving the Soaring Eagle to 2c and adding a Sente Pawn on 3d to prevent the Eagle from wreaking havoc on the new diagonal results in a mate in 21.
+
+D13 (MSM D14): OK. Mate in 14.
+
+D14 (MSM D15): OK. Mate in 14.
+
+D15 (MSM D16): The original puzzle's SFEN missed an empty square between the Gote Gold General on 5b and the Gote Promoted Leopard (Bishop) on 3b, but is otherwise OK. Mate in 10.
+
+D16 (MSM D17): OK. Mate in 18.
+
+D17 (MSM D18): OK. Mate in 14.
+
+D18 (MSM D19): OK. Mate in 10.
+
+D19 (MSM D20): OK. Mate in 9.
+
+D20 (MSM D22): The original puzzle's SFEN had a wrong color Promoted Copper (Side Mover) on 6h, and a very obviously parasitic mate in 2 not using most of the pieces. A mate in 9 appears if the Gote Pawn on 5i is promoted.
+
+D21 (MSM D23): This puzzle originally had a Gote Flying Ox on 9a and a Gote White Horse on 10b, which prevented a solution due to Sente running out of checks. A mate in 20 appears if instead a Gote Copper General is placed on 9a and a Gote Whale is placed on 10b.
+
+D22 (MSM D24): OK. Mate in 21.
+
+D23 (MSM D25): The original puzzle had a Gote Gold General on 10f, which prevented a solution due to G 10fx9g. A mate in 12 appears if a Gote Side Mover is placed on 10f instead.
+
+D24 (MSM D26): OK. Mate in 19.
+
+D25 (MSM D27): OK. Mate in 13.
+
+D26 (MSM D28): The original puzzle had a Sente Whale on 10a, and in the MSM there was a conflict over whether one of the Blind Tigers, presumably the one on 4g, was promoted or not. An unpromoted Blind Tiger on 4g seems to have next to no function though, as the piece's purpose seems to have been to prevent vertical slides from the Sente Dragon King on 4a. However, in either case there was no solution due to Sente running out of checks. A mate in 12 appears if a Sente White Horse is placed on 10a instead.
+
+D27 (MSM D29): OK. Mate in 38.
+
+D28 (MSM D30): OK. Mate in 13.
+
+D29 (MSM D31): The original puzzle had a redundant Gote Vertical Mover on 2b, which prevented a solution due to V 2bx3b. Removing the Vertical Mover results in a mate in a mate in 23.
+
+D30 (MSM D32): In the MSM there was a conflict over whether the Gote Dragon Horse on 2a was promoted or not. The puzzle only works with the former case, and is a mate in 13.
+
+D31 (MSM D33): OK. Mate in 16.
+
+D32 (MSM D34): OK. Mate in 16.
+
+D33 (MSM D35): OK. Mate in 8.
+
+D34 (MSM D36): OK. Mate in 12.
+
+D35 (MSM D37): The original puzzle had a Gote Kirin on 1i, which prevented a solution due to the Kirin protecting 2h. A mate in 19 appears if a Gote Copper General is placed on 1i instead.
+
+D36 (MSM D38): The original puzzle had a Gote Gold General on 5c, which prevented a solution due to Sente running out of checks. A mate in 16 appears if a Gote Blind Tiger is placed on 5c instead.
+
+D37 (MSM D39): OK. Mate in 19.
+
+D38 (MSM D40): The original puzzle had many extra pieces on the upper-left section of the board which caused a parasitic mate in 8, making the original SFEN of the puzzle as follows (uses Winboard format):
+
+4+a+Iv1n3/1+mv9/3is+F+C2+P1+l/+P+f3+a5+I/2p3s2+D2/3P2p1+b2+p/4P2k4/5PXpi3/7+m3q/1+x10/11N/2Q+c3+F4 w - 0 1
+
+The mate can be made non-parasitic by removing these pieces.
+
+D39 (MSM D41): OK. Mate in 14.
+
+D40 (MSM D42): The original puzzle had a Sente Whale on 1i, which prevented a solution through allowing K 4d-4e. A mate in 19 appears if a Sente Flying Ox is placed on 1i instead (though it is a bit different from what Muller states).
+
+D41 (MSM D43): OK. Mate in 23.
+
+D42 (MSM D44): OK. Mate in 8.
+
+D43 (MSM D45): The original puzzle had a Sente Free Boar on 12h, which prevented a solution due to Sente running out of checks. A mate in 10 appears if a Free King is placed on 12h instead, but this loses the cute Phoenix maneuver in the beginning unless an intervening piece such as a Gote Copper General is also placed on 12g. However, a mate in 12 appears without needing any extra pieces if a Sente Dragon Horse is placed on 12h instead.
+
+D44 (MSM D47): OK. Mate in 11.
+
+D45 (MSM D48): OK. Mate in 21.
+
+D46 (MSM D49): OK. Mate in 7.
+
+D47 (MSM D50): OK. Mate in 13.
+
+D48 (MSM D51): The original puzzle had a Sente Horned Falcon on 4a, which prevented a solution due to Sente running out of checks. A mate in 24 appears if a Sente Soaring Eagle is placed on 4a instead
+
+D49 (MSM D52): OK. Mate in 18.
+
+D50 (MSM D54): The original puzzle had a Sente Promoted Leopard (Bishop) on 10j, which prevented a solution due to Sente running out of checks. A mate in 10 appears if a Sente Flying Ox is placed on 10j instead.
+
+E-SERIES
+
+MIDDLE SHOGI MANUAL LEFTOVERS
+
+E1 (MSM D1): The original puzzle lacked the Gote Copper General on 4e, and had a Sente Promoted Silver (Vertical Mover) on 12a and a Sente Whale on 10k, which prevented a solution due to the lack of a promotion opportunity for the Sente Kirin on 3c. A mate in 16 (confirmed by HaChu after 8 moves per player) appears if a Gote Copper General is placed on 4e and the now-redundant Promoted Silver (Vertical Mover) on 12a and Whale on 10k are removed.
+
+E2 (MSM D46): The original puzzle had a Sente Promoted Silver (Vertical Mover) on 12k, which prevented a solution due to Sente running out of checks. A mate in 12 appears if a Sente Promoted Gold (Rook) is placed on 12k instead.
+
+E3 (MSM D56): The original puzzle had an unpromoted Sente Ferocious Leopard on 1h, which prevented a solution due to Sente running out of checks. A mate in 15 (confirmed by HaChu after 4 moves per player) appears if a Sente Promoted Leopard (Bishop) is placed on 1h instead.
+
+E4 (MSM D58): The original puzzle had Gote's Flying Stag on 4d instead of 4h. This resulted in a parasitic mate in 4 due to Sente's Soaring Eagle being able to prevent the Gote King's escape. A mate in 12 appears if Gote's Flying Stag is moved to 4h instead.
+
+E5 (MSM D69): The original puzzle had a Sente Horned Falcon on 10h, a Sente Whale on 11i, and a Gote Promoted Rook (Dragon King) on 11k, which prevented a solution due to Sente running out of checks. A mate in 8 appears if a Sente Dragon Horse is placed on 10h and the now-redundant Whale on 11i and Promoted Rook (Dragon King) on 11k are removed.
+
+E6 (MSM D72): The original puzzle had an extra Gote Flying Stag on 2j, which prevented a solution due to Sente running out of checks. A mate in 7 appears if the extra Flying Stag on 2j is removed.
+
+E7 (MSM D88): The original puzzle had a Gote Rook on 5e and a Gote Promoted Copper (Side Mover) on 2k, which prevented a solution due to sente running out of checks. A mate in 9 appears if the redundant Whale on 5e and Promoted Copper (Side Mover) on 2k are removed.
+
+E8 (MSM D89): The original puzzle had a Gote Go-Between on 9g and a Gote Silver General on 4h. This resulted in a parasitic mate in 9 due to holes in Gote's defenses allowing Sente's Kirin to slip through. A mate in 29 appears if a Gote Promoted Go-Between (Drunk Elephant) is placed on 4h and a Gote Copper General is placed on 9g to account for both Go-Betweens being used elsewhere.
+
+E9 (MSM D90): The original puzzle had an unpromoted Sente Ferocious Leopard on 2c, which prevented a solution due to Sente running out of checks. A mate in 16 (confirmed by HaChu after 2 moves per player) appears if a Sente Promoted Leopard (Bishop) is placed on 2c instead.
+
+E10 (MSM D94): The original puzzle had a Gote Horned Falcon on 8b, which prevented a solution due to the Falcon's orthogonal Lion move. A mate in 6 appears if a Gote Soaring Eagle is placed on 8b instead.
+
+AUTHOR'S CREATIONS
+
+E11: OK. Mate in 10.
+
+E12: OK. Mate in 11.
+
+SHINAN COLLECTION (https://toybox.a.la9.jp/chushogi/dhtmlchu/shinan/shinanXX.html)
+
+E13 (Shinan 4): The original record of the puzzle had an illegal promotion just outside the promotion zone. The real solution is a mate in 11.
+
+TUMECHU COLLECTION (https://www.asahi-net.or.jp/~xr9s-ymgc/tume/tumechuN.html)
+
+E14 (TumeChu 1): OK. Mate in 3.
+
+E15 (TumeChu 3): OK. Mate in 9.
+
+E16 (TumeChu 4): OK. Mate in 41. This puzzle is a simple example of what the author calls a "chaser," a type of puzzle where the attacker chases the opposing King around part of the board at least once.
+
+E17 (TumeChu 5): OK. Mate in 37. This puzzle is a simple example of the author calls a "saw," a type of puzzle where the attacker's motion resembles that of a saw, and is often used to capture pieces in a long-winded manner. Such puzzles have very repetitive solutions, often to the point where the defending King will just shuffle back and forth between two squares.
+
+E18 (TumeChu 6): OK. Mate in 6.
+
+E19 (TumeChu 8): OK. Mate in 12.
+
+E20 (TumeChu 9): OK. Mate in 56.
+
+E21 (TumeChu 11): OK. Mate in 14.
+
+E22 (TumeChu 14): This puzzle is the longest puzzle in the entire collection, excluding the three thousand-move puzzles, being a mate in 135. It combines the chaser and saw ideas into one very long puzzle. HaChu confirmed the mate with human assistance via process of elimination, as it found several deviations from the given solution, but all of them were sub-optimal.
+
+E23 (TumeChu 19): OK. Mate in 14.
+
+E24 (TumeChu 27): OK. Mate in 8.
+
+E25 (TumeChu 29): OK. Mate in 17.
+
+E26 (TumeChu 31): OK. Mate in 6.
+
+E27 (TumeChu 32): OK. Mate in 7.
+
+E28 (TumeChu 33): OK. Mate in 10.
+
+E29 (TumeChu 36): OK. Mate in 6.
+
+E30 (TumeChu 37): OK. Mate in 7.
+
+E31 (TumeChu 41): OK. Mate in 5.
+
+E32 (TumeChu 43): OK. Mate in 10.
+
+E33 (TumeChu 45): OK. Mate in 29.
+
+E34 (TumeChu 46): OK. Mate in 8.
+
+E35 (TumeChu 47): OK. Mate in 8.
+
+E36 (TumeChu 52): OK. Mate in 8.
+
+E37 (TumeChu 53): OK. Mate in 12.
+
+E38 (TumeChu 65): OK. Mate in 36.
+
+E39 (TumeChu 72): OK. Mate in 8.
+
+E40 (TumeChu 74): OK. Mate in 5.
+
+E41 (TumeChu 75): OK. Mate in 5.
+
+E42 (TumeChu 76): OK. Mate in 25.
+
+E43 (TumeChu 82): OK. Mate in 3.
+
+E44 (TumeChu 86): OK. Mate in 18.
+
+E45 (TumeChu 89): OK. Mate in 7.
+
+E46 (TumeChu 91): OK. Mate in 6.
+
+E47 (TumeChu 99): OK. Mate in 37.
+
+TUMECHU THOUSAND-MOVES COLLECTION (https://www.asahi-net.or.jp/~xr9s-ymgc/tume/tumechuX.html)
+
+E48 (TumeChu 12): OK. Mate in 505. This puzzle combines a chaser and a saw to create an extremely long mate.
+
+E49 (TumeChu 60): OK. Mate in 672. This puzzle uses the same idea as the previous one, except the initial phase involves clearing several pieces to clear the way for the chaser.
+
+E50 (TumeChu 16): OK. Mate in 1,629. This puzzle holds the title for the longest Chu Shogi tsume puzzle ever made, and is far and away the longest puzzle in the entire collection. It uses the same idea as the previous two puzzles, except the saw encompasses a much wider area and follows a curved trajectory. HaChu found a deviation involving blocking the sawing Dragon Horse with the Dragon King on 4i instead of the 4th-file Go-Between, but this is very poor defense, as it allows pieces trapped near the bottom of the board to escape far earlier than they would otherwise be able to.
