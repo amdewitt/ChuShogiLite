@@ -45,7 +45,7 @@ __&lt;!-- Include files (Embed these once per page) --><br>
 &nbsp;  "showInfluenceDisplay": false,<br>
 &nbsp;  "allowIllegalMoves": false,<br>
 &nbsp;  "allowCustomComments": true,<br>
-&nbsp;  "midpointProtection": false,
+&nbsp;  "midpointProtection": false,<br>
 &nbsp;  "trappedLancePromotion": false,<br>
 &nbsp;  "repetitionHandling": "strict"<br>
 }'>&lt;/div>__
