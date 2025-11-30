@@ -60,7 +60,7 @@ Most of the key-value pairs in the JSON string have boolean values (i.e. they ca
 * __"boardSize"__ - Can be "small", "medium", or "large"
 * __"repetitionHandling"__ - Can be "strict", "lenient", or "relaxed"
 
-A Game Export string is a string containing an SFEN string followed by a series of moves in USI, all separated by spaces.
+*A Game Export string is a string containing an SFEN string followed by a series of moves in USI, all separated by spaces.
 
 <a href="https://en.wikipedia.org/wiki/Shogi_notation#SFEN">SFEN (Shogi Forsyth-Edwards Notation)</a> is a compact string encoding of the position of a Shogi game, and <a href="https://en.wikipedia.org/wiki/Shogi_notation#SFEN">USI (Universal Shogi Interface)</a> is a dialect of UCI (Universal Chess Interface) adapted for Shogi (i.e. 7g7f or 7g7c+). ChuShogiLite uses versions of both that are specifically adapted for Chu Shogi, which are the same as those used by <a href="https://lishogi.org/analysis/chushogi">Lishogi</a>.
 
