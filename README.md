@@ -9,6 +9,10 @@ This is a piece of Chu Shogi infrastructure that can be very easily embedded in 
 * Easy editing of all aspects of the board position with the mouse
 * As a bonus, a collection of tsume puzzles and a couple of helpful tools are included.
 
+## Live Version
+
+A live version of the script is available [here](https://www.chessvariants.com/invention/chushogilite).
+
 ## Setting up ChuShogiLite a Website
 
 To set up the applet onto your own site, do the following:
