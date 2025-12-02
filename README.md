@@ -13,7 +13,7 @@ This is a piece of Chu Shogi infrastructure that can be very easily embedded in 
 
 A live version of the script is available [here](https://www.chessvariants.com/invention/chushogilite).
 
-## Setting up ChuShogiLite a Website
+## Setting up ChuShogiLite on a Website
 
 To set up the applet onto your own site, do the following:
 
