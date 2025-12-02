@@ -31,7 +31,7 @@ To embed the applet in a webpage, simply embed the following code into the page'
 
 __&lt;!-- Include files (Embed these once per page) --><br>
 &lt;link rel="stylesheet" href="&lt;FILE PATH HERE>/chushogi-lite.css"><br>
-&lt;script src="&lt;FILE PATH HERE>/chushogi-lite.js">&lt;/script><br>
+&lt;script src="&lt;FILE PATH HERE>/chushogi-lite.js">&lt;/script><br><br>
 &lt;!-- Game container (Embed as many of these as desired)--><br>
 &lt;div class="chuShogiLite" data-config='{<br>
 &nbsp; "appletMode": "sandbox",<br>
