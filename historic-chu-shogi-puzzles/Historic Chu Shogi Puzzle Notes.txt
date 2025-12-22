@@ -16,7 +16,7 @@ A2: This puzzle is by far the longest of all the puzzles in the first four serie
 
 A3: OK. Mate in 14.
 
-A4: OK. Mate in 7.
+A4: OK. Mate in 9.
 
 A5: OK. Mate in 18.
 
@@ -66,7 +66,7 @@ A26 (MSM D57): OK. Mate in 8.
 
 A27 (MSM D59): The original puzzle had a Gote Whale on 11f, which made the puzzle unsolvable due to said Whale protecting 6a and preventing a Kirin promotion. Replacing this Whale with a Gote White Horse repairs the puzzle but also speeds up the solution a bit, resulting in a mate in 14.
 
-A28 (MSM D60): OK. Mate in 21.
+A28 (MSM D60): OK. Mate in 19.
 
 A29 (MSM D61): OK. Mate in 11.
 
