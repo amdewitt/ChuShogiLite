@@ -17038,10 +17038,37 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                     moveHistory: [],
                 });
 
-                // Import just the moves (without SFEN) from the solution
-                // This will execute all moves sequentially
-                const solutionString = this.puzzleSolution.join(" ");
-                console.log("View Solution: Importing moves:", solutionString);
+                // Build solution string with comments included
+                // Format: {startingComment} move1 {comment1} move2 {comment2}...
+                // Use escapeComment to properly handle special characters
+                let solutionParts = [];
+
+                // Add starting comment if present
+                if (this.startingComment) {
+                    solutionParts.push(
+                        `{${this.escapeComment(this.startingComment)}}`,
+                    );
+                }
+
+                // Add each move with its comment
+                for (let i = 0; i < this.puzzleSolution.length; i++) {
+                    solutionParts.push(this.puzzleSolution[i]);
+                    // Add comment if present for this move
+                    if (
+                        this.puzzleSolutionComments &&
+                        this.puzzleSolutionComments[i]
+                    ) {
+                        solutionParts.push(
+                            `{${this.escapeComment(this.puzzleSolutionComments[i])}}`,
+                        );
+                    }
+                }
+
+                const solutionString = solutionParts.join(" ");
+                console.log(
+                    "View Solution: Importing moves with comments:",
+                    solutionString,
+                );
 
                 // Use the importGame method with just moves
                 const importResult = this.importGame(solutionString);
@@ -17050,11 +17077,6 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                     console.log(
                         "View Solution: Successfully imported complete solution",
                     );
-
-                    // Switch to Info tab to show the complete move history
-                    this.switchTab("moves");
-
-                    console.log("View Solution: Switched to Info tab");
                 } else {
                     throw new Error("Failed to import puzzle solution");
                 }
