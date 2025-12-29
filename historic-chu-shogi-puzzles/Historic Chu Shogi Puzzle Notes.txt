@@ -2,7 +2,7 @@ From the fact that different manuscripts often give different solutions for the 
 
 NOTE: For puzzles that were renamed, their original name is given in parentheses.
 
-NOTE: The puzzle lengths are measured in terms of moves by each player, but the solutions will always have the turn number before every move, which, unlike in Chess, is incremented every turn.
+NOTE: The puzzle lengths here are measured in terms of moves by each player, but the solutions will always have the turn number before every move, which, unlike in Chess, is incremented every turn.
 
 NOTE: In the E-Series, only the first 10 puzzles are from the MSM. E11 and E12 were created by A. M. DeWitt specifically for this collection, E13 is from the Shinan collection (https://toybox.a.la9.jp/chushogi/dhtmlchu/shinan/), and is the only one that was not also included in the MSM. The rest are from the TumeChu collection (https://www.asahi-net.or.jp/~xr9s-ymgc/tume/tumechu_allitiran.html), with the three puzzles that were more than a thousand turns long being put at the very end in order of solution length.
 
