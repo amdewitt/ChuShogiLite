@@ -72,7 +72,7 @@ A29 (MSM D61): OK. Mate in 11.
 
 A30 (MSM D63): This puzzle has a parasitic mate in 8, with almost all pieces on the lower half of the board as well as Gote's Copper General on 12f having no function, making the original SFEN of the puzzle as follows (uses Winboard format):
 
-1+P1i1g6/+A1k1+V3dD2/+l1m1+G1+t5/2r2X6/8+aq2/c11/9p2/1Pt9/1n1+p4+p2+F/4m5NH/7+r+i3/4G7 w - 0 1
+1+P1i1g6/+A1k1+V3dD2/+l1m1+G1+t5/2r2X6/8+aq2/c11/9p2/1Pt9/1n1+p4+p2+F/4m5NH/7+r+i3/4G7 b - 1
 
 The mate can be made non-parasitic by removing these pieces and placing a Gote Promoted Pawn (Gold General) on 3i.
 
@@ -180,7 +180,7 @@ B29: OK. Mate in 18.
 
 B30: The original puzzle had many additional pieces on the leftmost third of the board as well as a Sente Pawn on 4i, a Gote Silver General on 3j, and a Sente Gold General on 4k that caused a parasitic mate in 8, making the original SFEN of the puzzle as follows (uses Winboard format):
 
-1r3e1g1c1l/+P4t+G2t2/7k1+Pf1/1f+b4pppp1/1p1p+apn5/7P2+OX/T5N1i3/1P10/2+r5P2Q/+g8s2/+M7G3/1F4q5 w - 0 1
+1r3e1g1c1l/+P4t+G2t2/7k1+Pf1/1f+b4pppp1/1p1p+apn5/7P2+OX/T5N1i3/1P10/2+r5P2Q/+g8s2/+M7G3/1F4q5 b - 1
 
 The mate can be made non-parasitic by removing these pieces.
 
@@ -320,7 +320,7 @@ C43: The original puzzle had a Gote Promoted Pawn (Gold General) on 5g, and coul
 
 C44: The original puzzle had many extra pieces on the upper third of the board which caused in a parasitic mate in 36, making the original SFEN of the puzzle as follows (uses Winboard format):
 
-h1+P9/4+I3+P3/+Pmd1g1fe1cm+C/4+I3g3/12/5s4+SP/Q8x2/2f+p8/R3S2O4/+t1+b3n5/1R6GM1+p/1G5k2+i1 w - 0 1
+h1+P9/4+I3+P3/+Pmd1g1fe1cm+C/4+I3g3/12/5s4+SP/Q8x2/2f+p8/R3S2O4/+t1+b3n5/1R6GM1+p/1G5k2+i1 b - 1
 
 Unlike most parasitic solutions, this one follows the intended solution for a very long time before quickly deviating to a fast mate after about 33 moves. The mate can be made non-parasitic by removing the extra pieces.
 
@@ -334,13 +334,13 @@ C48: OK. Mate in 16.
 
 C49: The original puzzle had many extra pieces on the rightmost 5 ranks of the board which caused in a parasitic mate in 11, making the original SFEN of the puzzle as follows (uses Winboard format):
 
-2v3d+S4/3gm4c2/4+P4+P2/1p4+M1+P3/+P1+P+f2+Ip4/2n2+h4g1/1+e2c1H2C1l/3p3Pf3/3P+hB6/H3T3+R3/3+A1+pTM4/+l3Q1D3VL w - 0 1
+2v3d+S4/3gm4c2/4+P4+P2/1p4+M1+P3/+P1+P+f2+Ip4/2n2+h4g1/1+e2c1H2C1l/3p3Pf3/3P+hB6/H3T3+R3/3+A1+pTM4/+l3Q1D3VL b - 1
 
 The mate can be made non-parasitic by removing the extra pieces, and delayed to a mate in 13 by removing the Gote Copper General on 8g.
 
 C50: The original puzzle had a whole smorgasbord of extra pieces all over the place which prevented a solution due to Sente running out of checks, making the original SFEN of the puzzle as follows (uses Winboard format):
 
-+G+m2+Pxs+as+A1q/+L+r3b1CiG1C/+R1nv3+R4/2mg4+A2l/T1V+ct+FH+h+gv2/cD2+p2f+V+r+LM/+pp+l+i2N+TISP1/M+d+F1BtPp4/2D3+pS2k1/+b2+H4E1+p1/3O+d2+p1+h2/3+f1X3+a+p1 w - 0 1
++G+m2+Pxs+as+A1q/+L+r3b1CiG1C/+R1nv3+R4/2mg4+A2l/T1V+ct+FH+h+gv2/cD2+p2f+V+r+LM/+pp+l+i2N+TISP1/M+d+F1BtPp4/2D3+pS2k1/+b2+H4E1+p1/3O+d2+p1+h2/3+f1X3+a+p1 b - 1
 
 A mate in 8 appears if all of the extra pieces are removed.
 
@@ -422,7 +422,7 @@ D37 (MSM D39): OK. Mate in 19.
 
 D38 (MSM D40): The original puzzle had many extra pieces on the upper-left section of the board which caused a parasitic mate in 8, making the original SFEN of the puzzle as follows (uses Winboard format):
 
-4+a+Iv1n3/1+mv9/3is+F+C2+P1+l/+P+f3+a5+I/2p3s2+D2/3P2p1+b2+p/4P2k4/5PXpi3/7+m3q/1+x10/11N/2Q+c3+F4 w - 0 1
+4+a+Iv1n3/1+mv9/3is+F+C2+P1+l/+P+f3+a5+I/2p3s2+D2/3P2p1+b2+p/4P2k4/5PXpi3/7+m3q/1+x10/11N/2Q+c3+F4 b - 1
 
 The mate can be made non-parasitic by removing these pieces.
 
