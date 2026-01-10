@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1"
+    />
+    <title>ChuShogiLite Embed Test</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+        padding: 20px;
+        background-color: #f0f0f0;
+      }
+      .demo-header {
+        text-align: center;
+        margin-bottom: 30px;
+        padding: 20px;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+      .test-section {
+        margin-bottom: 40px;
+        padding: 20px;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+      .test-section h3 {
+        color: #333;
+        margin-top: 0;
+        border-bottom: 2px solid #007bff;
+        padding-bottom: 10px;
+      }
+      .test-note {
+        background: #e7f3ff;
+        border: 1px solid #b3d9ff;
+        padding: 15px;
+        border-radius: 4px;
+        margin: 15px 0;
+        font-size: 14px;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Include files -->
+    <link rel="stylesheet" href="../chushogi-lite.css" />
+    <script src="../chushogi-lite.js"></script>
+
+    <div class="demo-header">
+      <h1>ChuShogiLite Embed Test</h1>
+      <p>HTML embed testing file</p>
+    </div>
+
+    <div class="test-section">
+      <h3>Standard Sandbox Mode Instance</h3>
+      <div class="test-note">
+        This instance uses <strong>sandbox</strong> mode (default), which shows
+        all controls including Undo, New Game, Reset buttons, Edit tab, and
+        Import section.
+      </div>
+
+      <!-- Game container with explicit configuration -->
+      <div
+        class="chuShogiLite"
+        data-config='{"boardSize": "large", "appletMode": "sandbox", "allowIllegalMoves": false, "showLastMove": true, "showPromotionZones": false, "showInfluenceDisplay": false, "startGame": null}'
+      ></div>
+    </div>
+
+    <div class="test-section">
+      <h3>ViewOnly Mode Instance</h3>
+      <div class="test-note">
+        This instance uses <strong>viewOnly</strong> mode, which hides
+        game-changing controls (Undo, New Game buttons, Edit tab, Game Import
+        section within Export/Import tab), disables board clicks for piece
+        movement, and restricts certain settings, useful for viewing recorded
+        games. Reset button, navigation controls, and Export functionality
+        remain available. Note: <strong>allowIllegalMoves</strong> is set to
+        <strong>true</strong> to test that viewOnly mode now respects the
+        configured value.
+      </div>
+
+      <!-- Game container with viewOnly mode and pre-loaded game -->
+      <div
+        class="chuShogiLite"
+        data-config='{
+        "boardSize": "large",
+        "showCoordinates": true,
+        "allowIllegalMoves": false,
+        "showLastMove": true,
+        "showPromotionZones": false,
+        "showInfluenceDisplay": false,
+        "autoPromoteCompatibles": false,
+        "renmeiBridgeCaptureRule": false,
+        "flipView": false,
+        "appletMode": "viewOnly",
+        "startGame": "{From 中象戯補録集 1710} 8i8h 5d5e 7j6h 8d8e 5i5h 7b5d 6k8i 6d6e 7i7h 6b6d 7k7i 5c6b 8j7k 10d10e 6j6k 9c11e 3i3h 8c7b 4j2h 7c8c 12i12h 10a9b 10l9k 9b9c 9k8j 9c8d 6h6g 8c10a 3l4k 10c8c 4k4j 3a4b 4j5i 6d7e 5h5g 6e6f 6g6f6g 6c6e 6g4g 3d3e 5i5h 8e8f 7i6h 8d8e 8j7i 4b5c 12j12i 11c10c 12h12g 12d12e 9h9g 6e7f 8i10g 12c12d 9g9h 4c2e 4g5i 8f8g 10g8i 8e8f 12i12h 11a11b 9l9k 9a9b 11l11k 9b9c 9k8j 9c8d 9j9k 8d8e 1i1h 1d1e 1h1g 2a2b 1j1i 11b11c 4h4g 11c10d 4i4h 10e10f 2l2k 8b9b 4l4k 10d10e 4k4j 10e11f 12h11h 10b9a 4j4i 7f9f 5k4k 11f11g 11h11g 9f11g 8h8g 8f8g 6h7g 8e8f 7g7e 7d7e 7h7g 10f10g 11i11h 11g12g11f 11h11g 11f9f 7i7h 8g7h 5i7h 7e7f 3k4l 7f7g 7h9j 11e9c 9j11h 7g7h 4l3k 5c6d 2h5k 9f8g 2i2h 8f7g 3h3g 3c7c 2h2g 7g8h 2g2f 2e1d 4i3h 8h8i 6k8i 8g6f 8i7j 6f5g5f 1i4i 5f4g4f 3k6h 4f6f 4h4g 5d7f 5k3i 7f5h 3i6f 5h7j 8k7j 9c6f 1g1f 2c3c 1f1e 1d2c 2f2e 3c3d 3g3f 2d2e 3f3e 3d2d 3h3g 2b3c 3g3f 3b4c 7j8i 9a10b 8i7h 6f5f 5j5f 5e5f 8j8i 5f5g 10j7j 2c3b 11j10j 2d2b 10j9j 6d6e 9j8j 6e5f 4k5j 5g5h 8j8k 10a11a 4i1i 5f5g 6h7i 7c5c 5j4i 5g4h 7h6h 4h4i 1i4i 10b2j+ 3j2j 8c7c 8i7h 11a6f 7k3k 5a4b 7i6j 5c5d 8k7k 8a8b 6j4h 6f6c 11k10j 3c2d 5l6k 4b3c 11h10g9g 3b4b 9g7i 2e2f 6h5g 2d2e 7i5h 3c2d 7j3j 2b3b 7h6g 10c9c 4g4f 4e4f 5h4f 4b6d 4f4g 6d4b 6g5f 2e3f 4g3f2f 4b3c 2f4f 2d2c 5f5e 5d8d 5g4g 7b8c 4h8d+ 8c8d 7k7c+ 6c7c 6l7k 7c7f 4f5g 4d4e 10k6g 7f7e 5e6f 7e7c 4g5f 9e9f 3j7j 7c6c 5f4e 9d9e 4e5e 11d11e 6g4e 6c5c 5g5f 8b7c 6i6h 9c8c 8l8k 5b6c 5f4f 5c5b 2k3j 6c5c 7j5j 4a4b 3j3i 6b8b 3i4h 7a6b 6k7j 3c2b 3k2k 3b3c 1e1d+ 1c1d 4e2c 3c2c 2j2c 2b2c 2k2c+ 8d2d 5j2j 2d2c 2j2c+ 5c4d 9k9j 4d3c 2c1b 1a1b 9j1b+ 4c3b 1k1d 12d1d 1l1d+ 3b1d 1b1d 5b8e 1d3d 3c4c 3d9j 4c5b 8k8j 12e12f 7l8k 12f12g 6f6e 9f9g 6e6d+ 12g12h 4f5d 6a7a 10i10h 12h12i+ 10j10i 8b9c 5e6e 9g9h 6e7d 7c7d 6d7d 7a6a 9j3d 4b5a 3d5b {Gote resign.}"
+      }'
+      ></div>
+    </div>
+
+    <div class="test-section">
+      <h3>FixedStart Mode Instance</h3>
+      <div class="test-note">
+        This instance uses <strong>fixedStart</strong> mode (default), which
+        blocks any settings that change the starting position.
+      </div>
+
+      <!-- Game container with fixedStart mode -->
+      <div
+        class="chuShogiLite"
+        data-config='{
+        "boardSize": "large",
+        "appletMode": "fixedStart",
+        "allowIllegalMoves": false,
+        "showLastMove": true,
+        "showPromotionZones": false,
+        "showInfluenceDisplay": false,
+        "autoPromoteCompatibles": false,
+        "renmeiBridgeCaptureRule": false,
+        "flipView": false
+      }'
+      ></div>
+    </div>
+
+    <div class="test-section">
+      <h3>FixedRules Mode Instance</h3>
+      <div class="test-note">
+        This instance uses <strong>fixedRules</strong> mode, which blocks rule
+        settings changes but allows editing and importing.
+      </div>
+
+      <!-- Game container with fixedRules mode -->
+      <div
+        class="chuShogiLite"
+        data-config='{
+        "boardSize": "large",
+        "appletMode": "fixedRules",
+        "allowIllegalMoves": false,
+        "showLastMove": true,
+        "showPromotionZones": false,
+        "showInfluenceDisplay": false,
+        "autoPromoteCompatibles": false,
+        "renmeiBridgeCaptureRule": false,
+        "lishogiPromotionRule": false,
+        "flipView": false
+      }'
+      ></div>
+    </div>
+
+    <div class="test-section">
+      <h3>FixedStartAndRules Mode Instance</h3>
+      <div class="test-note">
+        This instance uses <strong>fixedStartAndRules</strong> mode, which
+        combines both fixedStart and fixedRules restrictions - hides Edit tab,
+        restricts imports, and blocks rule changes.
+      </div>
+
+      <!-- Game container with fixedStartAndRules mode -->
+      <div
+        class="chuShogiLite"
+        data-config='{
+        "boardSize": "large",
+        "appletMode": "fixedStartAndRules",
+        "allowIllegalMoves": false,
+        "showLastMove": true,
+        "showPromotionZones": false,
+        "showInfluenceDisplay": false,
+        "autoPromoteCompatibles": false,
+        "renmeiBridgeCaptureRule": false,
+        "lishogiPromotionRule": false,
+        "flipView": false
+      }'
+      ></div>
+    </div>
+
+    <div class="test-section">
+      <h3>FixedSettings Mode Instance</h3>
+      <div class="test-note">
+        This instance uses <strong>fixedSettings</strong> mode, which blocks all
+        settings changes but allows editing and importing.
+      </div>
+
+      <!-- Game container with fixedRules mode -->
+      <div
+        class="chuShogiLite"
+        data-config='{
+        "boardSize": "large",
+        "appletMode": "fixedSettings",
+        "allowIllegalMoves": false,
+        "showLastMove": true,
+        "showPromotionZones": false,
+        "showInfluenceDisplay": false,
+        "autoPromoteCompatibles": false,
+        "renmeiBridgeCaptureRule": false,
+        "lishogiPromotionRule": false,
+        "flipView": false
+      }'
+      ></div>
+    </div>
+
+    <div class="test-section">
+      <h3>FixedStartAndSettings Mode Instance</h3>
+      <div class="test-note">
+        This instance uses <strong>fixedStartAndSettings</strong> mode, which
+        combines both fixedStart and fixedSettings restrictions - hides Edit tab,
+        restricts imports, and blocks all settings changes.
+      </div>
+
+      <!-- Game container with fixedStartAndRules mode -->
+      <div
+        class="chuShogiLite"
+        data-config='{
+        "boardSize": "large",
+        "appletMode": "fixedStartAndSettings",
+        "allowIllegalMoves": false,
+        "showLastMove": true,
+        "showPromotionZones": false,
+        "showInfluenceDisplay": false,
+        "autoPromoteCompatibles": false,
+        "renmeiBridgeCaptureRule": false,
+        "lishogiPromotionRule": false,
+        "flipView": false
+      }'
+      ></div>
+    </div>
+
+    <div class="test-section">
+      <h3>Puzzle Mode Instance</h3>
+      <div class="test-note">
+        This instance uses <strong>puzzle</strong> mode, which validates moves
+        against a solution sequence. Rules settings and imports are blocked.
+        Opponent moves execute automatically.
+      </div>
+
+      <!-- Game container with puzzle mode -->
+      <div
+        class="chuShogiLite"
+        data-config='{
+        "boardSize": "large",
+        "appletMode": "puzzle",
+        "allowIllegalMoves": false,
+        "showLastMove": true,
+        "showPromotionZones": false,
+        "showInfluenceDisplay": false,
+        "autoPromoteCompatibles": false,
+        "renmeiBridgeCaptureRule": false,
+        "lishogiPromotionRule": false,
+        "flipView": false,
+        "startGame": "11l/5t2o1+O1/5n1t1s2/3m3k3q/5pP2p2/12/5N3f2/3+L4+b3/6+A5/12/12/12 b - 1 7g6g5f 5d6c 2b4a 1d4a 6e6d 7c6d {Pawn deferral to avoid bridge-capture} 6i6d 5c6d 5f6e 6c6b 9h9e 6b5b 6e6d7c 5b4c 9e9h 7e7f 9h7f 4c3d 7c5e 3d2e 5e4e 2e1e 4e3e"
+      }'
+      ></div>
+    </div>
+  </body>
+</html>
