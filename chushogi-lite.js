@@ -11083,7 +11083,6 @@ impossible to fulfill for either player, the game is considered a draw.</p>
   "showPromotionZones": false,
   "showInfluenceDisplay": false,
   "allowIllegalMoves": false,
-  "allowCustomComments": true,
   "midpointProtection": false,
   "trappedLancePromotion": false,
   "repetitionHandling": "strict"
@@ -14472,7 +14471,8 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                 target === null ||
                 (typeof target === "number" && target === livePositionIndex) ||
                 // Special case: navigating to start when no moves have been played
-                ((target === "start" || target === -1) && this.moveHistory.length === 0);
+                ((target === "start" || target === -1) &&
+                    this.moveHistory.length === 0);
 
             // Clear puzzle pause state only when navigating away from live position
             if (
