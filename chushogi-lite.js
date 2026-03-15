@@ -3528,7 +3528,7 @@ case of multiple Lions.</p>
             </li>
             </ul>
             <ul>
-            <li>A non-Lion cannot capture a Lion when in the immediately preceding turn a Lion
+            <li>Counter-strike - A non-Lion cannot capture a Lion when in the immediately preceding turn a Lion
 was captured by a non-Lion on another square.
                 <ul>
                 <li>This includes double moves from Horned Falcons and Soaring Eagles.</li>
