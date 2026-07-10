@@ -101,6 +101,12 @@
   --shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
   --overlay-dark: rgba(0, 0, 0, 0.5);
 
+  /* Move Diagram Colors */
+  --move-type-jump: #4caf50;
+  --move-type-slide: #e53935;
+  --move-type-lion-linear: #2196f3;
+  --move-type-lion-full: #f9a825;
+
   /* ===== END OF CSS VARIABLES ===== */
 
   /* Reset potential inherited styles from parent page */
@@ -1085,6 +1091,194 @@
   display: block !important;
 }
 
+.chushogi-info-sub-tab-list {
+  display: flex !important;
+  border-bottom: 1px solid var(--border-light) !important;
+  margin-bottom: 8px !important;
+}
+
+.chushogi-info-sub-tab {
+  flex: 1 !important;
+  padding: 6px 4px !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  color: var(--text-color-sidebar) !important;
+  border-bottom: 2px solid transparent !important;
+  cursor: pointer !important;
+  transition: color 0.2s, border-color 0.2s !important;
+  text-align: center !important;
+}
+
+.chushogi-info-sub-tab.active {
+  border-bottom-color: var(--tab-active) !important;
+}
+
+.chushogi-info-subpanel {
+  display: none !important;
+}
+
+.chushogi-info-subpanel.active {
+  display: block !important;
+}
+
+/* ===== Piece Info: Legend ===== */
+.chushogi-piece-legend {
+  padding: 8px 0 12px !important;
+  border-bottom: 1px solid var(--border-light) !important;
+  margin-bottom: 12px !important;
+}
+
+.chushogi-legend-title {
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.06em !important;
+  color: var(--text-color-sidebar) !important;
+  opacity: 0.6 !important;
+  margin-bottom: 8px !important;
+}
+
+.chushogi-legend-items {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: 6px 12px !important;
+}
+
+.chushogi-legend-item {
+  display: flex !important;
+  align-items: center !important;
+  gap: 7px !important;
+}
+
+.chushogi-legend-swatch {
+  flex-shrink: 0 !important;
+  width: 14px !important;
+  height: 14px !important;
+  border-radius: 3px !important;
+  opacity: 0.85 !important;
+}
+
+.chushogi-legend-jump   { background-color: var(--move-type-jump) !important; }
+.chushogi-legend-slide  { background-color: var(--move-type-slide) !important; }
+.chushogi-legend-lion-linear { background-color: var(--move-type-lion-linear) !important; }
+.chushogi-legend-lion-full   { background-color: var(--move-type-lion-full) !important; }
+
+.chushogi-legend-label {
+  font-size: 14px !important;
+  color: var(--text-color-sidebar) !important;
+}
+
+.chushogi-piece-info-placeholder {
+  font-size: 14px !important;
+  color: var(--text-color-sidebar) !important;
+  opacity: 0.55 !important;
+  font-style: italic !important;
+  text-align: center !important;
+  padding: 16px 8px !important;
+}
+
+/* ===== Piece Info: Name + Diagram ===== */
+.chushogi-piece-traits {
+  margin: 8px 0 0 !important;
+  padding-left: 18px !important;
+  list-style: disc !important;
+  font-size: 14px !important;
+  color: var(--text-color-sidebar) !important;
+  opacity: 0.85 !important;
+  line-height: 1.5 !important;
+}
+
+.chushogi-piece-traits li {
+  margin-bottom: 2px !important;
+}
+
+.chushogi-piece-diagram-tab-list {
+  display: flex !important;
+  border-bottom: 1px solid var(--border-light) !important;
+  margin-bottom: 8px !important;
+}
+
+.chushogi-piece-diagram-tab {
+  flex: 1 !important;
+  padding: 5px 4px !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  color: var(--text-color-sidebar) !important;
+  border-bottom: 2px solid transparent !important;
+  cursor: pointer !important;
+  transition: color 0.2s, border-color 0.2s !important;
+  text-align: center !important;
+}
+
+.chushogi-piece-diagram-tab.active {
+  border-bottom-color: var(--tab-active) !important;
+}
+
+.chushogi-piece-diagram-panel {
+  display: none !important;
+}
+
+.chushogi-piece-diagram-panel.active {
+  display: block !important;
+}
+
+.chushogi-piece-info-promotes-label {
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.06em !important;
+  color: var(--text-color-sidebar) !important;
+  opacity: 0.6 !important;
+  text-align: center !important;
+  margin: 12px 0 6px !important;
+  padding-top: 12px !important;
+  border-top: 1px solid var(--border-light) !important;
+}
+
+.chushogi-piece-info-name {
+  font-size: 18px !important;
+  font-weight: 600 !important;
+  color: var(--text-color-sidebar) !important;
+  margin-bottom: 8px !important;
+  text-align: center !important;
+}
+
+.chushogi-move-diagram {
+  display: grid !important;
+  grid-template-columns: repeat(5, 1fr) !important;
+  gap: 2px !important;
+  margin: 0 auto 12px !important;
+  max-width: 160px !important;
+}
+
+.chushogi-diagram-cell {
+  aspect-ratio: 1 !important;
+  border-radius: 2px !important;
+  outline: 1px solid var(--border-square) !important;
+}
+
+.chushogi-diagram-piece {
+  background-color: var(--background-board-square) !important;
+  border: 2px solid var(--border-board-edge) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 1.1em !important;
+  font-weight: 700 !important;
+  color: var(--text-color-piece, #1a1a1a) !important;
+  line-height: 1 !important;
+}
+
+.chushogi-diagram-empty {
+  background-color: var(--background-board-square) !important;
+  opacity: 0.35 !important;
+}
+
+.chushogi-diagram-jump        { background-color: var(--move-type-jump) !important; opacity: 0.85 !important; }
+.chushogi-diagram-slide       { background-color: var(--move-type-slide) !important; opacity: 0.85 !important; }
+.chushogi-diagram-lion-linear { background-color: var(--move-type-lion-linear) !important; opacity: 0.85 !important; }
+.chushogi-diagram-lion-full   { background-color: var(--move-type-lion-full) !important; opacity: 0.85 !important; }
+
 .chushogi-game-log {
   margin-bottom: 16px !important;
   display: flex !important;
@@ -1452,13 +1646,15 @@
   margin: 0 0 12px 0 !important;
 }
 
-.chushogi-help-content ul {
+.chushogi-help-content ul,
+.chushogi-setting-group ul {
   margin: 8px 0 12px 0 !important;
   padding-left: 20px !important;
   list-style-type: disc !important;
 }
 
-.chushogi-help-content li {
+.chushogi-help-content li,
+.chushogi-setting-group li {
   margin-bottom: 0px !important;
   display: list-item !important;
 }

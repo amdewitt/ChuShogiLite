@@ -764,6 +764,10 @@
             this.lastMove = null;
             this.gameStatus = "playing";
             this.currentTab = "moves"; // Track current active tab
+            this.currentInfoSubTab = "game-info"; // Track active sub-tab in Info panel
+            this.currentPieceSubTab = "piece"; // Track active sub-tab in Piece Info panel
+            this.lastDiagramPieceType = null; // Reset piece sub-tab when piece changes
+            this.inspectedSquare = null; // Square inspected for info without selecting
             this.lastLionCapture = null; // Track last Lion capture location for SFEN
             this.startingLionCapture = null; // Track Lion capture state from starting position
             this.startingSFEN = null; // Track the initial starting position for New Game button
@@ -1699,10 +1703,10 @@
         <div class="chushogi-controls">
           <div class="chushogi-action-buttons">
             <div class="chushogi-drawing-controls">
-              <input type="checkbox" data-drawing-shift title="Left = Red shapes" style="outline: 3px solid #00af0e;">
-              <input type="checkbox" data-drawing-alt title="Right = Blue shapes" style="outline: 3px solid #00af0e;">
+              <input type="checkbox" data-drawing-shift title="Neither = Green shapes, Left = Red shapes,\nRight = Blue shapes, Both = Gold shapes" style="outline: 3px solid #00af0e;">
+              <input type="checkbox" data-drawing-alt title="Neither = Green shapes, Left = Red shapes,\nRight = Blue shapes, Both = Gold shapes" style="outline: 3px solid #00af0e;">
             </div>
-            <button class="chushogi-btn" onclick="this.closest('.chushogi-container').chuShogiInstance.flipBoard()">🔄
+            <button class="chushogi-btn" onclick="this.closest('.chushogi-container').chuShogiInstance.flipBoard()" title="Flip board view">🔄
             </button>
             <button class="chushogi-btn" data-nav-start onclick="this.closest('.chushogi-container').chuShogiInstance.goToStart()" title="Go to start position">|&lt;
             </button>
@@ -1720,13 +1724,13 @@
             }
             ${
                 !isViewOnly
-                    ? `<button class="chushogi-btn" onclick="this.closest('.chushogi-container').chuShogiInstance.confirmNewGame()">⌫
+                    ? `<button class="chushogi-btn" onclick="this.closest('.chushogi-container').chuShogiInstance.confirmNewGame()" title="Start a new game">⌫
             </button>`
                     : ""
             }
             ${
                 !isPuzzle
-                    ? `<button class="chushogi-btn" onclick="this.closest('.chushogi-container').chuShogiInstance.confirmReset()">⟳
+                    ? `<button class="chushogi-btn" onclick="this.closest('.chushogi-container').chuShogiInstance.confirmReset()" title="Reset board state">⟳
             </button>`
                     : ""
             }
@@ -1965,31 +1969,63 @@
 
         generateMovesPanel() {
             return `
-        <div class="chushogi-game-log">
-          <h4>Game Log</h4>
-          <div class="chushogi-checkbox" style="margin-bottom: 8px;">
-            <input type="checkbox" id="show-sfen-${this.instanceId}" ${this.config.displaySFEN ? "checked" : ""}>
-            <label for="show-sfen-${this.instanceId}">Display SFEN</label>
-          </div>
-          <div class="chushogi-checkbox" style="margin-bottom: 8px;">
-            <input type="checkbox" id="use-inline-notation-${this.instanceId}" ${this.config.displayInlineNotation ? "checked" : ""}>
-            <label for="use-inline-notation-${this.instanceId}">Display inline notation</label>
-          </div>
-          <div class="chushogi-displayed-position-section">
-            <div class="chushogi-position-display" translate="no" data-position-display>
+        <div class="chushogi-info-sub-tab-list">
+          <div class="chushogi-info-sub-tab ${this.currentInfoSubTab === "game-info" ? "active" : ""}" data-info-subtab="game-info" onclick="this.closest('.chushogi-container').chuShogiInstance.switchInfoSubTab('game-info')">Game Info</div>
+          <div class="chushogi-info-sub-tab ${this.currentInfoSubTab === "piece-info" ? "active" : ""}" data-info-subtab="piece-info" onclick="this.closest('.chushogi-container').chuShogiInstance.switchInfoSubTab('piece-info')">Piece Info</div>
+        </div>
+        <div class="chushogi-info-subpanel ${this.currentInfoSubTab === "game-info" ? "active" : ""}" data-info-subpanel="game-info">
+          <div class="chushogi-game-log">
+            <h4>Game Log</h4>
+            <div class="chushogi-checkbox" style="margin-bottom: 8px;">
+              <input type="checkbox" id="show-sfen-${this.instanceId}" ${this.config.displaySFEN ? "checked" : ""}>
+              <label for="show-sfen-${this.instanceId}">Display SFEN</label>
+            </div>
+            <div class="chushogi-checkbox" style="margin-bottom: 8px;">
+              <input type="checkbox" id="use-inline-notation-${this.instanceId}" ${this.config.displayInlineNotation ? "checked" : ""}>
+              <label for="use-inline-notation-${this.instanceId}">Display inline notation</label>
+            </div>
+            <div class="chushogi-displayed-position-section">
+              <div class="chushogi-position-display" translate="no" data-position-display>
+              </div>
+            </div>
+            <div class="chushogi-sfen-section">
+              <textarea class="chushogi-sfen-display" translate="no" data-current-sfen readonly placeholder="Loading..."></textarea>
+            </div>
+            <div class="chushogi-move-list" translate="no" data-move-list>
+              <div class="chushogi-move-item">Starting Position</div>
+              ${this.moveHistory
+                  .map(
+                      (move, index) =>
+                          `<div class="chushogi-move-item" data-move="${index}">${index + 1}. ${move.notation}</div>`,
+                  )
+                  .join("")}
             </div>
           </div>
-          <div class="chushogi-sfen-section">
-            <textarea class="chushogi-sfen-display" translate="no" data-current-sfen readonly placeholder="Loading..."></textarea>
+        </div>
+        <div class="chushogi-info-subpanel ${this.currentInfoSubTab === "piece-info" ? "active" : ""}" data-info-subpanel="piece-info">
+          <div class="chushogi-piece-legend">
+            <div class="chushogi-legend-title">Move Types</div>
+            <div class="chushogi-legend-items">
+              <div class="chushogi-legend-item" title="Jump to this square, ignoring other pieces">
+                <span class="chushogi-legend-swatch chushogi-legend-jump"></span>
+                <span class="chushogi-legend-label">Jump</span>
+              </div>
+              <div class="chushogi-legend-item" title="Move any number of squares in a straight line,\nstopping at the first obstacle or capture">
+                <span class="chushogi-legend-swatch chushogi-legend-slide"></span>
+                <span class="chushogi-legend-label">Slide</span>
+              </div>
+              <div class="chushogi-legend-item" title="Move to this square, then optionally move to\nany adjacent square along the same line">
+                <span class="chushogi-legend-swatch chushogi-legend-lion-linear"></span>
+                <span class="chushogi-legend-label">Linear Lion Move</span>
+              </div>
+              <div class="chushogi-legend-item" title="Move to this square, then optionally\nmove to any adjacent square">
+                <span class="chushogi-legend-swatch chushogi-legend-lion-full"></span>
+                <span class="chushogi-legend-label">Full Lion Move</span>
+              </div>
+            </div>
           </div>
-          <div class="chushogi-move-list" translate="no" data-move-list>
-            <div class="chushogi-move-item">Starting Position</div>
-            ${this.moveHistory
-                .map(
-                    (move, index) =>
-                        `<div class="chushogi-move-item" data-move="${index}">${index + 1}. ${move.notation}</div>`,
-                )
-                .join("")}
+          <div data-piece-info-display>
+            <div class="chushogi-piece-info-placeholder">Click a piece to see its moves.</div>
           </div>
         </div>
       `;
@@ -2093,7 +2129,7 @@
           <div class="chushogi-setting-group">
             <h4>Game Export</h4>
             <textarea class="chushogi-textarea" translate="no" data-game-export readonly>Loading...</textarea>
-            <button class="chushogi-btn-primary" onclick="this.closest('.chushogi-container').chuShogiInstance.exportGame()">
+            <button class="chushogi-btn-primary" onclick="this.closest('.chushogi-container').chuShogiInstance.exportGame()" title="Copy current CSL notation to clipboard">
               ↓ Export Game
             </button>
           </div>
@@ -2113,8 +2149,8 @@
               !isViewOnly && !isPuzzle
                   ? `<div class="chushogi-setting-group">
             <h4>Game Import${isFixedStart ? " (Restricted)" : ""}</h4>
-            <textarea class="chushogi-textarea" placeholder="Paste game in Game Export format (i. e. SFEN {StartComment} USIMove1 USIMove2 {Comment2}... or USIMove1 USIMove2...) here..." data-game-import=""></textarea>
-            <button class="chushogi-btn-primary" onclick="this.closest('.chushogi-container').chuShogiInstance.importGameFromInput()">
+            <textarea class="chushogi-textarea" placeholder="Paste game in CSL notation (i. e. SFEN {StartComment} USIMove1 USIMove2 {Comment2}... or USIMove1 USIMove2...) here..." data-game-import=""></textarea>
+            <button class="chushogi-btn-primary" onclick="this.closest('.chushogi-container').chuShogiInstance.importGameFromInput()" title="Import game from CSL notation">
               ↑ Import Game
             </button>
             ${isFixedStart ? `<p class="chushogi-help-text">Only moves-only games or games with a matching starting SFEN are allowed.</p>` : ""}
@@ -2228,6 +2264,7 @@
                             html += `<div class="chushogi-selector-square ${this.editMode.counterStrikeSelection ? "selected" : ""}" 
                          data-piece="counterstrike" 
                          onclick="this.closest('.chushogi-container').chuShogiInstance.selectPieceFromTable('counterstrike')"
+                         oncontextmenu="event.preventDefault(); this.closest('.chushogi-container').chuShogiInstance.relaxCounterStrikeRule()"
                          title="Counter-strike Rule Selection">
                          🛡️
                        </div>`;
@@ -2303,11 +2340,11 @@
           <div class="chushogi-setting-group">
             <h4>Position Setup</h4>
             <div class="chushogi-edit-controls">
-              <button class="chushogi-btn-primary" onclick="this.closest('.chushogi-container').chuShogiInstance.clearBoard()">
+              <button class="chushogi-btn-primary" onclick="this.closest('.chushogi-container').chuShogiInstance.clearBoard()" title="Empty the board">
                 🗑️ Clear Board
               </button>
 
-              <button class="chushogi-btn-primary" onclick="this.closest('.chushogi-container').chuShogiInstance.confirmSetStartPosition()">
+              <button class="chushogi-btn-primary" onclick="this.closest('.chushogi-container').chuShogiInstance.confirmSetStartPosition()" title="Start a new game from the displayed position,\nwith the selected player moving first">
                 📍 Set Start Position
               </button>
 
@@ -3651,13 +3688,18 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                 <li>> or → key: navigates one move forward</li>
                 <li>>| or ↓ key: navigates to current position</li>
                 ${!isViewOnly ? "<li>↶: undoes the last move</li>" : ""}
+                ${!isViewOnly ? "<li>✂: trims the game to the displayed position</li>" : ""}
                 ${!isViewOnly ? "<li>⌫: starts a new game</li>" : ""}
                 ${!isPuzzle ? "<li>⟳: resets the board to its original state</li>" : ""}
               </ul>
               <p><strong>Sidebar:</strong></p>
               <p>Use the tabs to switch between different panels</p>
               <ul>
-                <li>📋 Info: Shows information about the current game</li>
+                <li>📋 Info: Shows information about the current game and the selected piece
+                <ul>
+                <li>Click a moves in the move history to jump to that point in the game</li>
+                </ul>
+                </li>
                 <li>⚙️ Settings: Shows available settings${isViewOnly ? " (some settings are restricted in view-only mode)" : ""}</li>
                 <li>⇅ Export/Import: Allows for games to be exported to plaintext${!isViewOnly ? (isFixedStart ? " and imported from plaintext (imports restricted to same starting position)" : " and imported from plaintext") : " (Game imports not available in viewOnly mode)"}${isPuzzle ? " and has a 'View Solution' button to reveal the complete puzzle answer" : ""}</li>
                 ${!isViewOnly && !isFixedStart && !isPuzzle ? "<li>✏️ Edit: Allows the board to be edited without importing a game</li>" : ""}
@@ -3708,7 +3750,7 @@ impossible to fulfill for either player, the game is considered a draw.</p>
               </ul>`
               }
               <p><strong>Game Export${!isViewOnly && !isPuzzle ? "/Import" : ""}:</strong></p>
-              <p>The ⇅ Export/Import tab allows for games to be exported to plaintext${!isViewOnly && !isPuzzle ? (isFixedStart ? " and imported from plaintext (imports restricted)." : " and imported from plaintext.") : "."}.${isPuzzle ? " For puzzles, a 'View Solution' button to reveal the complete puzzle answer, and imports are not available." : ""}</p><p>The format used for a game's plaintext is very simple: an SFEN followed by a sequence of moves in Universal Shogi Notation (USI) and optional comments enclosed in {} curly brackets, all separated by spaces. Alternatively, you can import just the moves (without SFEN) to continue from the current game's starting position.${isFixedStart ? " Imports are restricted to moves-only format or games that start from the same position." : ""} An example is provided in the Game Export section.</p>
+              <p>The ⇅ Export/Import tab allows for games to be exported to plaintext${!isViewOnly && !isPuzzle ? (isFixedStart ? " and imported from plaintext (imports restricted)." : " and imported from plaintext.") : "."}${isPuzzle ? " For puzzles, a 'View Solution' button to reveal the complete puzzle answer, and imports are not available." : ""}</p><p>The format used for a game's plaintext is called CSL (short for ChuShogiLite) notation and is very simple: an SFEN followed by a sequence of moves in Universal Shogi Notation (USI) and optional comments enclosed in {} curly brackets, all separated by spaces. Alternatively, you can import just the moves (without SFEN) to continue from the current game's starting position.${isFixedStart ? " Imports are restricted to moves-only format or games that start from the same position." : ""} An example is provided in the Game Export section.</p>
               <p>SFEN {StartComment} USIMove1 USIMove2 {Comment2}...</p>
               <p>A comment for a move is placed immediately after that move, and the comment for the starting position is placed just before the first move.</p>
               <ul>
@@ -3744,7 +3786,7 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                 <li>To set the Counter-strike rule state, select the square with a shield
                 <ul>
                   <li>Click a piece on the board to invoke the Counter-strike rule on its square</li>
-                  <li>Click an empty board square to relax the rule</li>
+                  <li>Click an empty board square or right-click the shield to relax the rule</li>
                   <li>A highlight will show the current state while the ✏️ Edit tab is open</li>
                 </ul>
                 </li>
@@ -4581,6 +4623,7 @@ impossible to fulfill for either player, the game is considered a draw.</p>
 
             // Update drawing display after highlighting changes
             this.updateDrawingDisplay();
+            this.updatePieceInfoPanel();
         }
 
         updateSquareHighlights() {
@@ -8634,6 +8677,8 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                         piece.color === this.currentPlayer)
                 ) {
                     this.selectSquare(squareId);
+                } else if (piece) {
+                    this.inspectSquare(squareId);
                 }
             } else {
                 // No square selected - select if it's current player's piece
@@ -8643,6 +8688,12 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                         piece.color === this.currentPlayer)
                 ) {
                     this.selectSquare(squareId);
+                } else if (piece) {
+                    this.inspectSquare(squareId);
+                } else {
+                    // Empty square clicked - clear any passively inspected piece
+                    this.inspectedSquare = null;
+                    this.updatePieceInfoPanel();
                 }
             }
         }
@@ -8724,6 +8775,8 @@ impossible to fulfill for either player, the game is considered a draw.</p>
             );
             this.highlightManager.updateAll();
             this.updateBoard();
+            this.inspectedSquare = null;
+            this.updatePieceInfoPanel();
         }
 
         selectSquare(squareId) {
@@ -8737,6 +8790,8 @@ impossible to fulfill for either player, the game is considered a draw.</p>
             ) {
                 return;
             }
+
+            this.inspectedSquare = null; // Clear any passive inspection when selecting
 
             // Calculate moves with repetition info
             const movesInfo =
@@ -8979,6 +9034,7 @@ impossible to fulfill for either player, the game is considered a draw.</p>
             // Update highlights through centralized HighlightManager
             this.highlightManager.updateAll();
             this.updateBoard();
+            this.updatePieceInfoPanel();
         }
 
         // Double move helper functions
@@ -10859,6 +10915,226 @@ impossible to fulfill for either player, the game is considered a draw.</p>
             }
         }
 
+        switchInfoSubTab(subTabName) {
+            this.currentInfoSubTab = subTabName;
+            this.container
+                .querySelectorAll("[data-info-subtab]")
+                .forEach((el) => {
+                    el.classList.toggle(
+                        "active",
+                        el.dataset.infoSubtab === subTabName,
+                    );
+                });
+            this.container
+                .querySelectorAll("[data-info-subpanel]")
+                .forEach((el) => {
+                    el.classList.toggle(
+                        "active",
+                        el.dataset.infoSubpanel === subTabName,
+                    );
+                });
+        }
+
+        switchPieceSubTab(tabName) {
+            this.currentPieceSubTab = tabName;
+            this.updatePieceInfoPanel();
+        }
+
+        inspectSquare(squareId) {
+            this.inspectedSquare = squareId;
+            // Auto-switch to Piece Info sub-tab so the diagram is visible,
+            // then always refresh the panel (switchInfoSubTab only toggles classes).
+            if (this.currentInfoSubTab !== "piece-info") {
+                this.switchInfoSubTab("piece-info");
+            }
+            this.updatePieceInfoPanel();
+        }
+
+        buildMoveDiagram(pieceType) {
+            // 5x5 grid: row 0 = rank -2 (forward/opponent side), row 4 = rank +2 (own side)
+            //           col 0 = file -2 (left), col 4 = file +2 (right), center = [2][2]
+            const grid = Array.from({ length: 5 }, () => Array(5).fill(null));
+            const def = PIECE_DEFINITIONS[pieceType];
+            if (!def) return grid;
+
+            const dirs = this.parseMoveDefinition(def.movement);
+            const isFullLion = pieceType === "N" || pieceType === "+O";
+            const isLinearLionH = pieceType === "+H";
+            const isLinearLionD = pieceType === "+D";
+
+            // Higher priority wins when two move types share a cell
+            const priority = {
+                jump: 1,
+                slide: 2,
+                "lion-full": 3,
+                "lion-linear": 4,
+            };
+            const trySet = (r, c, type) => {
+                if (r < 0 || r > 4 || c < 0 || c > 4) return;
+                if (!grid[r][c] || priority[type] > priority[grid[r][c]]) {
+                    grid[r][c] = type;
+                }
+            };
+
+            if (isFullLion) {
+                // Adjacent squares (distance 1): lion-full double-move mechanic
+                for (let dr = -1; dr <= 1; dr++) {
+                    for (let dc = -1; dc <= 1; dc++) {
+                        if (dr === 0 && dc === 0) continue;
+                        trySet(2 + dr, 2 + dc, "lion-full");
+                    }
+                }
+                // Distance-2 squares (knight, alfil, dabbaba): direct jumps
+                for (const { rank: dr, file: dc } of dirs) {
+                    if (Math.abs(dr) === 2 || Math.abs(dc) === 2) {
+                        trySet(2 + dr, 2 + dc, "jump");
+                    }
+                }
+            } else {
+                for (const { rank: dr, file: dc, sliding } of dirs) {
+                    // Lion-linear only applies to the distance-1 step; the distance-2
+                    // landing square is a direct jump (green)
+                    let moveType;
+                    if (isLinearLionH && dc === 0 && dr < 0) {
+                        moveType = Math.abs(dr) === 1 ? "lion-linear" : "jump";
+                    } else if (
+                        isLinearLionD &&
+                        dr < 0 &&
+                        Math.abs(dc) === Math.abs(dr)
+                    ) {
+                        moveType = Math.abs(dr) === 1 ? "lion-linear" : "jump";
+                    } else {
+                        moveType = sliding ? "slide" : "jump";
+                    }
+
+                    if (sliding) {
+                        // Fill both reachable steps along this ray
+                        for (let step = 1; step <= 2; step++) {
+                            trySet(2 + dr * step, 2 + dc * step, moveType);
+                        }
+                    } else {
+                        trySet(2 + dr, 2 + dc, moveType);
+                    }
+                }
+            }
+
+            return grid;
+        }
+
+        updatePieceInfoPanel() {
+            const panel = this.container.querySelector(
+                '[data-info-subpanel="piece-info"]',
+            );
+            if (!panel) return;
+            const displayEl = panel.querySelector("[data-piece-info-display]");
+            if (!displayEl) return;
+
+            const sq = this.selectedSquare || this.inspectedSquare;
+            const piece = sq
+                ? utils.board.getPieceAt(this.board, sq)
+                : null;
+            const def = piece ? PIECE_DEFINITIONS[piece.type] : null;
+
+            if (!piece || !def) {
+                this.currentPieceSubTab = "piece";
+                this.lastDiagramPieceType = null;
+                displayEl.innerHTML =
+                    '<div class="chushogi-piece-info-placeholder">Click a piece to see its moves.</div>';
+                return;
+            }
+
+            // Reset to "piece" tab whenever a different piece type is selected
+            if (piece.type !== this.lastDiagramPieceType) {
+                this.currentPieceSubTab = "piece";
+                this.lastDiagramPieceType = piece.type;
+            }
+
+            const typeClass = {
+                jump: "chushogi-diagram-jump",
+                slide: "chushogi-diagram-slide",
+                "lion-linear": "chushogi-diagram-lion-linear",
+                "lion-full": "chushogi-diagram-lion-full",
+            };
+
+            const PIECE_TRAITS = {
+                k: ["Royal piece (No royal pieces = loss)"],
+                K: ["Royal piece (No royal pieces = loss)"],
+                "+E": ["Royal piece (No royal pieces = loss)"],
+                P: [
+                    "Promotion always allowed on last rank",
+                    "Cannot be used as a bridge-capture",
+                ],
+                I: ["Cannot be used as a bridge-capture"],
+                N: [
+                    "Cannot capture non-adjacent protected Lions without a bridge-capture",
+                ],
+                "+O": [
+                    "Cannot capture non-adjacent protected Lions without a bridge-capture",
+                ],
+            };
+
+            if (this.config.trappedLancePromotion) {
+                PIECE_TRAITS["L"] = ["Promotion always allowed on last rank"];
+            }
+
+            const renderTraits = (type) => {
+                const traits = [...(PIECE_TRAITS[type] || [])];
+                const isLion = type === "N" || type === "+O";
+                if (!isLion && this.lastLionCapture) {
+                    traits.push(
+                        `Can only capture a Lion on ${this.lastLionCapture} this turn`,
+                    );
+                }
+                if (isLion && this.lastLionCapture) {
+                    traits.push(
+                        `Immune to non-Lion captures this turn, except on ${this.lastLionCapture}`,
+                    );
+                }
+                if (traits.length === 0) return "";
+                return `<ul class="chushogi-piece-traits">${traits.map((t) => `<li>${t}</li>`).join("")}</ul>`;
+            };
+
+            const buildCells = (type, kanji) => {
+                const g = this.buildMoveDiagram(type);
+                let c = "";
+                for (let row = 0; row < 5; row++) {
+                    for (let col = 0; col < 5; col++) {
+                        if (row === 2 && col === 2) {
+                            c += `<div class="chushogi-diagram-cell chushogi-diagram-piece">${kanji}</div>`;
+                        } else {
+                            const t = g[row][col];
+                            c += t
+                                ? `<div class="chushogi-diagram-cell ${typeClass[t]}"></div>`
+                                : '<div class="chushogi-diagram-cell chushogi-diagram-empty"></div>';
+                        }
+                    }
+                }
+                return c;
+            };
+
+            const renderPanel = (type, pDef) =>
+                `<div class="chushogi-piece-info-name">${pDef.kanji} — ${pDef.name}</div>` +
+                `<div class="chushogi-move-diagram">${buildCells(type, pDef.kanji)}</div>` +
+                renderTraits(type);
+
+            let html;
+            if (def.promotes) {
+                const promDef = PIECE_DEFINITIONS[def.promotes];
+                const isPiece = this.currentPieceSubTab === "piece";
+                const tab = (name, label, active) =>
+                    `<div class="chushogi-piece-diagram-tab${active ? " active" : ""}" ` +
+                    `onclick="this.closest('.chushogi-container').chuShogiInstance.switchPieceSubTab('${name}')">${label}</div>`;
+                html =
+                    `<div class="chushogi-piece-diagram-tab-list">${tab("piece", "Piece", isPiece)}${tab("promotion", "Promotion", !isPiece)}</div>` +
+                    `<div class="chushogi-piece-diagram-panel${isPiece ? " active" : ""}">${renderPanel(piece.type, def)}</div>` +
+                    `<div class="chushogi-piece-diagram-panel${!isPiece ? " active" : ""}">${renderPanel(def.promotes, promDef)}</div>`;
+            } else {
+                html = renderPanel(piece.type, def);
+            }
+
+            displayEl.innerHTML = html;
+        }
+
         updateButtonStates() {
             const isEditTab = this.currentTab === "edit";
             const isPuzzleOpponentThinking =
@@ -10985,6 +11261,19 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                         shouldDisableUndo ? "not-allowed" : "pointer",
                         "important",
                     );
+                    // Show ✂ when undo would trim moves after the displayed position,
+                    // ↶ when it would simply undo the last move.
+                    const isTrimmingMode =
+                        this.isNavigating &&
+                        this.currentNavigationIndex !== null &&
+                        (this.currentNavigationIndex === -1
+                            ? this.moveHistory.length > 0
+                            : this.currentNavigationIndex <
+                              this.moveHistory.length - 1);
+                    undoBtn.textContent = isTrimmingMode ? "✂" : "↶";
+                    undoBtn.title = isTrimmingMode
+                        ? "Trim game to displayed position"
+                        : "Undo last move";
                 }
 
                 // Disable/enable other buttons based on edit mode or puzzle opponent thinking
@@ -11087,9 +11376,7 @@ impossible to fulfill for either player, the game is considered a draw.</p>
   "trappedLancePromotion": false,
   "repetitionHandling": "strict"
 }'>
-</div>
-
-`;
+</div>`;
             }
         }
 
@@ -11653,11 +11940,11 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                 if (this.config.displayInlineNotation) {
                     // Inline notation: display all moves in a single line using spans
                     const startingSpan =
-                        '<span class="chushogi-move-item-inline clickable" data-move="start">Starting Position</span>';
+                        '<span class="chushogi-move-item-inline clickable" data-move="start" title="Click to navigate here">Starting Position</span>';
                     const moveSpans = this.moveHistory
                         .map(
                             (move, index) =>
-                                `<span class="chushogi-move-item-inline clickable" data-move="${index}">${index + 1}. ${move.notation}</span>`,
+                                `<span class="chushogi-move-item-inline clickable" data-move="${index}" title="Click to navigate here">${index + 1}. ${move.notation}</span>`,
                         )
                         .join(" ");
                     moveList.innerHTML =
@@ -11666,11 +11953,11 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                 } else {
                     // Default: display moves in individual rows
                     moveList.innerHTML =
-                        '<div class="chushogi-move-item clickable" data-move="start">Starting Position</div>' +
+                        '<div class="chushogi-move-item clickable" data-move="start" title="Click to navigate here">Starting Position</div>' +
                         this.moveHistory
                             .map(
                                 (move, index) =>
-                                    `<div class="chushogi-move-item clickable" data-move="${index}">${index + 1}. ${move.notation}</div>`,
+                                    `<div class="chushogi-move-item clickable" data-move="${index}" title="Click to navigate here">${index + 1}. ${move.notation}</div>`,
                             )
                             .join("");
                 }
@@ -13310,6 +13597,7 @@ impossible to fulfill for either player, the game is considered a draw.</p>
 
             // Reset to the starting position (either imported SFEN or default)
             this.loadSFEN(this.startingSFEN);
+            this.updateButtonStates();
         }
 
         confirmReset() {
@@ -13420,6 +13708,7 @@ impossible to fulfill for either player, the game is considered a draw.</p>
             }
             this.updateDisplay();
             this.updateMoveHistoryHighlight();
+            this.updateButtonStates();
         }
 
         clearBoard() {
@@ -13507,6 +13796,7 @@ impossible to fulfill for either player, the game is considered a draw.</p>
             this.clearSelection();
             this.updateDisplay();
             this.updateSquareHighlights();
+            this.updateButtonStates();
 
             console.log("Set new starting position:", newStartingSFEN);
         }
@@ -13622,6 +13912,30 @@ impossible to fulfill for either player, the game is considered a draw.</p>
             this.updateDisplay();
 
             // Ensure highlighting is applied after DOM updates
+            requestAnimationFrame(() => {
+                this.updateSquareHighlights();
+            });
+        }
+
+        relaxCounterStrikeRule() {
+            // Only act when the shield is selected (counter-strike selection mode is active)
+            if (!this.editMode.counterStrikeSelection) return;
+
+            // Store pre-edit position if this is the first edit
+            if (!this.editMode.preEditPosition) {
+                this.editMode.preEditPosition = this.exportSFEN();
+                this.editMode.preEditCounterStrike = this.lastLionCapture;
+            }
+
+            // Invalidate moveable pieces cache
+            this.moveablePiecesCache = null;
+
+            // Clear the counter-strike restriction
+            this.lastLionCapture = null;
+            console.log("Counter-strike rule relaxed via right-click");
+
+            this.updateBoard();
+            this.updateDisplay();
             requestAnimationFrame(() => {
                 this.updateSquareHighlights();
             });
@@ -13779,6 +14093,7 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                 selectedSquare.classList.remove("selected");
             }
             this.editMode.selectedPiece = null;
+            this.editMode.counterStrikeSelection = false;
         }
 
         restorePieceSelection() {
@@ -13813,6 +14128,7 @@ impossible to fulfill for either player, the game is considered a draw.</p>
             this.editMode.preEditCounterStrike = null;
 
             this.clearEditSelection();
+            this.updateSquareHighlights();
         }
 
         flipBoard() {
@@ -14036,6 +14352,9 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                     // Update display to reflect the new state
                     this.updateDisplay();
 
+                    // Update button states so undo symbol reflects post-trim state
+                    this.updateButtonStates();
+
                     // Update highlights (including moveable pieces) after bulk undo
                     this.highlightManager.updateAllIntelligent();
                     return;
@@ -14082,6 +14401,9 @@ impossible to fulfill for either player, the game is considered a draw.</p>
 
             // Update display to reflect the new state
             this.updateDisplay();
+
+            // Update button states so undo symbol reflects post-undo position
+            this.updateButtonStates();
 
             // Update highlights (including moveable pieces) after undo
             this.highlightManager.updateAllIntelligent();
@@ -14167,6 +14489,9 @@ impossible to fulfill for either player, the game is considered a draw.</p>
 
                     // Update display to reflect the new state
                     this.updateDisplay();
+
+                    // Update button states so undo symbol reflects post-trim state
+                    this.updateButtonStates();
 
                     // Update highlights (including moveable pieces) after puzzle bulk undo
                     this.highlightManager.updateAllIntelligent();
@@ -14288,6 +14613,9 @@ impossible to fulfill for either player, the game is considered a draw.</p>
             this.isNavigating = false;
             this.clearAllDrawings();
             this.updateDisplay();
+
+            // Update button states so undo symbol reflects post-undo position
+            this.updateButtonStates();
 
             // Update highlights (including moveable pieces) after standard undo
             this.highlightManager.updateAllIntelligent();
@@ -14707,6 +15035,7 @@ impossible to fulfill for either player, the game is considered a draw.</p>
 
             this.importGame(input.value.trim());
             input.value = "";
+            this.updateButtonStates();
         }
 
         // Parse game string with comments (PGN-style {comment} format)
