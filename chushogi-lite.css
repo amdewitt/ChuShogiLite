@@ -1121,6 +1121,40 @@
   display: block !important;
 }
 
+/* ===== Export/Import panel sub-tabs (CSL / PGN) ===== */
+.chushogi-export-sub-tab-list {
+  display: flex !important;
+  border-bottom: 1px solid var(--border-light) !important;
+  margin-bottom: 0 !important;
+}
+
+.chushogi-export-sub-tab {
+  flex: 1 !important;
+  padding: 6px 4px !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  color: var(--text-color-sidebar) !important;
+  border-bottom: 2px solid transparent !important;
+  cursor: pointer !important;
+  transition: color 0.2s, border-color 0.2s !important;
+  text-align: center !important;
+}
+
+.chushogi-export-sub-tab.active {
+  border-bottom-color: var(--tab-active) !important;
+}
+
+.chushogi-export-subpanel {
+  display: none !important;
+}
+
+.chushogi-export-subpanel.active {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 8px !important;
+  padding-top: 8px !important;
+}
+
 /* ===== Piece Info: Legend ===== */
 .chushogi-piece-legend {
   padding: 8px 0 12px !important;

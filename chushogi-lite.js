@@ -768,6 +768,7 @@
             this.currentPieceSubTab = "piece"; // Track active sub-tab in Piece Info panel
             this.lastDiagramPieceType = null; // Reset piece sub-tab when piece changes
             this.inspectedSquare = null; // Square inspected for info without selecting
+            this.currentExportSubTab = "csl"; // Track active sub-tab in Export/Import panel
             this.lastLionCapture = null; // Track last Lion capture location for SFEN
             this.startingLionCapture = null; // Track Lion capture state from starting position
             this.startingSFEN = null; // Track the initial starting position for New Game button
@@ -2010,7 +2011,7 @@
                 <span class="chushogi-legend-swatch chushogi-legend-jump"></span>
                 <span class="chushogi-legend-label">Jump</span>
               </div>
-              <div class="chushogi-legend-item" title="Move any number of squares in a straight line,\nstopping at the first obstacle or capture">
+              <div class="chushogi-legend-item" title="Move any number of squares in a straight line,\nstopping at the first obstacle">
                 <span class="chushogi-legend-swatch chushogi-legend-slide"></span>
                 <span class="chushogi-legend-label">Slide</span>
               </div>
@@ -2126,11 +2127,16 @@
             const isPuzzle = this.config.appletMode === "puzzle";
             return `
         <div class="chushogi-settings">
+          <div class="chushogi-export-sub-tab-list">
+            <div class="chushogi-export-sub-tab${this.currentExportSubTab === "csl" ? " active" : ""}" data-export-subtab="csl" onclick="this.closest('.chushogi-container').chuShogiInstance.switchExportSubTab('csl')">CSL</div>
+            <div class="chushogi-export-sub-tab${this.currentExportSubTab === "pgn" ? " active" : ""}" data-export-subtab="pgn" onclick="this.closest('.chushogi-container').chuShogiInstance.switchExportSubTab('pgn')">PGN</div>
+          </div>
+          <div class="chushogi-export-subpanel${this.currentExportSubTab === "csl" ? " active" : ""}" data-export-subpanel="csl">
           <div class="chushogi-setting-group">
             <h4>Game Export</h4>
             <textarea class="chushogi-textarea" translate="no" data-game-export readonly>Loading...</textarea>
             <button class="chushogi-btn-primary" onclick="this.closest('.chushogi-container').chuShogiInstance.exportGame()" title="Copy current CSL notation to clipboard">
-              ↓ Export Game
+              ↓ Export CSL
             </button>
           </div>
 
@@ -2151,12 +2157,36 @@
             <h4>Game Import${isFixedStart ? " (Restricted)" : ""}</h4>
             <textarea class="chushogi-textarea" placeholder="Paste game in CSL notation (i. e. SFEN {StartComment} USIMove1 USIMove2 {Comment2}... or USIMove1 USIMove2...) here..." data-game-import=""></textarea>
             <button class="chushogi-btn-primary" onclick="this.closest('.chushogi-container').chuShogiInstance.importGameFromInput()" title="Import game from CSL notation">
-              ↑ Import Game
+              ↑ Import CSL
             </button>
             ${isFixedStart ? `<p class="chushogi-help-text">Only moves-only games or games with a matching starting SFEN are allowed.</p>` : ""}
           </div>`
                   : ""
           }
+          </div>
+          <div class="chushogi-export-subpanel${this.currentExportSubTab === "pgn" ? " active" : ""}" data-export-subpanel="pgn">
+          <div class="chushogi-setting-group">
+            <h4>PGN Export</h4>
+            <textarea class="chushogi-textarea" translate="no" data-pgn-export readonly>Loading...</textarea>
+            <button class="chushogi-btn-primary" onclick="this.closest('.chushogi-container').chuShogiInstance.exportPGN()" title="Copy current PGN to clipboard">
+              ↓ Export PGN
+            </button>
+          </div>
+          ${
+              !isViewOnly && !isPuzzle
+                  ? `<div class="chushogi-setting-group">
+            <h4>PGN to CSL Conversion</h4>
+            <textarea class="chushogi-textarea" placeholder="Paste PGN input here..." data-pgn-import=""></textarea>
+            <button class="chushogi-btn-primary" onclick="this.closest('.chushogi-container').chuShogiInstance.convertPGNtoCSL()" title="Convert PGN to CSL notation">
+              ⇄ Convert PGN to CSL
+            </button>
+          </div>
+          <div class="chushogi-setting-group">
+            <textarea class="chushogi-textarea" translate="no" data-pgn-csl-output readonly placeholder="CSL output will appear here..."></textarea>
+          </div>`
+                  : ""
+          }
+          </div>
         </div>
       `;
         }
@@ -3754,7 +3784,7 @@ impossible to fulfill for either player, the game is considered a draw.</p>
               <p>SFEN {StartComment} USIMove1 USIMove2 {Comment2}...</p>
               <p>A comment for a move is placed immediately after that move, and the comment for the starting position is placed just before the first move.</p>
               <ul>
-                <li>To copy the current game's plaintext, click Export Game</li>
+                <li>To copy the current game's plaintext, click Export CSL</li>
                 ${
                     !isViewOnly && !isPuzzle
                         ? `<li>To import a game, paste it's plaintext into the Game Import text area and press Import Game
@@ -7977,8 +8007,9 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                             // Save move comment
                             this.moveHistory[position].comment = newComment;
                         }
-                        // Update game export to reflect the change
+                        // Update game export and PGN export to reflect the change
                         this.updateGameExport();
+                        this.updatePGNExport();
                     }
                 },
 
@@ -10940,6 +10971,26 @@ impossible to fulfill for either player, the game is considered a draw.</p>
             this.updatePieceInfoPanel();
         }
 
+        switchExportSubTab(name) {
+            this.currentExportSubTab = name;
+            this.container
+                .querySelectorAll("[data-export-subtab]")
+                .forEach((el) => {
+                    el.classList.toggle(
+                        "active",
+                        el.dataset.exportSubtab === name,
+                    );
+                });
+            this.container
+                .querySelectorAll("[data-export-subpanel]")
+                .forEach((el) => {
+                    el.classList.toggle(
+                        "active",
+                        el.dataset.exportSubpanel === name,
+                    );
+                });
+        }
+
         inspectSquare(squareId) {
             this.inspectedSquare = squareId;
             // Auto-switch to Piece Info sub-tab so the diagram is visible,
@@ -11030,9 +11081,7 @@ impossible to fulfill for either player, the game is considered a draw.</p>
             if (!displayEl) return;
 
             const sq = this.selectedSquare || this.inspectedSquare;
-            const piece = sq
-                ? utils.board.getPieceAt(this.board, sq)
-                : null;
+            const piece = sq ? utils.board.getPieceAt(this.board, sq) : null;
             const def = piece ? PIECE_DEFINITIONS[piece.type] : null;
 
             if (!piece || !def) {
@@ -11924,6 +11973,7 @@ impossible to fulfill for either player, the game is considered a draw.</p>
 
                 // Update game export automatically
                 this.updateGameExport();
+                this.updatePGNExport();
 
                 if (!this.isBatchImporting) {
                     console.log("updateDisplay: Game export updated");
@@ -12987,6 +13037,24 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                 .replace(/\}/g, "\\}");
         }
 
+        // Sanitize a raw (unescaped) comment for embedding in PGN { … } braces.
+        // PGN uses { } as comment delimiters and % at line-start as an escape line,
+        // so those characters must be replaced.  Newlines would break PGN line
+        // semantics and are collapsed to "; ".
+        //   {  →  -(
+        //   }  →  )-
+        //   \n →  ;  (semicolon + space)
+        //   %  →  */o
+        // Returns the sanitized text ready to be wrapped in { }.
+        sanitizeCommentForPGN(comment) {
+            if (!comment) return "";
+            return comment
+                .replace(/\{/g, "-(")
+                .replace(/\}/g, ")-")
+                .replace(/\n/g, "; ")
+                .replace(/%/g, "*/o");
+        }
+
         // Unescape special characters in comments during import
         unescapeComment(comment) {
             if (!comment) return "";
@@ -13020,7 +13088,7 @@ impossible to fulfill for either player, the game is considered a draw.</p>
             });
         }
 
-        // Export game in USI format (starting SFEN + space-separated moves)
+        // Export game in CSL format (starting SFEN + space-separated moves)
         exportGame() {
             const exportTextarea =
                 this.container.querySelector("[data-game-export]");
@@ -13052,16 +13120,22 @@ impossible to fulfill for either player, the game is considered a draw.</p>
 
             exportTextarea.value = gameExport;
 
-            // Select the text for easy copying
-            exportTextarea.select();
-            exportTextarea.setSelectionRange(0, 99999); // For mobile devices
-
-            // Try to copy to clipboard
-            try {
-                document.execCommand("copy");
-                console.log("Game exported and copied to clipboard");
-            } catch (err) {
-                console.log("Game exported (copy to clipboard failed)");
+            // Copy to clipboard without selecting the text
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(gameExport).catch(() => {
+                    // Fallback: select + execCommand
+                    exportTextarea.select();
+                    exportTextarea.setSelectionRange(0, 99999);
+                    try {
+                        document.execCommand("copy");
+                    } catch (_) {}
+                });
+            } else {
+                exportTextarea.select();
+                exportTextarea.setSelectionRange(0, 99999);
+                try {
+                    document.execCommand("copy");
+                } catch (_) {}
             }
         }
 
@@ -13096,6 +13170,779 @@ impossible to fulfill for either player, the game is considered a draw.</p>
             }
 
             exportTextarea.value = gameExport;
+        }
+
+        // Render a SFEN board string as a PGN comment block (text drawing).
+        // pgnPlayer: "w" or "b" — shown as "white to play" / "black to play".
+        // Promoted pieces are shown as "+"; empty squares as ".".
+        sfenToBoardComment(boardPart, pgnPlayer) {
+            const ranks = boardPart.split("/");
+            const rows = [];
+            for (const rank of ranks) {
+                const cells = [];
+                let i = 0;
+                while (i < rank.length) {
+                    const ch = rank[i];
+                    if (ch === "+") {
+                        // Promoted piece — show as "+" and skip the following letter
+                        cells.push("+");
+                        i += 2;
+                    } else if (ch >= "0" && ch <= "9") {
+                        // Empty-square run (possibly multi-digit, e.g. "12")
+                        let numStr = "";
+                        while (
+                            i < rank.length &&
+                            rank[i] >= "0" &&
+                            rank[i] <= "9"
+                        ) {
+                            numStr += rank[i++];
+                        }
+                        const count = parseInt(numStr, 10);
+                        for (let j = 0; j < count; j++) cells.push(".");
+                    } else {
+                        cells.push(ch);
+                        i++;
+                    }
+                }
+                rows.push(cells.join(" "));
+            }
+            const playerLine =
+                pgnPlayer === "w" ? "white to play" : "black to play";
+            const border = "--------------";
+            return `{${border}\n${rows.join("\n")}\n${playerLine}\n${border}}`;
+        }
+
+        // Convert a CSL square ID (e.g. "a1", "f12") to a PGN SAN coordinate.
+        // CSL rank 1 = gote's back row (top) ↔ PGN rank 12.
+        // CSL rank 12 = sente's back row (bottom) ↔ PGN rank 1.
+        // Convert an internal square ID (<fileNumber><rankChar>, e.g. "6g") to
+        // PGN algebraic notation (<fileLetter><rankNumber>, e.g. "g6").
+        //
+        // Internal format:  fileNumber = 12 - fileIndex (12=leftmost, 1=rightmost)
+        //                   rankChar   = 'a' + rankIndex ('a'=top, 'l'=bottom)
+        // PGN format:       fileLetter = 'a' + fileIndex  (a=leftmost from white's view)
+        //                   rankNumber = 12 - rankIndex   (1=white's back rank, 12=black's)
+        //
+        // Since fileIndex = 12 - fileNumber:
+        //   fileLetter charCode = 97 + (12 - fileNumber) = 109 - fileNumber
+        cslSqToPgn(sq) {
+            const match = sq.match(/^(\d+)([a-l])$/);
+            if (!match) return "??";
+            const fileNumber = parseInt(match[1], 10);
+            const rankIndex = match[2].charCodeAt(0) - 97; // 'a'=0 … 'l'=11
+            const fileLetter = String.fromCharCode(109 - fileNumber); // 109 = 97+12
+            const rankNumber = 12 - rankIndex;
+            return fileLetter + rankNumber;
+        }
+
+        // Return true when the move was a promotion deferral — the piece was eligible
+        // to promote (same conditions the engine uses) but the player chose not to yet.
+        // Mirrors checkNormalPromotionEligibility in the promotion manager.
+        moveWasDeferred(move) {
+            if (move.promoted) return false; // piece DID promote
+            if (move.piece.promoted) return false; // already promoted — no forward deferral
+            if (!this.getPromotedType(move.piece.type)) return false; // not promotable
+            const [fromRank] = this.parseSquareId(move.from);
+            const [toRank] = this.parseSquareId(move.to);
+            const { promotionZone, lastRank } =
+                this.promotionManager.getPromotionZones(move.piece.color);
+            const fromInZone = promotionZone.includes(fromRank);
+            const toInZone = promotionZone.includes(toRank);
+            const anyCapture = !!(move.captured || move.capturedAtMidpoint);
+            // Rule a: piece enters the promotion zone (starts outside, ends within).
+            if (!fromInZone && toInZone) return true;
+            // Rule b: piece starts inside the zone and makes a capture.
+            if (fromInZone && anyCapture) return true;
+            // Rule c: pawn (P) reaches the very last rank.
+            if (move.piece.type.toUpperCase() === "P" && toRank === lastRank)
+                return true;
+            return false;
+        }
+
+        // Return true if a piece at (fromRank, fromFile) can reach (destRank, destFile)
+        // on the given board, using the same direction-walk logic as calculateValidMoves.
+        // Sliding pieces are blocked by any intervening piece; step pieces need a clear
+        // single step.  Friendly-piece destinations are never reachable.
+        canReachSquare(fromRank, fromFile, piece, destRank, destFile, board) {
+            const destPiece = board[destRank][destFile];
+            if (destPiece && destPiece.color === piece.color) return false; // friendly blocker
+            const directions = this.getPieceDirections(piece.type, piece.color);
+            for (const dir of directions) {
+                for (let d = 1; d < 12; d++) {
+                    const r = fromRank + dir.rank * d;
+                    const f = fromFile + dir.file * d;
+                    if (r < 0 || r >= 12 || f < 0 || f >= 12) break;
+                    if (r === destRank && f === destFile) return true;
+                    if (board[r][f]) break; // blocked by any piece
+                    if (!dir.sliding) break; // step piece — no further range
+                }
+            }
+            return false;
+        }
+
+        // Return the SAN disambiguation prefix (file letter, PGN rank number, or both)
+        // needed when multiple pieces of the same type and colour can reach toSq.
+        // Per PGN spec:
+        //   • No other piece can reach toSq → no prefix.
+        //   • Rivals exist but none share the moving piece's file → file letter.
+        //   • Rivals share the file but not the rank → rank number.
+        //   • Rivals share both file and rank → full square coordinate.
+        // boardBefore is the 12×12 array from parseSFENBoard() for the position BEFORE
+        // the move.
+        getSANDisambiguation(piece, fromSq, toSq, boardBefore) {
+            if (!boardBefore) return "";
+            const [fromRankIdx, fromFileIdx] = this.parseSquareId(fromSq);
+            const [destRankIdx, destFileIdx] = this.parseSquareId(toSq);
+
+            // Find every other piece of the same type/colour that can reach toSq.
+            const rivals = [];
+            for (let r = 0; r < 12; r++) {
+                for (let c = 0; c < 12; c++) {
+                    if (r === fromRankIdx && c === fromFileIdx) continue;
+                    const p = boardBefore[r][c];
+                    if (!p || p.type !== piece.type || p.color !== piece.color)
+                        continue;
+                    if (
+                        this.canReachSquare(
+                            r,
+                            c,
+                            p,
+                            destRankIdx,
+                            destFileIdx,
+                            boardBefore,
+                        )
+                    ) {
+                        rivals.push({ rank: r, file: c });
+                    }
+                }
+            }
+
+            if (rivals.length === 0) return ""; // sole piece that can reach toSq
+
+            const pgnFrom = this.cslSqToPgn(fromSq);
+            const pgnFileLetter = pgnFrom[0];
+            const pgnRankNumber = pgnFrom.slice(1);
+
+            // File alone suffices when no rival sits on the same internal file column.
+            if (!rivals.some((rv) => rv.file === fromFileIdx))
+                return pgnFileLetter;
+            // Rank alone suffices when no rival sits on the same internal rank row.
+            if (!rivals.some((rv) => rv.rank === fromRankIdx))
+                return pgnRankNumber;
+            // Both needed.
+            return pgnFrom;
+        }
+
+        // For a pass move (from === to, no midpoint), find an empty square that is a
+        // legal first-leg square for the moving piece's double move, so the PGN can
+        // represent the pass as a double move without XBoard/Winboard confusion.
+        //
+        // Legal first-leg directions mirror the engine's own double-move generators:
+        //   Lion (+O or N)    — any of the 8 king-step adjacent squares
+        //   Horned Falcon +H  — forward orthogonal only (-1,0 for black; +1,0 for white)
+        //   Soaring Eagle +D  — forward diagonals only  (-1,±1 for black; +1,±1 for white)
+        //
+        // Returns an internal square ID string, or null if nothing is available.
+        findPassMidpoint(fromSq, boardBefore) {
+            if (!boardBefore) return null;
+            const [fromRank, fromFile] = this.parseSquareId(fromSq);
+            const piece = boardBefore[fromRank][fromFile];
+            if (!piece) return null;
+
+            // Build the legal first-leg direction set for this piece type.
+            const fwd = piece.color === "b" ? -1 : 1; // forward rank direction
+            let directions;
+
+            if (this.isLionPiece(piece)) {
+                // Lions may use any of the 8 king-step adjacent squares as midpoint.
+                directions = [
+                    [-1, -1],
+                    [-1, 0],
+                    [-1, 1],
+                    [0, -1],
+                    [0, 1],
+                    [1, -1],
+                    [1, 0],
+                    [1, 1],
+                ];
+            } else if (this.isHornedFalconPiece(piece)) {
+                // Horned Falcon double moves only in the forward orthogonal direction.
+                directions = [[fwd, 0]];
+            } else if (this.isSoaringEaglePiece(piece)) {
+                // Soaring Eagle double moves only in the two forward diagonal directions.
+                directions = [
+                    [fwd, -1],
+                    [fwd, 1],
+                ];
+            } else {
+                // Fallback: try all 8 king-step adjacents for any unknown double-mover.
+                directions = [
+                    [-1, -1],
+                    [-1, 0],
+                    [-1, 1],
+                    [0, -1],
+                    [0, 1],
+                    [1, -1],
+                    [1, 0],
+                    [1, 1],
+                ];
+            }
+
+            for (const [dr, df] of directions) {
+                const r = fromRank + dr;
+                const f = fromFile + df;
+                if (r < 0 || r >= 12 || f < 0 || f >= 12) continue;
+                if (!boardBefore[r][f]) return this.getSquareId(r, f); // empty square ✓
+            }
+            return null; // all candidate squares are occupied — shouldn't happen in practice
+        }
+
+        // Generate Standard Algebraic Notation for one move.
+        // boardBefore is the 12×12 array from parseSFENBoard() for the position BEFORE
+        // the move; pass null to skip disambiguation.
+        moveToSAN(move, boardBefore) {
+            const piece = move.piece;
+            const pieceLtr = piece.type; // e.g. "K", "N", "+H"
+
+            // Pass move: piece returns to its own square with no recorded midpoint.
+            // XBoard/Winboard cannot parse "from === to" double moves, so we substitute
+            // any empty adjacent square as a legal fake midpoint.
+            const isPassMove = move.from === move.to && !move.midpoint;
+
+            const disambig = this.getSANDisambiguation(
+                piece,
+                move.from,
+                move.to,
+                boardBefore,
+            );
+
+            let body;
+            if (move.midpoint || isPassMove) {
+                // Double move (Lion / Horned Falcon / Soaring Eagle) or pass move.
+                //   Piece[disambig][x]<midpoint>,<destination>
+                const anyCapture = !!move.captured || !!move.capturedAtMidpoint;
+
+                let midSq, destSq;
+                if (isPassMove) {
+                    const fakeMid = this.findPassMidpoint(
+                        move.from,
+                        boardBefore,
+                    );
+                    // Fallback (shouldn't occur): reuse the piece's own square so the
+                    // output is at least syntactically valid.
+                    midSq = fakeMid
+                        ? this.cslSqToPgn(fakeMid)
+                        : this.cslSqToPgn(move.from);
+                    destSq = this.cslSqToPgn(move.to);
+                } else {
+                    midSq = this.cslSqToPgn(move.midpoint);
+                    destSq = this.cslSqToPgn(move.to);
+                }
+
+                body =
+                    pieceLtr +
+                    disambig +
+                    (anyCapture ? "x" : "") +
+                    midSq +
+                    "," +
+                    destSq;
+            } else {
+                // Regular move: Piece[disambig][x]<destination>
+                const destSq = this.cslSqToPgn(move.to);
+                body =
+                    pieceLtr + disambig + (move.captured ? "x" : "") + destSq;
+            }
+
+            // Suffix: + for promotion, = for deferral, nothing otherwise.
+            if (move.promoted) body += "+";
+            else if (this.moveWasDeferred(move)) body += "=";
+
+            return body;
+        }
+
+        buildPGNString() {
+            const now = new Date();
+            const pad = (n) => String(n).padStart(2, "0");
+            const date = `${now.getFullYear()}.${pad(now.getMonth() + 1)}.${pad(now.getDate())}`;
+
+            const tags = [
+                `[Event "ChuShogiLite PGN Record"]`,
+                `[Site "ChuShogiLite Applet"]`,
+                `[Date "${date}"]`,
+                `[Round "-"]`,
+                `[White "?"]`,
+                `[Black "?"]`,
+                `[Result "*"]`,
+                `[Variant "chu"]`,
+            ];
+
+            // Standard Chu Shogi opening: board + player + anti-trade fields
+            const DEFAULT_START_PREFIX =
+                "lfcsgekgscfl/a1b1txot1b1a/mvrhdqndhrvm/pppppppppppp/3i4i3/12/12/3I4I3/PPPPPPPPPPPP/MVRHDNQDHRVM/A1B1TOXT1B1A/LFCSGKEGSCFL b -";
+
+            const startSFEN = this.startingSFEN || "";
+            const sfenParts = startSFEN.split(" ");
+            const startPrefix = sfenParts.slice(0, 3).join(" ");
+
+            // CSL player "b" = sente = PGN white; "w" = gote = PGN black.
+            const cslStartPlayer = sfenParts[1] || "b";
+            const pgnStartPlayer = cslStartPlayer === "b" ? "w" : "b";
+
+            let boardComment = null;
+            if (sfenParts.length >= 3 && startPrefix !== DEFAULT_START_PREFIX) {
+                // Non-standard position: add SetUp + FEN tags (SetUp must precede FEN).
+                // PGN FEN differs from CSL SFEN:
+                //   - player to move is inverted (b↔w)
+                //   - anti-trade field is kept as-is, then always followed by "0 1"
+                const board = sfenParts[0] || "";
+                const antiTrade = sfenParts[2] || "-";
+                const pgnPlayer = pgnStartPlayer;
+                tags.push(`[SetUp "1"]`);
+                tags.push(`[FEN "${board} ${pgnPlayer} ${antiTrade} 0 1"]`);
+                boardComment = this.sfenToBoardComment(board, pgnPlayer);
+            }
+
+            // ── Move text ─────────────────────────────────────────────────────────
+            // Standard PGN move numbering: the number prefix appears on white's
+            // half-move ("N. san") and black's response follows with no prefix.
+            // The only time black gets a prefix is the very first half-move of a
+            // game where black plays first ("1... san"), to signal whose turn it is.
+            //
+            // White starts (cslStartPlayer "b"):
+            //   i even → white ("1. san"), i odd → black ("san")
+            //   moveNum(i) = ⌊i/2⌋ + 1
+            //
+            // Black starts (cslStartPlayer "w"):
+            //   i=0 black → "1... san"  (only occurrence of N... in the output)
+            //   i odd  → white ("N. san"),  moveNum(i) = ⌊(i+1)/2⌋ + 1
+            //   i even → black ("san")  (for i > 0)
+            //
+            // NOTE: turn order is determined solely by the starting player and the
+            // half-move index i — NOT by which piece's color actually moved.  This
+            // keeps numbering correct even when allowIllegalMoves lets one side move
+            // multiple times in a row.
+            const moveTokens = [];
+            // cslStartPlayer "w" means gote (PGN black) moves first.
+            const blackStarted = cslStartPlayer === "w";
+
+            for (let i = 0; i < this.moveHistory.length; i++) {
+                const move = this.moveHistory[i];
+
+                // Determine whose turn this half-move slot belongs to, based on
+                // starting player and index — independent of move.piece.color.
+                const isWhiteTurn = blackStarted ? i % 2 === 1 : i % 2 === 0;
+
+                // Board state BEFORE this move: previous move's resultingSFEN, or
+                // the starting board for the first move.
+                const prevSFENFull =
+                    i === 0
+                        ? startSFEN
+                        : this.moveHistory[i - 1].resultingSFEN || "";
+                const prevBoard = prevSFENFull.split(" ")[0] || "";
+                let boardBefore = null;
+                try {
+                    boardBefore = prevBoard
+                        ? this.parseSFENBoard(prevBoard)
+                        : null;
+                } catch (_) {
+                    /* skip disambiguation on parse error */
+                }
+
+                const san = this.moveToSAN(move, boardBefore);
+
+                // Build the token: number prefix (if any) + SAN + optional comment.
+                const commentText =
+                    move.comment && move.comment.trim()
+                        ? " {" + this.sanitizeCommentForPGN(move.comment) + "}"
+                        : "";
+
+                if (blackStarted && i === 0) {
+                    // Only time "N..." appears: black's very first move of the game.
+                    moveTokens.push(`1... ${san}${commentText}`);
+                } else if (isWhiteTurn) {
+                    // White always opens a numbered pair.
+                    const moveNum = blackStarted
+                        ? Math.floor((i + 1) / 2) + 1 // i=1→2, i=3→3, i=5→4 …
+                        : Math.floor(i / 2) + 1; // i=0→1, i=2→2, i=4→3 …
+                    moveTokens.push(`${moveNum}. ${san}${commentText}`);
+                } else {
+                    // Black responds without a number prefix.
+                    moveTokens.push(`${san}${commentText}`);
+                }
+            }
+
+            // Starting-position comment, if any, appears before the first move token.
+            const startComment =
+                this.startingComment && this.startingComment.trim()
+                    ? "{" +
+                      this.sanitizeCommentForPGN(this.startingComment) +
+                      "} "
+                    : "";
+
+            const moveText =
+                (moveTokens.length > 0
+                    ? startComment + moveTokens.join(" ") + " "
+                    : startComment) + "*";
+
+            // ── Assemble output ───────────────────────────────────────────────────
+            let output = tags.join("\n") + "\n\n";
+            if (boardComment) output += boardComment + "\n\n";
+            output += moveText;
+            return output;
+        }
+
+        updatePGNExport() {
+            const ta = this.container.querySelector("[data-pgn-export]");
+            if (!ta) return;
+            ta.value = this.buildPGNString();
+        }
+
+        // Convert a PGN square (fileLetter + rankNumber, e.g. "g6") to a CSL/USI
+        // square (fileNumber + rankChar, e.g. "6g").  Exact inverse of cslSqToPgn.
+        pgnSqToCsl(pgnSq) {
+            const match = pgnSq.match(/^([a-l])(\d+)$/);
+            if (!match) return null;
+            const fileNumber = 109 - match[1].charCodeAt(0); // cslSqToPgn: charCode = 109 - fileNumber
+            const rankIndex  = 12 - parseInt(match[2], 10);  // cslSqToPgn: rankNumber = 12 - rankIndex
+            if (rankIndex < 0 || rankIndex > 11 || fileNumber < 1 || fileNumber > 12) return null;
+            return String(fileNumber) + String.fromCharCode(97 + rankIndex);
+        }
+
+        // Tokenize PGN move text into { type: "comment"|"move", text } objects.
+        // Skips move-number prefixes (N. / N...), result codes, NAGs ($N), and
+        // parenthesised variations.
+        tokenizePGNMoveText(text) {
+            const tokens = [];
+            let i = 0;
+            const n = text.length;
+            while (i < n) {
+                const ch = text[i];
+                if (ch === '{') {
+                    // Brace comment — collect content verbatim
+                    i++;
+                    let comment = '';
+                    while (i < n && text[i] !== '}') comment += text[i++];
+                    if (i < n) i++; // skip closing '}'
+                    tokens.push({ type: 'comment', text: comment });
+                } else if (ch === '(') {
+                    // Variation — skip, respecting nesting
+                    let depth = 1; i++;
+                    while (i < n && depth > 0) {
+                        if (text[i] === '(') depth++;
+                        else if (text[i] === ')') depth--;
+                        i++;
+                    }
+                } else if (ch === ';') {
+                    // Semicolon line comment — skip to end of line
+                    while (i < n && text[i] !== '\n') i++;
+                } else if (ch === '%' && (i === 0 || text[i - 1] === '\n')) {
+                    // PGN escape line — skip to end of line
+                    while (i < n && text[i] !== '\n') i++;
+                } else if (/\s/.test(ch)) {
+                    i++;
+                } else {
+                    // Whitespace-delimited word
+                    let word = '';
+                    while (i < n && !/\s/.test(text[i]) && text[i] !== '{' && text[i] !== '(') {
+                        word += text[i++];
+                    }
+                    if (!word) continue;
+                    if (/^\d+\.+$/.test(word) || word === '...') {
+                        // Move-number prefix — ignore
+                    } else if (['*', '1-0', '0-1', '1/2-1/2'].includes(word)) {
+                        // Result token — ignore
+                    } else if (word[0] === '$') {
+                        // NAG annotation \u2014 ignore
+                    } else {
+                        tokens.push({ type: 'move', text: word });
+                    }
+                }
+            }
+            return tokens;
+        }
+
+
+        // Parse a Chu Shogi PGN SAN token into its logical components:
+        //   { pieceType, destSq, midSq, promotes, disambigFile, disambigRank }
+        // Returns null if the token cannot be recognised.
+        parseSANToken(san) {
+            let s = san.trim();
+            if (!s) return null;
+
+            // Strip promotion / deferral suffix
+            let promotes = false;
+            if (s.endsWith('+'))      { promotes = true; s = s.slice(0, -1); }
+            else if (s.endsWith('=')) {                  s = s.slice(0, -1); }
+
+            // Piece type: optional leading '+' + one uppercase letter
+            let pieceType = '';
+            if (s[0] === '+' && s.length > 1 && /[A-Z]/.test(s[1])) {
+                pieceType = s.slice(0, 2); s = s.slice(2);
+            } else if (/[A-Z]/.test(s[0])) {
+                pieceType = s[0]; s = s.slice(1);
+            } else {
+                return null;
+            }
+
+            // Helper: index of the last [a-l]\d+ match in a string
+            const lastSqMatch = (str) => {
+                const m = [...str.matchAll(/[a-l]\d+/g)];
+                return m.length ? m[m.length - 1] : null;
+            };
+
+            // Split on ',' for double moves
+            const parts = s.split(',');
+            const isDouble = parts.length >= 2;
+
+            let midSq = null, destSq = null, beforeDest = '';
+            if (isDouble) {
+                const m0 = lastSqMatch(parts[0]);
+                const m1 = lastSqMatch(parts[1]);
+                if (!m0 || !m1) return null;
+                midSq      = m0[0];
+                destSq     = m1[0];
+                beforeDest = parts[0].slice(0, m0.index);
+            } else {
+                const m = lastSqMatch(s);
+                if (!m) return null;
+                destSq     = m[0];
+                beforeDest = s.slice(0, m.index);
+            }
+
+            // Remove capture marker from disambiguation zone
+            beforeDest = beforeDest.replace(/x/g, '');
+
+            // Parse disambiguation: full square, file letter, or rank number
+            let disambigFile = null, disambigRank = null;
+            const dSq   = beforeDest.match(/^([a-l])(\d+)$/);
+            const dFile = beforeDest.match(/^([a-l])$/);
+            const dRank = beforeDest.match(/^(\d+)$/);
+            if (dSq)        { disambigFile = dSq[1]; disambigRank = parseInt(dSq[2]); }
+            else if (dFile) { disambigFile = dFile[1]; }
+            else if (dRank) { disambigRank = parseInt(dRank[1]); }
+
+            return { pieceType, destSq, midSq, promotes, disambigFile, disambigRank };
+        }
+
+        // Convert a single SAN token to a USI move string using the supplied board.
+        // pgnColor: "w" (PGN white = sente) or "b" (PGN black = gote).
+        // Returns a USI string on success, null on failure.
+        sanToUSI(san, pgnColor, board) {
+            const parsed = this.parseSANToken(san);
+            if (!parsed) return null;
+            const { pieceType, destSq, midSq, promotes, disambigFile, disambigRank } = parsed;
+
+            // PGN white = CSL "b" (sente);  PGN black = CSL "w" (gote)
+            const cslColor = pgnColor === 'w' ? 'b' : 'w';
+
+            const destCsl = this.pgnSqToCsl(destSq);
+            if (!destCsl) return null;
+            const [destRank, destFile] = this.parseSquareId(destCsl);
+
+            // Helper: apply file/rank disambiguation filter to a candidate list.
+            // From cslSqToPgn: fileLetter charCode = 97 + fileIndex -> fileIndex = charCode - 97
+            //                  rankNumber = 12 - rankIndex           -> rankIndex = 12 - rankNumber
+            const applyDisambig = (list) => {
+                let out = list;
+                if (disambigFile !== null) {
+                    const tfi = disambigFile.charCodeAt(0) - 97;
+                    out = out.filter(([, f]) => f === tfi);
+                }
+                if (disambigRank !== null) {
+                    const tri = 12 - disambigRank;
+                    out = out.filter(([r]) => r === tri);
+                }
+                return out;
+            };
+
+            if (midSq) {
+                // ── Double move (Lion / Horned Falcon / Soaring Eagle) ────────────
+                // The piece makes two legs: source -> mid -> dest.
+                // For disambiguation we identify the source by checking the FIRST LEG
+                // (can the piece reach the mid square?).  Checking the final destination
+                // does not work for Lion-return moves (dest === source) because
+                // canReachSquare rejects a friendly-occupied destination.
+                const midCsl = this.pgnSqToCsl(midSq);
+                if (!midCsl) return null;
+                const [midRank, midFile] = this.parseSquareId(midCsl);
+
+                const midCandidates = [];
+                for (let r = 0; r < 12; r++) {
+                    for (let f = 0; f < 12; f++) {
+                        const p = board[r][f];
+                        if (!p || p.type !== pieceType || p.color !== cslColor) continue;
+                        if (this.canReachSquare(r, f, p, midRank, midFile, board))
+                            midCandidates.push([r, f]);
+                    }
+                }
+                const midFiltered = applyDisambig(midCandidates);
+                if (midFiltered.length === 1) {
+                    const fromCsl = this.getSquareId(midFiltered[0][0], midFiltered[0][1]);
+                    // fromCsl === destCsl is a valid Lion-return (captures at mid, returns home)
+                    return fromCsl + midCsl + destCsl + (promotes ? '+' : '');
+                }
+
+                // True pass move: no first-leg candidate found because the piece already
+                // sits on the destination and canReachSquare also rejects it as friendly.
+                // Emit the 2-square USI pass token (from === to, no mid).
+                const pieceAtDest = board[destRank][destFile];
+                if (pieceAtDest && pieceAtDest.type === pieceType && pieceAtDest.color === cslColor) {
+                    const passDisambigOk = applyDisambig([[destRank, destFile]]).length === 1;
+                    if (passDisambigOk) return destCsl + destCsl;
+                }
+                return null;
+            }
+
+            // ── Regular (single-leg) move ─────────────────────────────────────────
+            const candidates = [];
+            for (let r = 0; r < 12; r++) {
+                for (let f = 0; f < 12; f++) {
+                    const p = board[r][f];
+                    if (!p || p.type !== pieceType || p.color !== cslColor) continue;
+                    if (this.canReachSquare(r, f, p, destRank, destFile, board))
+                        candidates.push([r, f]);
+                }
+            }
+            const filtered = applyDisambig(candidates);
+            if (filtered.length !== 1) return null;
+
+            const fromCsl = this.getSquareId(filtered[0][0], filtered[0][1]);
+            return fromCsl + destCsl + (promotes ? '+' : '');
+        }
+
+        // Apply a USI move to a mutable 12x12 board array in-place.
+        // Used to advance board state between moves during PGN to CSL conversion.
+        applyUSIToBoard(usi, board) {
+            const promotes = usi.endsWith('+');
+            const u = promotes ? usi.slice(0, -1) : usi;
+
+            // Extract all squares -- each is \d+[a-l] (file number + rank char)
+            const sqMatches = [...u.matchAll(/\d+[a-l]/g)].map(m => m[0]);
+            if (sqMatches.length < 2) return;
+
+            const fromSq = sqMatches[0];
+            const toSq   = sqMatches[sqMatches.length - 1];
+            const midSq  = sqMatches.length === 3 ? sqMatches[1] : null;
+
+            // True pass move: from === to with NO midpoint. Lion-return (from===to
+            // with a midpoint) still needs to clear the captured piece at mid.
+            if (fromSq === toSq && !midSq) return;
+
+            const [fromRank, fromFile] = this.parseSquareId(fromSq);
+            const [toRank,   toFile  ] = this.parseSquareId(toSq);
+            const piece = board[fromRank][fromFile];
+            if (!piece) return;
+
+            // For double moves: clear any enemy piece captured at the midpoint
+            if (midSq) {
+                const [midRank, midFile] = this.parseSquareId(midSq);
+                const midPiece = board[midRank][midFile];
+                if (midPiece && midPiece.color !== piece.color)
+                    board[midRank][midFile] = null;
+            }
+
+            const movedPiece = promotes
+                ? { ...piece, type: this.getPromotedType(piece.type) || piece.type, promoted: true }
+                : { ...piece };
+
+            board[fromRank][fromFile] = null;
+            board[toRank][toFile]     = movedPiece;
+        }
+
+        // Read PGN from [data-pgn-import], convert it to CSL notation, and write
+        // the result to [data-pgn-csl-output].
+        convertPGNtoCSL() {
+            const inputEl  = this.container.querySelector("[data-pgn-import]");
+            const outputEl = this.container.querySelector("[data-pgn-csl-output]");
+            if (!inputEl || !outputEl) return;
+
+            const pgn = inputEl.value.trim();
+            if (!pgn) { outputEl.value = ""; return; }
+
+            // 1. Extract FEN tag -> starting SFEN
+            const DEFAULT_SFEN =
+                "lfcsgekgscfl/a1b1txot1b1a/mvrhdqndhrvm/pppppppppppp/3i4i3/12/12/" +
+                "3I4I3/PPPPPPPPPPPP/MVRHDNQDHRVM/A1B1TOXT1B1A/LFCSGKEGSCFL b - 1";
+
+            let startingSFEN = DEFAULT_SFEN;
+            const fenMatch = pgn.match(/\[FEN\s+"([^"]+)"\]/i);
+            if (fenMatch) {
+                const fp        = fenMatch[1].trim().split(/\s+/);
+                const cslPlayer = (fp[1] || "w") === "w" ? "b" : "w"; // invert PGN <-> CSL
+                startingSFEN = `${fp[0] || ""} ${cslPlayer} ${fp[2] || "-"} 1`;
+            }
+
+            // 2. Initialise board state
+            const sfenParts = startingSFEN.split(" ");
+            let board;
+            try { board = this.parseSFENBoard(sfenParts[0]); }
+            catch (_) { board = null; }
+            if (!board) { outputEl.value = "Error: could not parse starting position."; return; }
+
+            // 3. Determine first mover
+            // CSL "b" = sente = PGN white;  CSL "w" = gote = PGN black
+            let currentPgnColor = (sfenParts[1] || "b") === "b" ? "w" : "b";
+
+            // 4. Tokenize PGN move text (strip all [Tag "..."] pairs first)
+            const moveText = pgn.replace(/\[[^\]]*\]/g, "").trim();
+            const tokens   = this.tokenizePGNMoveText(moveText);
+
+            // 5. Convert each token
+            let startingComment = "";
+            const cslParts = [];
+            let firstMoveEmitted = false;
+
+            for (const tok of tokens) {
+                if (tok.type === "comment") {
+                    // Comments are passed through verbatim, wrapped in CSL { }
+                    if (!firstMoveEmitted) {
+                        startingComment = tok.text;
+                    } else {
+                        cslParts.push("{" + tok.text + "}");
+                    }
+                } else if (tok.type === "move") {
+                    const usi = this.sanToUSI(tok.text, currentPgnColor, board);
+                    if (!usi) {
+                        outputEl.value = `Error: could not convert move "${tok.text}".`;
+                        return;
+                    }
+                    cslParts.push(usi);
+                    this.applyUSIToBoard(usi, board);
+                    currentPgnColor  = currentPgnColor === "w" ? "b" : "w";
+                    firstMoveEmitted = true;
+                }
+            }
+
+            // 6. Assemble CSL string
+            let csl = startingSFEN;
+            if (startingComment) csl += " {" + startingComment + "}";
+            if (cslParts.length)  csl += " " + cslParts.join(" ");
+
+            outputEl.value = csl;
+        }
+
+        exportPGN() {
+            const ta = this.container.querySelector("[data-pgn-export]");
+            if (!ta) return;
+            const pgn = this.buildPGNString();
+            ta.value = pgn;
+            // Copy to clipboard without selecting the text
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(pgn).catch(() => {
+                    // Fallback: select + execCommand
+                    ta.select();
+                    ta.setSelectionRange(0, 99999);
+                    try {
+                        document.execCommand("copy");
+                    } catch (_) {}
+                });
+            } else {
+                ta.select();
+                ta.setSelectionRange(0, 99999);
+                try {
+                    document.execCommand("copy");
+                } catch (_) {}
+            }
         }
 
         // Utility methods
