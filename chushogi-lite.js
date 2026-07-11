@@ -161,6 +161,134 @@
         }, // Rook -> Dragon King
     };
 
+    // KIF board-diagram constants. These are specific to the plain-text KIF
+    // "drawing" format used for non-standard starting positions, and are
+    // intentionally separate from PIECE_DEFINITIONS above: the KIF diagram
+    // convention for some promoted pieces (e.g. "+P" -> "成歩") differs from
+    // the piece's actual promoted identity used elsewhere in the app
+    // (Pawn -> Gold General, kanji "金"). This table matches the literal
+    // reference diagram exactly.
+    const KIF_DIAGRAM_KANJI = {
+        P: "歩",
+        I: "仲",
+        C: "銅",
+        S: "銀",
+        G: "金",
+        F: "豹",
+        T: "虎",
+        E: "象",
+        X: "鳳",
+        O: "麒",
+        L: "香",
+        A: "反",
+        M: "横",
+        V: "竪",
+        B: "角",
+        R: "飛",
+        H: "馬",
+        D: "龍",
+        Q: "奔",
+        N: "獅",
+        K: "玉",
+        "+P": "成歩",
+        "+I": "成象",
+        "+C": "成横",
+        "+S": "成竪",
+        "+G": "成飛",
+        "+F": "成角",
+        "+T": "鹿",
+        "+E": "太",
+        "+X": "成奔",
+        "+O": "成獅",
+        "+L": "駒",
+        "+A": "鯨",
+        "+M": "猪",
+        "+V": "牛",
+        "+B": "成馬",
+        "+R": "成龍",
+        "+H": "鷹",
+        "+D": "鷲",
+    };
+
+    // Formal (traditional, multi-kanji) piece names used in KIF move text —
+    // distinct from the single-kanji board-diagram glyphs in
+    // KIF_DIAGRAM_KANJI above (e.g. Bishop's board glyph is "角" but its
+    // formal move-notation name is "角行"). For promoted pieces, the name
+    // shown is always the RESULTING piece's formal name (e.g. a promoting
+    // Bishop is shown as "龍馬", the Dragon Horse it becomes), matching the
+    // reference example exactly. Names for the eight uniquely-named
+    // promoted pieces not covered by the reference example (+T, +E, +L,
+    // +A, +M, +V, +H, +D) use their standard historical two-kanji Chu
+    // Shogi names.
+    const KIF_MOVE_PIECE_NAMES = {
+        P: "歩兵",
+        I: "仲人",
+        C: "銅将",
+        S: "銀将",
+        G: "金将",
+        F: "猛豹",
+        T: "盲虎",
+        E: "酔象",
+        X: "鳳凰",
+        O: "麒麟",
+        L: "香車",
+        A: "反車",
+        M: "横行",
+        V: "竪行",
+        B: "角行",
+        R: "飛車",
+        H: "龍馬",
+        D: "龍王",
+        Q: "奔王",
+        N: "獅子",
+        K: "玉将",
+        "+P": "金将",
+        "+I": "酔象",
+        "+C": "横行",
+        "+S": "竪行",
+        "+G": "飛車",
+        "+F": "角行",
+        "+T": "飛鹿",
+        "+E": "太子",
+        "+X": "奔王",
+        "+O": "獅子",
+        "+L": "白駒",
+        "+A": "鯨鯢",
+        "+M": "奔猪",
+        "+V": "飛牛",
+        "+B": "龍馬",
+        "+R": "龍王",
+        "+H": "角鷹",
+        "+D": "飛鷲",
+    };
+
+    const KIF_RANK_KANJI = [
+        "一",
+        "二",
+        "三",
+        "四",
+        "五",
+        "六",
+        "七",
+        "八",
+        "九",
+        "十",
+        "十一",
+        "十二",
+    ];
+
+    // Static file-number header and top/bottom border - always the same
+    // since the Chu Shogi board is always 12x12.
+    const KIF_FILE_HEADER =
+        " １２ １１ １０ ９  ８  ７  ６  ５  ４  ３  ２  １";
+    const KIF_BOARD_BORDER = "+" + "-".repeat(48) + "+";
+
+    // The standard Chu Shogi starting position's board field (no player/move
+    // fields). Used to decide whether a KIF export needs the "手合割：" line
+    // (standard start) or a full board drawing (non-standard start).
+    const KIF_STANDARD_START_BOARD =
+        "lfcsgekgscfl/a1b1txot1b1a/mvrhdqndhrvm/pppppppppppp/3i4i3/12/12/3I4I3/PPPPPPPPPPPP/MVRHDNQDHRVM/A1B1TOXT1B1A/LFCSGKEGSCFL";
+
     // CENTRALIZED UTILITY FUNCTIONS
     // Consolidates repeated DOM operations, coordinate parsing, and CSS class management
     const utils = {
@@ -2129,6 +2257,7 @@
         <div class="chushogi-settings">
           <div class="chushogi-export-sub-tab-list">
             <div class="chushogi-export-sub-tab${this.currentExportSubTab === "csl" ? " active" : ""}" data-export-subtab="csl" onclick="this.closest('.chushogi-container').chuShogiInstance.switchExportSubTab('csl')">CSL</div>
+            <div class="chushogi-export-sub-tab${this.currentExportSubTab === "kif" ? " active" : ""}" data-export-subtab="kif" onclick="this.closest('.chushogi-container').chuShogiInstance.switchExportSubTab('kif')">KIF</div>
             <div class="chushogi-export-sub-tab${this.currentExportSubTab === "pgn" ? " active" : ""}" data-export-subtab="pgn" onclick="this.closest('.chushogi-container').chuShogiInstance.switchExportSubTab('pgn')">PGN</div>
           </div>
           <div class="chushogi-export-subpanel${this.currentExportSubTab === "csl" ? " active" : ""}" data-export-subpanel="csl">
@@ -2158,6 +2287,27 @@
             <textarea class="chushogi-textarea" placeholder="Paste game in CSL notation (i. e. SFEN {StartComment} USIMove1 USIMove2 {Comment2}... or USIMove1 USIMove2...) here..." data-game-import=""></textarea>
             <button class="chushogi-btn-primary" onclick="this.closest('.chushogi-container').chuShogiInstance.importGameFromInput()" title="Import game from CSL notation">
               ↑ Import CSL
+            </button>
+            ${isFixedStart ? `<p class="chushogi-help-text">Only moves-only games or games with a matching starting SFEN are allowed.</p>` : ""}
+          </div>`
+                  : ""
+          }
+          </div>
+          <div class="chushogi-export-subpanel${this.currentExportSubTab === "kif" ? " active" : ""}" data-export-subpanel="kif">
+          <div class="chushogi-setting-group">
+            <h4>KIF Export</h4>
+            <textarea class="chushogi-textarea" translate="no" data-kif-export readonly>Loading...</textarea>
+            <button class="chushogi-btn-primary" onclick="this.closest('.chushogi-container').chuShogiInstance.exportKIF()" title="Copy current KIF to clipboard">
+              ↓ Export KIF
+            </button>
+          </div>
+          ${
+              !isViewOnly && !isPuzzle
+                  ? `<div class="chushogi-setting-group">
+            <h4>KIF Import${isFixedStart ? " (Restricted)" : ""}</h4>
+            <textarea class="chushogi-textarea" placeholder="Paste KIF input here..." data-kif-import=""></textarea>
+            <button class="chushogi-btn-primary" onclick="this.closest('.chushogi-container').chuShogiInstance.importKIFFromInput()" title="Import game from KIF notation">
+              ↑ Import KIF
             </button>
             ${isFixedStart ? `<p class="chushogi-help-text">Only moves-only games or games with a matching starting SFEN are allowed.</p>` : ""}
           </div>`
@@ -8009,6 +8159,7 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                         // Update game export and PGN export to reflect the change
                         this.updateGameExport();
                         this.updatePGNExport();
+                        this.updateKIFExport();
                     }
                 },
 
@@ -11990,6 +12141,7 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                 // Update game export automatically
                 this.updateGameExport();
                 this.updatePGNExport();
+                this.updateKIFExport();
 
                 if (!this.isBatchImporting) {
                     console.log("updateDisplay: Game export updated");
@@ -13613,6 +13765,573 @@ impossible to fulfill for either player, the game is considered a draw.</p>
             ta.value = this.buildPGNString();
         }
 
+        // ── KIF export ───────────────────────────────────────────────────────
+        // Renders the plain-text KIF board diagram for a non-standard
+        // starting position: a file-number header, a bordered 12x12 grid of
+        // piece kanji (each cell left-padded to a fixed 3-character width,
+        // gote pieces prefixed with "v"), and a matching bottom border.
+        buildKIFBoardDrawing(boardPart) {
+            const board = this.parseSFENBoard(boardPart);
+            const lines = [KIF_FILE_HEADER, KIF_BOARD_BORDER];
+            for (let rank = 0; rank < 12; rank++) {
+                let row = "|";
+                for (let file = 0; file < 12; file++) {
+                    const piece = board ? board[rank][file] : null;
+                    let cell;
+                    if (!piece) {
+                        cell = "・";
+                    } else {
+                        const kanji =
+                            KIF_DIAGRAM_KANJI[piece.type] || piece.type;
+                        cell = (piece.color === "w" ? "v" : "") + kanji;
+                    }
+                    row += cell.padStart(3, " ");
+                }
+                row += "|" + KIF_RANK_KANJI[rank];
+                lines.push(row);
+            }
+            lines.push(KIF_BOARD_BORDER);
+            return lines;
+        }
+
+        // Every KIF export shares three fixed lines: sente/gote player name
+        // fields (left blank - this applet has no player-name concept)
+        // followed by the fixed move-table column header. Before those,
+        // standard-start games get a single "手合割：" line, while
+        // non-standard-start games get a full board drawing instead.
+        buildKIFString() {
+            const lines = [];
+
+            const startSFEN = this.startingSFEN || this.exportSFEN();
+            const sfenFields = (startSFEN || "").split(" ");
+            const boardPart = sfenFields[0] || "";
+            const startPlayer = sfenFields[1] || "b";
+
+            // 手合割： is only valid for the standard starting position with
+            // sente to move (the only case a real "手合割" — even-game
+            // handicap type — actually describes). Any other position,
+            // including this exact same board with gote to move, must use
+            // a full board drawing instead.
+            if (boardPart === KIF_STANDARD_START_BOARD && startPlayer === "b") {
+                lines.push("手合割：");
+            } else {
+                lines.push(...this.buildKIFBoardDrawing(boardPart));
+            }
+
+            // KIF has no per-move player field — whoever moves first is
+            // implied by the header instead. Sente-first is the silent
+            // default; when gote moves first, a "後手番" marker line
+            // immediately follows the header (board drawing or 手合割：).
+            if (startPlayer === "w") {
+                lines.push("後手番");
+            }
+
+            lines.push(
+                "先手：",
+                "後手：",
+                "手数----指手---------消費時間--",
+            );
+
+            // The starting-position comment (same field CSL/PGN place before
+            // the first move) is rendered the same way as per-move comments:
+            // one "* ..." line per source line break, padded to line up
+            // under the move-number column.
+            if (this.startingComment && this.startingComment.trim()) {
+                const commentPad = " ".repeat(this.getKIFNumWidth() - 1);
+                this.startingComment.split("\n").forEach((commentLine) => {
+                    lines.push(`${commentPad}* ${commentLine}`);
+                });
+            }
+
+            const moveLines = this.buildKIFMoveList();
+            if (moveLines) {
+                lines.push(moveLines);
+            }
+
+            return lines.join("\n");
+        }
+
+        // Shared move-number column width used by both the move list and the
+        // starting-position comment padding: the widest move number gets
+        // exactly one leading space, and every shorter number (including the
+        // starting comment, which has no move number of its own) pads out to
+        // that same total width.
+        getKIFNumWidth() {
+            const maxDigits = String(this.moveHistory.length).length;
+            return maxDigits + 1;
+        }
+
+        // Convert an internal square ID ("<fileNumber><rankChar>", e.g. "8i")
+        // to its KIF display token: the Arabic file digit(s) followed by the
+        // kanji rank numeral (e.g. "8九").
+        kifSquareToken(sq) {
+            const match = (sq || "").match(/^(\d+)([a-l])$/);
+            if (!match) return sq || "";
+            const fileNum = match[1];
+            const rankIdx = match[2].charCodeAt(0) - 97;
+            return fileNum + (KIF_RANK_KANJI[rankIdx] || "");
+        }
+
+        // Formal KIF piece name for a move leg. KIF move text always names
+        // the piece by its identity BEFORE the move — even when the move
+        // promotes it — and relies on a separate trailing "成" suffix to
+        // signal the promotion. This holds even for pieces whose promotion
+        // target has its own distinct traditional name (e.g. a native
+        // Dragon Horse promoting to Horned Falcon is still written
+        // "龍馬成", not "角鷹成"), confirmed against the reference example.
+        getKIFPieceName(pieceType) {
+            return KIF_MOVE_PIECE_NAMES[pieceType] || pieceType;
+        }
+
+        // Render the full KIF move list from this.moveHistory. Each entry
+        // is numbered by its 1-based ply index ("N 手目"). Double moves
+        // (Lion/Horned Falcon/Soaring Eagle) share that same number across
+        // two lines ("N 手目一歩目" / "N 手目二歩目"); a promotion suffix
+        // ("成") is only ever attached to the final leg.
+        //
+        // Two special double-move cases, both landing back on the origin
+        // square (move.to === move.from):
+        //   - "居食い" (stationary capture): a REAL double move (midpoint
+        //     recorded) where the piece hops out and back, capturing along
+        //     the way. Marked with full-width parens on the final leg.
+        //   - "じっと" (pass): no midpoint recorded at all (nothing was
+        //     captured, nothing legally forces a midpoint) — same fake-
+        //     midpoint substitution used for PGN turn-passing moves via
+        //     findPassMidpoint(). Marked with half-width parens.
+        buildKIFMoveList() {
+            const startSFEN = this.startingSFEN || this.exportSFEN();
+            const lines = [];
+
+            // Number padding is relative, not fixed: the widest move number
+            // gets exactly one leading space, and every shorter number is
+            // padded out to that same total width (so single-digit numbers
+            // get 2 leading spaces in a game with up to 99 moves, 3 in a
+            // game with up to 999, etc.).
+            const numWidth = this.getKIFNumWidth();
+
+            this.moveHistory.forEach((move, i) => {
+                const num = String(i + 1).padStart(numWidth, " ");
+                const promoSuffix = move.promoted ? "成" : "";
+                const pieceName = this.getKIFPieceName(move.piece.type);
+                const isReturnToOrigin = move.to === move.from;
+
+                if (move.midpoint && isReturnToOrigin) {
+                    // 居食い: stationary capture double move.
+                    lines.push(
+                        `${num} 手目一歩目 ${this.kifSquareToken(move.midpoint)}${pieceName} （←${this.kifSquareToken(move.from)}）`,
+                    );
+                    lines.push(
+                        `${num} 手目二歩目 ${this.kifSquareToken(move.to)}${pieceName}${promoSuffix}（居食い） （←${this.kifSquareToken(move.midpoint)}）`,
+                    );
+                } else if (move.midpoint) {
+                    // Normal double move.
+                    lines.push(
+                        `${num} 手目一歩目 ${this.kifSquareToken(move.midpoint)}${pieceName} （←${this.kifSquareToken(move.from)}）`,
+                    );
+                    lines.push(
+                        `${num} 手目二歩目 ${this.kifSquareToken(move.to)}${pieceName}${promoSuffix} （←${this.kifSquareToken(move.midpoint)}）`,
+                    );
+                } else if (isReturnToOrigin) {
+                    // じっと: turn-passing move, rendered as a fake double move.
+                    const prevSFENFull =
+                        i === 0
+                            ? startSFEN
+                            : this.moveHistory[i - 1].resultingSFEN || "";
+                    const prevBoard = prevSFENFull.split(" ")[0] || "";
+                    let boardBefore = null;
+                    try {
+                        boardBefore = prevBoard
+                            ? this.parseSFENBoard(prevBoard)
+                            : null;
+                    } catch (_) {
+                        /* fall through to no-fake-midpoint case below */
+                    }
+                    const fakeMid = this.findPassMidpoint(
+                        move.from,
+                        boardBefore,
+                    );
+                    const midSq = fakeMid || move.from;
+
+                    lines.push(
+                        `${num} 手目一歩目 ${this.kifSquareToken(midSq)}${pieceName} （←${this.kifSquareToken(move.from)}）`,
+                    );
+                    lines.push(
+                        `${num} 手目二歩目 ${this.kifSquareToken(move.to)}${pieceName}${promoSuffix}(じっと) （←${this.kifSquareToken(midSq)}）`,
+                    );
+                } else {
+                    // Normal single-leg move.
+                    lines.push(
+                        `${num} 手目 ${this.kifSquareToken(move.to)}${pieceName}${promoSuffix} （←${this.kifSquareToken(move.from)}）`,
+                    );
+                }
+
+                // Comments follow the move's line(s), one KIF comment line per
+                // source line break. Each comment line starts with "*", padded
+                // by the same number of leading spaces as the move-number
+                // column minus the "*" itself (so it visually lines up under
+                // the number), followed by a space and the comment text.
+                if (move.comment && move.comment.trim()) {
+                    const commentPad = " ".repeat(numWidth - 1);
+                    move.comment.split("\n").forEach((commentLine) => {
+                        lines.push(`${commentPad}* ${commentLine}`);
+                    });
+                }
+            });
+            return lines.join("\n");
+        }
+
+        updateKIFExport() {
+            const ta = this.container.querySelector("[data-kif-export]");
+            if (!ta) return;
+            ta.value = this.buildKIFString();
+        }
+
+        // Convert an arbitrary 12x12 board array (as produced by
+        // parseSFENBoard(), or hand-built while parsing a KIF board
+        // drawing) into an SFEN board-part string. Mirrors boardToSFEN()'s
+        // logic exactly, but works on any board array rather than
+        // this.board, so it can be used for pure/offline conversions.
+        sfenBoardPartFromArray(board) {
+            let sfen = "";
+            for (let rank = 0; rank < 12; rank++) {
+                let emptyCount = 0;
+                let rankString = "";
+                for (let file = 0; file < 12; file++) {
+                    const piece = board[rank][file];
+                    if (piece) {
+                        if (emptyCount > 0) {
+                            rankString += emptyCount.toString();
+                            emptyCount = 0;
+                        }
+                        if (piece.promoted || piece.type.startsWith("+")) {
+                            const originalType =
+                                piece.originalType ||
+                                (piece.type.startsWith("+")
+                                    ? piece.type.substring(1)
+                                    : piece.type);
+                            let pieceChar = originalType;
+                            if (piece.color === "w")
+                                pieceChar = pieceChar.toLowerCase();
+                            rankString += "+" + pieceChar;
+                        } else {
+                            let pieceChar = piece.type;
+                            if (piece.color === "w")
+                                pieceChar = pieceChar.toLowerCase();
+                            rankString += pieceChar;
+                        }
+                    } else {
+                        emptyCount++;
+                    }
+                }
+                if (emptyCount > 0) rankString += emptyCount.toString();
+                sfen += rankString;
+                if (rank < 11) sfen += "/";
+            }
+            return sfen;
+        }
+
+        // Convert a KIF file-number + rank-kanji square token (e.g. "5八")
+        // back to an internal square ID ("<fileNumber><rankChar>", e.g.
+        // "5h"). Exact inverse of kifSquareToken().
+        kifTokenToSquare(token) {
+            const match = (token || "").match(
+                /^(\d{1,2})(十一|十二|[一二三四五六七八九十])$/,
+            );
+            if (!match) return null;
+            const fileNum = match[1];
+            const rankIdx = KIF_RANK_KANJI.indexOf(match[2]);
+            if (rankIdx === -1) return null;
+            return fileNum + String.fromCharCode(97 + rankIdx);
+        }
+
+        // Convert a KIF string to CSL notation. Returns { csl } on success or
+        // { error } on failure. Pure logic, no DOM access. Handles both the
+        // "手合割：" (standard start) and full board-drawing headers, the
+        // full move-list grammar (normal moves, promotions, double moves,
+        // 居食い, and じっと), and comments (including a leading "starting"
+        // comment block before the first move).
+        convertKIFStringToCSL(kif) {
+            kif = (kif || "").trim();
+            if (!kif) {
+                return { error: "No KIF data provided." };
+            }
+
+            const lines = kif.split(/\r\n|\r|\n/);
+            let idx = 0;
+            const isBlank = (s) => s.trim() === "";
+
+            while (idx < lines.length && isBlank(lines[idx])) idx++;
+
+            let boardPart;
+            if (
+                idx < lines.length &&
+                lines[idx].trim().startsWith("手合割")
+            ) {
+                boardPart = KIF_STANDARD_START_BOARD;
+                idx++;
+            } else {
+                // Expect a full board drawing: a border line, 12 piece rows,
+                // then a closing border line. Skip any preceding label/
+                // header rows (e.g. the file-number header) to find it.
+                while (
+                    idx < lines.length &&
+                    !/^\+-+\+$/.test(lines[idx].trim())
+                )
+                    idx++;
+                if (idx >= lines.length) {
+                    return {
+                        error: "Error: could not find a 手合割： line or a KIF board drawing.",
+                    };
+                }
+                idx++; // consume opening border
+
+                const invDiagram = {};
+                for (const [type, kanji] of Object.entries(
+                    KIF_DIAGRAM_KANJI,
+                )) {
+                    invDiagram[kanji] = type;
+                }
+
+                const board = this.createEmptyBoard();
+                for (let r = 0; r < 12; r++) {
+                    if (idx >= lines.length) {
+                        return {
+                            error: "Error: incomplete KIF board drawing.",
+                        };
+                    }
+                    const line = lines[idx];
+                    idx++;
+                    const body = line
+                        .replace(/^\|/, "")
+                        .replace(/\|[^|]*$/, "");
+                    for (let f = 0; f < 12; f++) {
+                        const chunk = body.slice(f * 3, f * 3 + 3);
+                        const cell = chunk.trim();
+                        if (!cell || cell === "・") continue;
+                        let color = "b";
+                        let token = cell;
+                        if (token.startsWith("v")) {
+                            color = "w";
+                            token = token.slice(1);
+                        }
+                        const type = invDiagram[token];
+                        if (!type) {
+                            return {
+                                error: `Error: unrecognized piece symbol "${cell}" in KIF board drawing.`,
+                            };
+                        }
+                        board[r][f] = type.startsWith("+")
+                            ? {
+                                  type,
+                                  color,
+                                  promoted: true,
+                                  originalType: type.slice(1),
+                              }
+                            : { type, color, promoted: false };
+                    }
+                }
+                // consume closing border, if present
+                if (
+                    idx < lines.length &&
+                    /^\+-+\+$/.test(lines[idx].trim())
+                )
+                    idx++;
+
+                boardPart = this.sfenBoardPartFromArray(board);
+            }
+
+            // Skip the 先手：/ 後手：/ move-table header lines (and any blank
+            // lines interspersed). A "後手番" line is not a blank player-name
+            // field like "後手：" — it's a marker meaning gote moves first
+            // (KIF has no per-move player field, so this is the only place
+            // that's recorded); sente-first is the silent default otherwise.
+            let startingPlayer = "b";
+            while (idx < lines.length) {
+                const t = lines[idx].trim();
+                if (t === "" || t.startsWith("先手") || t.startsWith("手数")) {
+                    idx++;
+                    continue;
+                }
+                if (t.startsWith("後手番")) {
+                    startingPlayer = "w";
+                    idx++;
+                    continue;
+                }
+                if (t.startsWith("後手")) {
+                    idx++;
+                    continue;
+                }
+                break;
+            }
+
+            // A run of "* ..." comment lines before the first move is the
+            // starting comment (mirrors PGN's post-FEN-tag comment).
+            const COMMENT_RE = /^\s*\*\s?(.*)$/;
+            const startingCommentLines = [];
+            while (idx < lines.length) {
+                const m = lines[idx].match(COMMENT_RE);
+                if (!m) break;
+                startingCommentLines.push(m[1]);
+                idx++;
+            }
+            const startingComment = startingCommentLines.join("\n");
+
+            // Parse the move list.
+            const NUM_RE = /^\s*(\d+)\s*手目(一歩目|二歩目)?\s*/;
+            const FROM_RE =
+                /（←(\d{1,2}(?:十一|十二|[一二三四五六七八九十]))）\s*$/;
+            const DEST_RE =
+                /^(\d{1,2}(?:十一|十二|[一二三四五六七八九十]))/;
+
+            const entries = [];
+            let currentEntry = null;
+            let pending = null; // { fromSq, midSq } awaiting a 二歩目 leg
+
+            for (; idx < lines.length; idx++) {
+                const rawLine = lines[idx];
+                if (isBlank(rawLine)) continue;
+
+                const commentMatch = rawLine.match(COMMENT_RE);
+                if (commentMatch) {
+                    if (currentEntry) {
+                        currentEntry.comments.push(commentMatch[1]);
+                    }
+                    continue;
+                }
+
+                const numMatch = rawLine.match(NUM_RE);
+                if (!numMatch) {
+                    return {
+                        error: `Error: could not parse KIF line: "${rawLine}"`,
+                    };
+                }
+                const leg = numMatch[2] || null;
+                let rest = rawLine.slice(numMatch[0].length);
+
+                const fromMatch = rest.match(FROM_RE);
+                if (!fromMatch) {
+                    return {
+                        error: `Error: could not find origin square in KIF line: "${rawLine}"`,
+                    };
+                }
+                const fromToken = fromMatch[1];
+                rest = rest.slice(0, fromMatch.index).trim();
+
+                let marker = null;
+                if (rest.includes("（居食い）")) {
+                    marker = "istick";
+                    rest = rest.replace("（居食い）", "").trim();
+                } else if (/\(じっと\)/.test(rest)) {
+                    marker = "pass";
+                    rest = rest.replace(/\(じっと\)/, "").trim();
+                }
+
+                let promoted = false;
+                if (rest.endsWith("成")) {
+                    promoted = true;
+                    rest = rest.slice(0, -1).trim();
+                }
+
+                const destMatch = rest.match(DEST_RE);
+                if (!destMatch) {
+                    return {
+                        error: `Error: could not find destination square in KIF line: "${rawLine}"`,
+                    };
+                }
+                const destToken = destMatch[1];
+
+                const fromSq = this.kifTokenToSquare(fromToken);
+                const destSq = this.kifTokenToSquare(destToken);
+                if (!fromSq || !destSq) {
+                    return {
+                        error: `Error: could not parse squares in KIF line: "${rawLine}"`,
+                    };
+                }
+
+                if (leg === "一歩目") {
+                    pending = { fromSq, midSq: destSq };
+                    continue;
+                }
+
+                let usi;
+                if (leg === "二歩目") {
+                    if (!pending) {
+                        return {
+                            error: `Error: 二歩目 line with no matching 一歩目: "${rawLine}"`,
+                        };
+                    }
+                    const { fromSq: origFrom, midSq } = pending;
+                    pending = null;
+                    if (marker === "pass") {
+                        // じっと: the recorded midpoint is a display-only
+                        // placeholder (findPassMidpoint) — CSL represents a
+                        // pass as a plain two-square "stay" token.
+                        usi = origFrom + origFrom;
+                    } else {
+                        // 居食い (marker === "istick") or a normal double
+                        // move both keep the real midpoint.
+                        usi = origFrom + midSq + destSq + (promoted ? "+" : "");
+                    }
+                } else {
+                    usi = fromSq + destSq + (promoted ? "+" : "");
+                }
+
+                const entry = { usi, comments: [] };
+                entries.push(entry);
+                currentEntry = entry;
+            }
+
+            if (pending) {
+                return {
+                    error: "Error: KIF ends with an incomplete double move (missing 二歩目 line).",
+                };
+            }
+
+            let csl = boardPart + " " + startingPlayer + " - 1";
+            if (startingComment) csl += " {" + startingComment + "}";
+            for (const entry of entries) {
+                csl += " " + entry.usi;
+                if (entry.comments.length) {
+                    csl += " {" + entry.comments.join("\n") + "}";
+                }
+            }
+
+            return { csl };
+        }
+
+        // Read KIF from [data-kif-import], convert it to CSL notation, and
+        // import it into the game (with the same overwrite confirmation as
+        // the CSL/PGN import buttons).
+        importKIFFromInput() {
+            // Block import in viewOnly mode
+            if (this.config.appletMode === "viewOnly") {
+                console.log("Game import blocked in viewOnly mode");
+                return;
+            }
+
+            const input = this.container.querySelector("[data-kif-import]");
+            if (!input || !input.value.trim()) {
+                return;
+            }
+
+            // Show confirmation prompt before importing
+            if (
+                !confirm("This will overwrite the current game. Are you sure?")
+            ) {
+                return;
+            }
+
+            const result = this.convertKIFStringToCSL(input.value.trim());
+            if (result.error) {
+                alert(result.error);
+                return;
+            }
+
+            this.importGame(result.csl);
+            input.value = "";
+            this.updateButtonStates();
+        }
+
         // Convert a PGN square (fileLetter + rankNumber, e.g. "g6") to a CSL/USI
         // square (fileNumber + rankChar, e.g. "6g").  Exact inverse of cslSqToPgn.
         pgnSqToCsl(pgnSq) {
@@ -14044,6 +14763,30 @@ impossible to fulfill for either player, the game is considered a draw.</p>
             // Copy to clipboard without selecting the text
             if (navigator.clipboard) {
                 navigator.clipboard.writeText(pgn).catch(() => {
+                    // Fallback: select + execCommand
+                    ta.select();
+                    ta.setSelectionRange(0, 99999);
+                    try {
+                        document.execCommand("copy");
+                    } catch (_) {}
+                });
+            } else {
+                ta.select();
+                ta.setSelectionRange(0, 99999);
+                try {
+                    document.execCommand("copy");
+                } catch (_) {}
+            }
+        }
+
+        exportKIF() {
+            const ta = this.container.querySelector("[data-kif-export]");
+            if (!ta) return;
+            const kif = this.buildKIFString();
+            ta.value = kif;
+            // Copy to clipboard without selecting the text
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(kif).catch(() => {
                     // Fallback: select + execCommand
                     ta.select();
                     ta.setSelectionRange(0, 99999);
