@@ -2133,7 +2133,7 @@
           </div>
           <div class="chushogi-export-subpanel${this.currentExportSubTab === "csl" ? " active" : ""}" data-export-subpanel="csl">
           <div class="chushogi-setting-group">
-            <h4>Game Export</h4>
+            <h4>CSL Export</h4>
             <textarea class="chushogi-textarea" translate="no" data-game-export readonly>Loading...</textarea>
             <button class="chushogi-btn-primary" onclick="this.closest('.chushogi-container').chuShogiInstance.exportGame()" title="Copy current CSL notation to clipboard">
               ↓ Export CSL
@@ -2154,7 +2154,7 @@
           ${
               !isViewOnly && !isPuzzle
                   ? `<div class="chushogi-setting-group">
-            <h4>Game Import${isFixedStart ? " (Restricted)" : ""}</h4>
+            <h4>CSL Import${isFixedStart ? " (Restricted)" : ""}</h4>
             <textarea class="chushogi-textarea" placeholder="Paste game in CSL notation (i. e. SFEN {StartComment} USIMove1 USIMove2 {Comment2}... or USIMove1 USIMove2...) here..." data-game-import=""></textarea>
             <button class="chushogi-btn-primary" onclick="this.closest('.chushogi-container').chuShogiInstance.importGameFromInput()" title="Import game from CSL notation">
               ↑ Import CSL
@@ -2175,14 +2175,12 @@
           ${
               !isViewOnly && !isPuzzle
                   ? `<div class="chushogi-setting-group">
-            <h4>PGN to CSL Conversion</h4>
+            <h4>PGN Import${isFixedStart ? " (Restricted)" : ""}</h4>
             <textarea class="chushogi-textarea" placeholder="Paste PGN input here..." data-pgn-import=""></textarea>
-            <button class="chushogi-btn-primary" onclick="this.closest('.chushogi-container').chuShogiInstance.convertPGNtoCSL()" title="Convert PGN to CSL notation">
-              ⇄ Convert PGN to CSL
+            <button class="chushogi-btn-primary" onclick="this.closest('.chushogi-container').chuShogiInstance.importPGNFromInput()" title="Import game from PGN notation">
+              ↑ Import PGN
             </button>
-          </div>
-          <div class="chushogi-setting-group">
-            <textarea class="chushogi-textarea" translate="no" data-pgn-csl-output readonly placeholder="CSL output will appear here..."></textarea>
+            ${isFixedStart ? `<p class="chushogi-help-text">Only moves-only games or games with a matching starting SFEN are allowed.</p>` : ""}
           </div>`
                   : ""
           }
@@ -3780,14 +3778,14 @@ impossible to fulfill for either player, the game is considered a draw.</p>
               </ul>`
               }
               <p><strong>Game Export${!isViewOnly && !isPuzzle ? "/Import" : ""}:</strong></p>
-              <p>The ⇅ Export/Import tab allows for games to be exported to plaintext${!isViewOnly && !isPuzzle ? (isFixedStart ? " and imported from plaintext (imports restricted)." : " and imported from plaintext.") : "."}${isPuzzle ? " For puzzles, a 'View Solution' button to reveal the complete puzzle answer, and imports are not available." : ""}</p><p>The format used for a game's plaintext is called CSL (short for ChuShogiLite) notation and is very simple: an SFEN followed by a sequence of moves in Universal Shogi Notation (USI) and optional comments enclosed in {} curly brackets, all separated by spaces. Alternatively, you can import just the moves (without SFEN) to continue from the current game's starting position.${isFixedStart ? " Imports are restricted to moves-only format or games that start from the same position." : ""} An example is provided in the Game Export section.</p>
+              <p>The ⇅ Export/Import tab allows for games to be exported to plaintext${!isViewOnly && !isPuzzle ? (isFixedStart ? " and imported from plaintext (imports restricted)." : " and imported from plaintext.") : "."}${isPuzzle ? " For puzzles, a 'View Solution' button to reveal the complete puzzle answer, and imports are not available." : ""}</p><p>The format used for a game's plaintext is called CSL (short for ChuShogiLite) notation and is very simple: an SFEN followed by a sequence of moves in Universal Shogi Notation (USI) and optional comments enclosed in {} curly brackets, all separated by spaces. Alternatively, you can import just the moves (without SFEN) to continue from the current game's starting position.${isFixedStart ? " Imports are restricted to moves-only format or games that start from the same position." : ""} An example is provided in the CSL Export section.</p>
               <p>SFEN {StartComment} USIMove1 USIMove2 {Comment2}...</p>
               <p>A comment for a move is placed immediately after that move, and the comment for the starting position is placed just before the first move.</p>
               <ul>
                 <li>To copy the current game's plaintext, click Export CSL</li>
                 ${
                     !isViewOnly && !isPuzzle
-                        ? `<li>To import a game, paste it's plaintext into the Game Import text area and press Import Game
+                        ? `<li>To import a game, paste it's CSL notation into the CSL Import text area and press Import CSL
                 <ul>
                   <li>Importing a game will overwrite the current game</li>
                 </ul>
@@ -3795,12 +3793,13 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                         : ""
                 }
               </ul>
-              <p>Comments have three special escape characters used to encode certain characters within the Game Export String:</p>
+              <p>Comments in CSL notation have three special escape characters used to encode certain characters within them:</p>
               <ul>
               <li><strong>\\}</strong>: } closing curly bracket within comment</li>
               <li><strong>\\\\</strong>: \\ backslash</li>
               <li><strong>\\n</strong>: newline character</li>
               </ul>
+              <p>Games can also be exported to${!isViewOnly && !isPuzzle ? " and imported from" : ""} PGN (Portable Game Notation).</p>
               ${
                   !isViewOnly && !isFixedStart && !isPuzzle
                       ? `<p><strong>Editing the Board:</strong></p>
@@ -3868,7 +3867,7 @@ impossible to fulfill for either player, the game is considered a draw.</p>
               <ul translate="no">
                 <li><strong>appletMode:</strong> <span style="text-decoration:underline">"sandbox"</span>, "fixedStart", "fixedRules", "fixedSettings", "fixedStartAndRules", "fixedStartAndSettings", "puzzle", "viewOnly"
                 </li>
-                <li><strong>startGame:</strong> Game Export string (i. e. SFEN {StartComment} USIMove1 USIMove2 {Comment2}... or USIMove1 USIMove2...), <span style="text-decoration:underline">null</span></li>
+                <li><strong>startGame:</strong> CSL notation (i. e. SFEN {StartComment} USIMove1 USIMove2 {Comment2}... or USIMove1 USIMove2...), <span style="text-decoration:underline">null</span></li>
                 <li><strong>allowCustomComments:</strong> <span style="text-decoration:underline">true</span>/false
                     <ul>
                     <li>Defaults to <span style="text-decoration:underline">false</span> when <strong>appletMode</strong> is "puzzle" or "viewOnly"</li>
@@ -8462,9 +8461,19 @@ impossible to fulfill for either player, the game is considered a draw.</p>
             // Clear all drawings on normal click/tap (works in all modes)
             this.clearAllDrawings();
 
-            // Block piece movement clicks in viewOnly mode (but allow drawing clearing above)
+            // Block piece movement clicks in viewOnly mode (but allow drawing clearing above).
+            // Pieces are not movable in viewOnly mode, so clicks are treated the
+            // same way as clicking an immovable piece: show its info instead of
+            // allowing selection/movement.
             if (this.config.appletMode === "viewOnly") {
                 console.log("Piece movement clicks blocked in viewOnly mode");
+                const viewOnlyPiece = this.board[rank][file];
+                if (viewOnlyPiece) {
+                    this.inspectSquare(squareId);
+                } else {
+                    this.inspectedSquare = null;
+                    this.updatePieceInfoPanel();
+                }
                 return;
             }
 
@@ -8491,11 +8500,18 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                 }
             }
 
-            // Prevent moves during navigation (only for normal play mode)
+            // Prevent moves during navigation (only for normal play mode).
+            // Pieces are not movable while viewing a non-current position, so
+            // clicks are treated the same way as clicking an immovable piece:
+            // show its info instead of allowing selection/movement.
             if (this.isNavigating) {
-                console.log(
-                    "Cannot make moves while navigating history. Use the navigation buttons to return to current position first.",
-                );
+                const navPiece = this.board[rank][file];
+                if (navPiece) {
+                    this.inspectSquare(squareId);
+                } else {
+                    this.inspectedSquare = null;
+                    this.updatePieceInfoPanel();
+                }
                 return;
             }
 
@@ -13603,8 +13619,14 @@ impossible to fulfill for either player, the game is considered a draw.</p>
             const match = pgnSq.match(/^([a-l])(\d+)$/);
             if (!match) return null;
             const fileNumber = 109 - match[1].charCodeAt(0); // cslSqToPgn: charCode = 109 - fileNumber
-            const rankIndex  = 12 - parseInt(match[2], 10);  // cslSqToPgn: rankNumber = 12 - rankIndex
-            if (rankIndex < 0 || rankIndex > 11 || fileNumber < 1 || fileNumber > 12) return null;
+            const rankIndex = 12 - parseInt(match[2], 10); // cslSqToPgn: rankNumber = 12 - rankIndex
+            if (
+                rankIndex < 0 ||
+                rankIndex > 11 ||
+                fileNumber < 1 ||
+                fileNumber > 12
+            )
+                return null;
             return String(fileNumber) + String.fromCharCode(97 + rankIndex);
         }
 
@@ -13617,50 +13639,55 @@ impossible to fulfill for either player, the game is considered a draw.</p>
             const n = text.length;
             while (i < n) {
                 const ch = text[i];
-                if (ch === '{') {
+                if (ch === "{") {
                     // Brace comment — collect content verbatim
                     i++;
-                    let comment = '';
-                    while (i < n && text[i] !== '}') comment += text[i++];
+                    let comment = "";
+                    while (i < n && text[i] !== "}") comment += text[i++];
                     if (i < n) i++; // skip closing '}'
-                    tokens.push({ type: 'comment', text: comment });
-                } else if (ch === '(') {
+                    tokens.push({ type: "comment", text: comment });
+                } else if (ch === "(") {
                     // Variation — skip, respecting nesting
-                    let depth = 1; i++;
+                    let depth = 1;
+                    i++;
                     while (i < n && depth > 0) {
-                        if (text[i] === '(') depth++;
-                        else if (text[i] === ')') depth--;
+                        if (text[i] === "(") depth++;
+                        else if (text[i] === ")") depth--;
                         i++;
                     }
-                } else if (ch === ';') {
+                } else if (ch === ";") {
                     // Semicolon line comment — skip to end of line
-                    while (i < n && text[i] !== '\n') i++;
-                } else if (ch === '%' && (i === 0 || text[i - 1] === '\n')) {
+                    while (i < n && text[i] !== "\n") i++;
+                } else if (ch === "%" && (i === 0 || text[i - 1] === "\n")) {
                     // PGN escape line — skip to end of line
-                    while (i < n && text[i] !== '\n') i++;
+                    while (i < n && text[i] !== "\n") i++;
                 } else if (/\s/.test(ch)) {
                     i++;
                 } else {
                     // Whitespace-delimited word
-                    let word = '';
-                    while (i < n && !/\s/.test(text[i]) && text[i] !== '{' && text[i] !== '(') {
+                    let word = "";
+                    while (
+                        i < n &&
+                        !/\s/.test(text[i]) &&
+                        text[i] !== "{" &&
+                        text[i] !== "("
+                    ) {
                         word += text[i++];
                     }
                     if (!word) continue;
-                    if (/^\d+\.+$/.test(word) || word === '...') {
+                    if (/^\d+\.+$/.test(word) || word === "...") {
                         // Move-number prefix — ignore
-                    } else if (['*', '1-0', '0-1', '1/2-1/2'].includes(word)) {
+                    } else if (["*", "1-0", "0-1", "1/2-1/2"].includes(word)) {
                         // Result token — ignore
-                    } else if (word[0] === '$') {
+                    } else if (word[0] === "$") {
                         // NAG annotation \u2014 ignore
                     } else {
-                        tokens.push({ type: 'move', text: word });
+                        tokens.push({ type: "move", text: word });
                     }
                 }
             }
             return tokens;
         }
-
 
         // Parse a Chu Shogi PGN SAN token into its logical components:
         //   { pieceType, destSq, midSq, promotes, disambigFile, disambigRank }
@@ -13671,15 +13698,21 @@ impossible to fulfill for either player, the game is considered a draw.</p>
 
             // Strip promotion / deferral suffix
             let promotes = false;
-            if (s.endsWith('+'))      { promotes = true; s = s.slice(0, -1); }
-            else if (s.endsWith('=')) {                  s = s.slice(0, -1); }
+            if (s.endsWith("+")) {
+                promotes = true;
+                s = s.slice(0, -1);
+            } else if (s.endsWith("=")) {
+                s = s.slice(0, -1);
+            }
 
             // Piece type: optional leading '+' + one uppercase letter
-            let pieceType = '';
-            if (s[0] === '+' && s.length > 1 && /[A-Z]/.test(s[1])) {
-                pieceType = s.slice(0, 2); s = s.slice(2);
+            let pieceType = "";
+            if (s[0] === "+" && s.length > 1 && /[A-Z]/.test(s[1])) {
+                pieceType = s.slice(0, 2);
+                s = s.slice(2);
             } else if (/[A-Z]/.test(s[0])) {
-                pieceType = s[0]; s = s.slice(1);
+                pieceType = s[0];
+                s = s.slice(1);
             } else {
                 return null;
             }
@@ -13691,37 +13724,52 @@ impossible to fulfill for either player, the game is considered a draw.</p>
             };
 
             // Split on ',' for double moves
-            const parts = s.split(',');
+            const parts = s.split(",");
             const isDouble = parts.length >= 2;
 
-            let midSq = null, destSq = null, beforeDest = '';
+            let midSq = null,
+                destSq = null,
+                beforeDest = "";
             if (isDouble) {
                 const m0 = lastSqMatch(parts[0]);
                 const m1 = lastSqMatch(parts[1]);
                 if (!m0 || !m1) return null;
-                midSq      = m0[0];
-                destSq     = m1[0];
+                midSq = m0[0];
+                destSq = m1[0];
                 beforeDest = parts[0].slice(0, m0.index);
             } else {
                 const m = lastSqMatch(s);
                 if (!m) return null;
-                destSq     = m[0];
+                destSq = m[0];
                 beforeDest = s.slice(0, m.index);
             }
 
             // Remove capture marker from disambiguation zone
-            beforeDest = beforeDest.replace(/x/g, '');
+            beforeDest = beforeDest.replace(/x/g, "");
 
             // Parse disambiguation: full square, file letter, or rank number
-            let disambigFile = null, disambigRank = null;
-            const dSq   = beforeDest.match(/^([a-l])(\d+)$/);
+            let disambigFile = null,
+                disambigRank = null;
+            const dSq = beforeDest.match(/^([a-l])(\d+)$/);
             const dFile = beforeDest.match(/^([a-l])$/);
             const dRank = beforeDest.match(/^(\d+)$/);
-            if (dSq)        { disambigFile = dSq[1]; disambigRank = parseInt(dSq[2]); }
-            else if (dFile) { disambigFile = dFile[1]; }
-            else if (dRank) { disambigRank = parseInt(dRank[1]); }
+            if (dSq) {
+                disambigFile = dSq[1];
+                disambigRank = parseInt(dSq[2]);
+            } else if (dFile) {
+                disambigFile = dFile[1];
+            } else if (dRank) {
+                disambigRank = parseInt(dRank[1]);
+            }
 
-            return { pieceType, destSq, midSq, promotes, disambigFile, disambigRank };
+            return {
+                pieceType,
+                destSq,
+                midSq,
+                promotes,
+                disambigFile,
+                disambigRank,
+            };
         }
 
         // Convert a single SAN token to a USI move string using the supplied board.
@@ -13730,10 +13778,17 @@ impossible to fulfill for either player, the game is considered a draw.</p>
         sanToUSI(san, pgnColor, board) {
             const parsed = this.parseSANToken(san);
             if (!parsed) return null;
-            const { pieceType, destSq, midSq, promotes, disambigFile, disambigRank } = parsed;
+            const {
+                pieceType,
+                destSq,
+                midSq,
+                promotes,
+                disambigFile,
+                disambigRank,
+            } = parsed;
 
             // PGN white = CSL "b" (sente);  PGN black = CSL "w" (gote)
-            const cslColor = pgnColor === 'w' ? 'b' : 'w';
+            const cslColor = pgnColor === "w" ? "b" : "w";
 
             const destCsl = this.pgnSqToCsl(destSq);
             if (!destCsl) return null;
@@ -13770,24 +13825,42 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                 for (let r = 0; r < 12; r++) {
                     for (let f = 0; f < 12; f++) {
                         const p = board[r][f];
-                        if (!p || p.type !== pieceType || p.color !== cslColor) continue;
-                        if (this.canReachSquare(r, f, p, midRank, midFile, board))
+                        if (!p || p.type !== pieceType || p.color !== cslColor)
+                            continue;
+                        if (
+                            this.canReachSquare(
+                                r,
+                                f,
+                                p,
+                                midRank,
+                                midFile,
+                                board,
+                            )
+                        )
                             midCandidates.push([r, f]);
                     }
                 }
                 const midFiltered = applyDisambig(midCandidates);
                 if (midFiltered.length === 1) {
-                    const fromCsl = this.getSquareId(midFiltered[0][0], midFiltered[0][1]);
+                    const fromCsl = this.getSquareId(
+                        midFiltered[0][0],
+                        midFiltered[0][1],
+                    );
                     // fromCsl === destCsl is a valid Lion-return (captures at mid, returns home)
-                    return fromCsl + midCsl + destCsl + (promotes ? '+' : '');
+                    return fromCsl + midCsl + destCsl + (promotes ? "+" : "");
                 }
 
                 // True pass move: no first-leg candidate found because the piece already
                 // sits on the destination and canReachSquare also rejects it as friendly.
                 // Emit the 2-square USI pass token (from === to, no mid).
                 const pieceAtDest = board[destRank][destFile];
-                if (pieceAtDest && pieceAtDest.type === pieceType && pieceAtDest.color === cslColor) {
-                    const passDisambigOk = applyDisambig([[destRank, destFile]]).length === 1;
+                if (
+                    pieceAtDest &&
+                    pieceAtDest.type === pieceType &&
+                    pieceAtDest.color === cslColor
+                ) {
+                    const passDisambigOk =
+                        applyDisambig([[destRank, destFile]]).length === 1;
                     if (passDisambigOk) return destCsl + destCsl;
                 }
                 return null;
@@ -13798,7 +13871,8 @@ impossible to fulfill for either player, the game is considered a draw.</p>
             for (let r = 0; r < 12; r++) {
                 for (let f = 0; f < 12; f++) {
                     const p = board[r][f];
-                    if (!p || p.type !== pieceType || p.color !== cslColor) continue;
+                    if (!p || p.type !== pieceType || p.color !== cslColor)
+                        continue;
                     if (this.canReachSquare(r, f, p, destRank, destFile, board))
                         candidates.push([r, f]);
                 }
@@ -13807,29 +13881,29 @@ impossible to fulfill for either player, the game is considered a draw.</p>
             if (filtered.length !== 1) return null;
 
             const fromCsl = this.getSquareId(filtered[0][0], filtered[0][1]);
-            return fromCsl + destCsl + (promotes ? '+' : '');
+            return fromCsl + destCsl + (promotes ? "+" : "");
         }
 
         // Apply a USI move to a mutable 12x12 board array in-place.
         // Used to advance board state between moves during PGN to CSL conversion.
         applyUSIToBoard(usi, board) {
-            const promotes = usi.endsWith('+');
+            const promotes = usi.endsWith("+");
             const u = promotes ? usi.slice(0, -1) : usi;
 
             // Extract all squares -- each is \d+[a-l] (file number + rank char)
-            const sqMatches = [...u.matchAll(/\d+[a-l]/g)].map(m => m[0]);
+            const sqMatches = [...u.matchAll(/\d+[a-l]/g)].map((m) => m[0]);
             if (sqMatches.length < 2) return;
 
             const fromSq = sqMatches[0];
-            const toSq   = sqMatches[sqMatches.length - 1];
-            const midSq  = sqMatches.length === 3 ? sqMatches[1] : null;
+            const toSq = sqMatches[sqMatches.length - 1];
+            const midSq = sqMatches.length === 3 ? sqMatches[1] : null;
 
             // True pass move: from === to with NO midpoint. Lion-return (from===to
             // with a midpoint) still needs to clear the captured piece at mid.
             if (fromSq === toSq && !midSq) return;
 
             const [fromRank, fromFile] = this.parseSquareId(fromSq);
-            const [toRank,   toFile  ] = this.parseSquareId(toSq);
+            const [toRank, toFile] = this.parseSquareId(toSq);
             const piece = board[fromRank][fromFile];
             if (!piece) return;
 
@@ -13842,22 +13916,24 @@ impossible to fulfill for either player, the game is considered a draw.</p>
             }
 
             const movedPiece = promotes
-                ? { ...piece, type: this.getPromotedType(piece.type) || piece.type, promoted: true }
+                ? {
+                      ...piece,
+                      type: this.getPromotedType(piece.type) || piece.type,
+                      promoted: true,
+                  }
                 : { ...piece };
 
             board[fromRank][fromFile] = null;
-            board[toRank][toFile]     = movedPiece;
+            board[toRank][toFile] = movedPiece;
         }
 
-        // Read PGN from [data-pgn-import], convert it to CSL notation, and write
-        // the result to [data-pgn-csl-output].
-        convertPGNtoCSL() {
-            const inputEl  = this.container.querySelector("[data-pgn-import]");
-            const outputEl = this.container.querySelector("[data-pgn-csl-output]");
-            if (!inputEl || !outputEl) return;
-
-            const pgn = inputEl.value.trim();
-            if (!pgn) { outputEl.value = ""; return; }
+        // Convert a PGN string to CSL notation. Returns { csl } on success or
+        // { error } on failure. Pure logic, no DOM access.
+        convertPGNStringToCSL(pgn) {
+            pgn = (pgn || "").trim();
+            if (!pgn) {
+                return { error: "No PGN data provided." };
+            }
 
             // 1. Extract FEN tag -> starting SFEN
             const DEFAULT_SFEN =
@@ -13867,7 +13943,7 @@ impossible to fulfill for either player, the game is considered a draw.</p>
             let startingSFEN = DEFAULT_SFEN;
             const fenMatch = pgn.match(/\[FEN\s+"([^"]+)"\]/i);
             if (fenMatch) {
-                const fp        = fenMatch[1].trim().split(/\s+/);
+                const fp = fenMatch[1].trim().split(/\s+/);
                 const cslPlayer = (fp[1] || "w") === "w" ? "b" : "w"; // invert PGN <-> CSL
                 startingSFEN = `${fp[0] || ""} ${cslPlayer} ${fp[2] || "-"} 1`;
             }
@@ -13875,9 +13951,14 @@ impossible to fulfill for either player, the game is considered a draw.</p>
             // 2. Initialise board state
             const sfenParts = startingSFEN.split(" ");
             let board;
-            try { board = this.parseSFENBoard(sfenParts[0]); }
-            catch (_) { board = null; }
-            if (!board) { outputEl.value = "Error: could not parse starting position."; return; }
+            try {
+                board = this.parseSFENBoard(sfenParts[0]);
+            } catch (_) {
+                board = null;
+            }
+            if (!board) {
+                return { error: "Error: could not parse starting position." };
+            }
 
             // 3. Determine first mover
             // CSL "b" = sente = PGN white;  CSL "w" = gote = PGN black
@@ -13885,7 +13966,7 @@ impossible to fulfill for either player, the game is considered a draw.</p>
 
             // 4. Tokenize PGN move text (strip all [Tag "..."] pairs first)
             const moveText = pgn.replace(/\[[^\]]*\]/g, "").trim();
-            const tokens   = this.tokenizePGNMoveText(moveText);
+            const tokens = this.tokenizePGNMoveText(moveText);
 
             // 5. Convert each token
             let startingComment = "";
@@ -13903,12 +13984,13 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                 } else if (tok.type === "move") {
                     const usi = this.sanToUSI(tok.text, currentPgnColor, board);
                     if (!usi) {
-                        outputEl.value = `Error: could not convert move "${tok.text}".`;
-                        return;
+                        return {
+                            error: `Error: could not convert move "${tok.text}".`,
+                        };
                     }
                     cslParts.push(usi);
                     this.applyUSIToBoard(usi, board);
-                    currentPgnColor  = currentPgnColor === "w" ? "b" : "w";
+                    currentPgnColor = currentPgnColor === "w" ? "b" : "w";
                     firstMoveEmitted = true;
                 }
             }
@@ -13916,9 +13998,42 @@ impossible to fulfill for either player, the game is considered a draw.</p>
             // 6. Assemble CSL string
             let csl = startingSFEN;
             if (startingComment) csl += " {" + startingComment + "}";
-            if (cslParts.length)  csl += " " + cslParts.join(" ");
+            if (cslParts.length) csl += " " + cslParts.join(" ");
 
-            outputEl.value = csl;
+            return { csl };
+        }
+
+        // Read PGN from [data-pgn-import], convert it to CSL notation, and
+        // import it into the game (with the same overwrite confirmation as
+        // the CSL import button).
+        importPGNFromInput() {
+            // Block import in viewOnly mode
+            if (this.config.appletMode === "viewOnly") {
+                console.log("Game import blocked in viewOnly mode");
+                return;
+            }
+
+            const input = this.container.querySelector("[data-pgn-import]");
+            if (!input || !input.value.trim()) {
+                return;
+            }
+
+            // Show confirmation prompt before importing
+            if (
+                !confirm("This will overwrite the current game. Are you sure?")
+            ) {
+                return;
+            }
+
+            const result = this.convertPGNStringToCSL(input.value.trim());
+            if (result.error) {
+                alert(result.error);
+                return;
+            }
+
+            this.importGame(result.csl);
+            input.value = "";
+            this.updateButtonStates();
         }
 
         exportPGN() {
@@ -15584,6 +15699,12 @@ impossible to fulfill for either player, the game is considered a draw.</p>
             // Clear any selections and highlights
             this.clearSelection();
             this.clearHighlights();
+
+            // Clear any passively inspected piece - the piece info tab should
+            // reset when the displayed position changes, not keep showing
+            // whatever piece used to be at that square.
+            this.inspectedSquare = null;
+            this.updatePieceInfoPanel();
 
             // Clear any prompt states that might interfere
             this.promotionPromptActive = false;
