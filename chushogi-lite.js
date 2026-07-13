@@ -289,14 +289,6 @@
     const KIF_STANDARD_START_BOARD =
         "lfcsgekgscfl/a1b1txot1b1a/mvrhdqndhrvm/pppppppppppp/3i4i3/12/12/3I4I3/PPPPPPPPPPPP/MVRHDNQDHRVM/A1B1TOXT1B1A/LFCSGKEGSCFL";
 
-    // KIF has no native field for CSL's Counter-strike square (3rd SFEN
-    // field), so it's smuggled in as a synthetic comment line: a KIF square
-    // token immediately followed by "獅子盾" (e.g. "7八獅子盾"), with no
-    // space between them. Shared between buildKIFString (encode) and
-    // convertKIFStringToCSL (decode) so both sides agree on the exact shape.
-    const COUNTERSTRIKE_RE =
-        /^(\d{1,2}(?:十一|十二|[一二三四五六七八九十]))獅子盾$/;
-
     // CENTRALIZED UTILITY FUNCTIONS
     // Consolidates repeated DOM operations, coordinate parsing, and CSS class management
     const utils = {
@@ -13855,39 +13847,18 @@ impossible to fulfill for either player, the game is considered a draw.</p>
             const hasCounterStrike = counterStrikeSquare !== "-";
             const hasStartingComment =
                 this.startingComment && this.startingComment.trim();
-
-            // A REAL starting comment that itself happens to start with some
-            // number (possibly zero) of empty lines immediately followed by
-            // a line that looks exactly like that same marker shape is
-            // ambiguous with the marker above ONLY when there's no real
-            // marker already occupying line 0 — on import, the marker
-            // pattern is only ever checked against the very first comment
-            // line overall. If a real marker IS being emitted, it already
-            // occupies that first line, so the comment's own lines (however
-            // they start) can never be mistaken for it and need no
-            // escaping. Escape (insert one extra leading empty line) only
-            // when there's no real marker.
-            let commentLines = hasStartingComment
-                ? this.startingComment.split("\n")
-                : [];
-            if (!hasCounterStrike && commentLines.length) {
-                let k = 0;
-                while (k < commentLines.length && commentLines[k] === "") k++;
-                if (k < commentLines.length && COUNTERSTRIKE_RE.test(commentLines[k])) {
-                    commentLines = [""].concat(commentLines);
-                }
-            }
-
-            if (hasCounterStrike || commentLines.length) {
+            if (hasCounterStrike || hasStartingComment) {
                 const commentPad = " ".repeat(this.getKIFNumWidth() - 1);
                 if (hasCounterStrike) {
                     lines.push(
                         `${commentPad}* ${this.kifSquareToken(counterStrikeSquare)}獅子盾`,
                     );
                 }
-                commentLines.forEach((commentLine) => {
-                    lines.push(`${commentPad}* ${commentLine}`);
-                });
+                if (hasStartingComment) {
+                    this.startingComment.split("\n").forEach((commentLine) => {
+                        lines.push(`${commentPad}* ${commentLine}`);
+                    });
+                }
             }
 
             const moveLines = this.buildKIFMoveList();
@@ -14212,55 +14183,36 @@ impossible to fulfill for either player, the game is considered a draw.</p>
             }
 
             // A run of "* ..." comment lines before the first move is the
-            // starting comment (mirrors PGN's post-FEN-tag comment).
+            // starting comment (mirrors PGN's post-FEN-tag comment). If the
+            // very first such line is a KIF square token immediately
+            // followed by "獅子盾" (e.g. "7八獅子盾"), it's not a real
+            // comment — it's the smuggled-in Counter-strike square (CSL's
+            // 3rd SFEN field), which KIF has no native field for.
             const COMMENT_RE = /^\s*\*\s?(.*)$/;
-            const rawCommentLines = [];
+            const COUNTERSTRIKE_RE =
+                /^(\d{1,2}(?:十一|十二|[一二三四五六七八九十]))獅子盾$/;
+            let counterStrikeSquare = "-";
+            const startingCommentLines = [];
+            let firstCommentLine = true;
             while (idx < lines.length) {
                 const m = lines[idx].match(COMMENT_RE);
                 if (!m) break;
-                rawCommentLines.push(m[1]);
+                if (firstCommentLine) {
+                    const csMatch = m[1].match(COUNTERSTRIKE_RE);
+                    if (csMatch) {
+                        counterStrikeSquare = this.kifTokenToSquare(
+                            csMatch[1],
+                        );
+                        idx++;
+                        firstCommentLine = false;
+                        continue;
+                    }
+                }
+                firstCommentLine = false;
+                startingCommentLines.push(m[1]);
                 idx++;
             }
-
-            // If the very first comment line is a KIF square token
-            // immediately followed by "獅子盾" (e.g. "7八獅子盾"), it's not
-            // a real comment — it's the smuggled-in Counter-strike square
-            // (CSL's 3rd SFEN field), which KIF has no native field for.
-            let counterStrikeSquare = "-";
-            let hasRealMarker = false;
-            let restLines = rawCommentLines;
-            if (
-                rawCommentLines.length &&
-                COUNTERSTRIKE_RE.test(rawCommentLines[0])
-            ) {
-                counterStrikeSquare = this.kifTokenToSquare(
-                    rawCommentLines[0].match(COUNTERSTRIKE_RE)[1],
-                );
-                hasRealMarker = true;
-                restLines = rawCommentLines.slice(1);
-            }
-
-            // A REAL starting comment that itself starts with some number
-            // (possibly zero) of empty lines immediately followed by a line
-            // that looks exactly like that same marker shape was escaped on
-            // export by inserting one extra leading empty line (see
-            // buildKIFString) — undo that here by dropping exactly one
-            // leading line so the original comment text round-trips. This
-            // escaping only ever happens when there's no real marker (a
-            // real marker already occupies line 0, so nothing after it
-            // needs escaping) — only undo it in that same case.
-            if (!hasRealMarker) {
-                let k = 0;
-                while (k < restLines.length && restLines[k] === "") k++;
-                if (
-                    k < restLines.length &&
-                    COUNTERSTRIKE_RE.test(restLines[k])
-                ) {
-                    restLines = restLines.slice(1);
-                }
-            }
-
-            const startingComment = restLines.join("\n");
+            const startingComment = startingCommentLines.join("\n");
 
             // Parse the move list.
             const NUM_RE = /^\s*(\d+)\s*手目(一歩目|二歩目)?\s*/;
