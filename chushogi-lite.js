@@ -13806,6 +13806,7 @@ impossible to fulfill for either player, the game is considered a draw.</p>
             const sfenFields = (startSFEN || "").split(" ");
             const boardPart = sfenFields[0] || "";
             const startPlayer = sfenFields[1] || "b";
+            const counterStrikeSquare = sfenFields[2] || "-";
 
             // 手合割： is only valid for the standard starting position with
             // sente to move (the only case a real "手合割" — even-game
@@ -13836,11 +13837,28 @@ impossible to fulfill for either player, the game is considered a draw.</p>
             // the first move) is rendered the same way as per-move comments:
             // one "* ..." line per source line break, padded to line up
             // under the move-number column.
-            if (this.startingComment && this.startingComment.trim()) {
+            //
+            // KIF has no native field for CSL's Counter-strike square (the
+            // 3rd SFEN field), so it's smuggled in as a synthetic first
+            // starting-comment line: the KIF square token immediately
+            // followed by "獅子盾" (e.g. "7八獅子盾" for square "7h"), with
+            // no space between them. Emitted whenever the rule is active,
+            // even if there's no real starting comment otherwise.
+            const hasCounterStrike = counterStrikeSquare !== "-";
+            const hasStartingComment =
+                this.startingComment && this.startingComment.trim();
+            if (hasCounterStrike || hasStartingComment) {
                 const commentPad = " ".repeat(this.getKIFNumWidth() - 1);
-                this.startingComment.split("\n").forEach((commentLine) => {
-                    lines.push(`${commentPad}* ${commentLine}`);
-                });
+                if (hasCounterStrike) {
+                    lines.push(
+                        `${commentPad}* ${this.kifSquareToken(counterStrikeSquare)}獅子盾`,
+                    );
+                }
+                if (hasStartingComment) {
+                    this.startingComment.split("\n").forEach((commentLine) => {
+                        lines.push(`${commentPad}* ${commentLine}`);
+                    });
+                }
             }
 
             const moveLines = this.buildKIFMoveList();
@@ -14165,12 +14183,32 @@ impossible to fulfill for either player, the game is considered a draw.</p>
             }
 
             // A run of "* ..." comment lines before the first move is the
-            // starting comment (mirrors PGN's post-FEN-tag comment).
+            // starting comment (mirrors PGN's post-FEN-tag comment). If the
+            // very first such line is a KIF square token immediately
+            // followed by "獅子盾" (e.g. "7八獅子盾"), it's not a real
+            // comment — it's the smuggled-in Counter-strike square (CSL's
+            // 3rd SFEN field), which KIF has no native field for.
             const COMMENT_RE = /^\s*\*\s?(.*)$/;
+            const COUNTERSTRIKE_RE =
+                /^(\d{1,2}(?:十一|十二|[一二三四五六七八九十]))獅子盾$/;
+            let counterStrikeSquare = "-";
             const startingCommentLines = [];
+            let firstCommentLine = true;
             while (idx < lines.length) {
                 const m = lines[idx].match(COMMENT_RE);
                 if (!m) break;
+                if (firstCommentLine) {
+                    const csMatch = m[1].match(COUNTERSTRIKE_RE);
+                    if (csMatch) {
+                        counterStrikeSquare = this.kifTokenToSquare(
+                            csMatch[1],
+                        );
+                        idx++;
+                        firstCommentLine = false;
+                        continue;
+                    }
+                }
+                firstCommentLine = false;
                 startingCommentLines.push(m[1]);
                 idx++;
             }
@@ -14287,7 +14325,13 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                 };
             }
 
-            let csl = boardPart + " " + startingPlayer + " - 1";
+            let csl =
+                boardPart +
+                " " +
+                startingPlayer +
+                " " +
+                (counterStrikeSquare || "-") +
+                " 1";
             if (startingComment) csl += " {" + startingComment + "}";
             for (const entry of entries) {
                 csl += " " + entry.usi;
