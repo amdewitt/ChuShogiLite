@@ -13859,17 +13859,18 @@ impossible to fulfill for either player, the game is considered a draw.</p>
             // A REAL starting comment that itself happens to start with some
             // number (possibly zero) of empty lines immediately followed by
             // a line that looks exactly like that same marker shape is
-            // ambiguous with the marker above — on import, only the very
-            // first comment line is ever checked against the marker
-            // pattern, so this shape is only ever risky at the very start
-            // of the comment's own lines. Escape it by inserting one extra
-            // leading empty line (regardless of whether a real marker
-            // precedes it — decode always re-scans the comment's own lines
-            // fresh after any real marker is consumed).
+            // ambiguous with the marker above ONLY when there's no real
+            // marker already occupying line 0 — on import, the marker
+            // pattern is only ever checked against the very first comment
+            // line overall. If a real marker IS being emitted, it already
+            // occupies that first line, so the comment's own lines (however
+            // they start) can never be mistaken for it and need no
+            // escaping. Escape (insert one extra leading empty line) only
+            // when there's no real marker.
             let commentLines = hasStartingComment
                 ? this.startingComment.split("\n")
                 : [];
-            if (commentLines.length) {
+            if (!hasCounterStrike && commentLines.length) {
                 let k = 0;
                 while (k < commentLines.length && commentLines[k] === "") k++;
                 if (k < commentLines.length && COUNTERSTRIKE_RE.test(commentLines[k])) {
@@ -14226,6 +14227,7 @@ impossible to fulfill for either player, the game is considered a draw.</p>
             // a real comment — it's the smuggled-in Counter-strike square
             // (CSL's 3rd SFEN field), which KIF has no native field for.
             let counterStrikeSquare = "-";
+            let hasRealMarker = false;
             let restLines = rawCommentLines;
             if (
                 rawCommentLines.length &&
@@ -14234,6 +14236,7 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                 counterStrikeSquare = this.kifTokenToSquare(
                     rawCommentLines[0].match(COUNTERSTRIKE_RE)[1],
                 );
+                hasRealMarker = true;
                 restLines = rawCommentLines.slice(1);
             }
 
@@ -14242,11 +14245,19 @@ impossible to fulfill for either player, the game is considered a draw.</p>
             // that looks exactly like that same marker shape was escaped on
             // export by inserting one extra leading empty line (see
             // buildKIFString) — undo that here by dropping exactly one
-            // leading line so the original comment text round-trips.
-            let k = 0;
-            while (k < restLines.length && restLines[k] === "") k++;
-            if (k < restLines.length && COUNTERSTRIKE_RE.test(restLines[k])) {
-                restLines = restLines.slice(1);
+            // leading line so the original comment text round-trips. This
+            // escaping only ever happens when there's no real marker (a
+            // real marker already occupies line 0, so nothing after it
+            // needs escaping) — only undo it in that same case.
+            if (!hasRealMarker) {
+                let k = 0;
+                while (k < restLines.length && restLines[k] === "") k++;
+                if (
+                    k < restLines.length &&
+                    COUNTERSTRIKE_RE.test(restLines[k])
+                ) {
+                    restLines = restLines.slice(1);
+                }
             }
 
             const startingComment = restLines.join("\n");
