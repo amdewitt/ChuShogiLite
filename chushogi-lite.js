@@ -2122,10 +2122,10 @@
             </div>
             <div class="chushogi-move-list" translate="no" data-move-list>
               <div class="chushogi-move-item">Starting Position</div>
-              ${this.moveHistory
+              ${this.buildMoveHistorySANLabels()
                   .map(
-                      (move, index) =>
-                          `<div class="chushogi-move-item" data-move="${index}">${index + 1}. ${move.notation}</div>`,
+                      (label, index) =>
+                          `<div class="chushogi-move-item" data-move="${index}">${label}</div>`,
                   )
                   .join("")}
             </div>
@@ -11160,11 +11160,10 @@ impossible to fulfill for either player, the game is considered a draw.</p>
 
         inspectSquare(squareId) {
             this.inspectedSquare = squareId;
-            // Auto-switch to Piece Info sub-tab so the diagram is visible,
-            // then always refresh the panel (switchInfoSubTab only toggles classes).
-            if (this.currentInfoSubTab !== "piece-info") {
-                this.switchInfoSubTab("piece-info");
-            }
+            // Just refresh the Piece Info panel's data \u2014 do NOT force-switch the
+            // Info sub-tab. Clicking an immovable/opponent piece during normal
+            // play shouldn't yank the user away from whichever sub-tab (e.g.
+            // Game Info) they were already looking at.
             this.updatePieceInfoPanel();
         }
 
@@ -12155,14 +12154,15 @@ impossible to fulfill for either player, the game is considered a draw.</p>
         updateMoveHistory() {
             const moveList = this.container.querySelector("[data-move-list]");
             if (moveList) {
+                const sanLabels = this.buildMoveHistorySANLabels();
                 if (this.config.displayInlineNotation) {
                     // Inline notation: display all moves in a single line using spans
                     const startingSpan =
                         '<span class="chushogi-move-item-inline clickable" data-move="start" title="Click to navigate here">Starting Position</span>';
-                    const moveSpans = this.moveHistory
+                    const moveSpans = sanLabels
                         .map(
-                            (move, index) =>
-                                `<span class="chushogi-move-item-inline clickable" data-move="${index}" title="Click to navigate here">${index + 1}. ${move.notation}</span>`,
+                            (label, index) =>
+                                `<span class="chushogi-move-item-inline clickable" data-move="${index}" title="Click to navigate here">${label}</span>`,
                         )
                         .join(" ");
                     moveList.innerHTML =
@@ -12172,10 +12172,10 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                     // Default: display moves in individual rows
                     moveList.innerHTML =
                         '<div class="chushogi-move-item clickable" data-move="start" title="Click to navigate here">Starting Position</div>' +
-                        this.moveHistory
+                        sanLabels
                             .map(
-                                (move, index) =>
-                                    `<div class="chushogi-move-item clickable" data-move="${index}" title="Click to navigate here">${index + 1}. ${move.notation}</div>`,
+                                (label, index) =>
+                                    `<div class="chushogi-move-item clickable" data-move="${index}" title="Click to navigate here">${label}</div>`,
                             )
                             .join("");
                 }
@@ -13448,17 +13448,20 @@ impossible to fulfill for either player, the game is considered a draw.</p>
             return false;
         }
 
-        // Return the SAN disambiguation prefix (file letter, PGN rank number, or both)
-        // needed when multiple pieces of the same type and colour can reach toSq.
+        // Return the SAN disambiguation info (file, rank, both, or none) needed
+        // when multiple pieces of the same type and colour can reach toSq.
         // Per PGN spec:
         //   \u2022 No other piece can reach toSq \u2192 no prefix.
-        //   \u2022 Rivals exist but none share the moving piece's file \u2192 file letter.
-        //   \u2022 Rivals share the file but not the rank \u2192 rank number.
+        //   \u2022 Rivals exist but none share the moving piece's file \u2192 file alone.
+        //   \u2022 Rivals share the file but not the rank \u2192 rank alone.
         //   \u2022 Rivals share both file and rank \u2192 full square coordinate.
         // boardBefore is the 12\u00d712 array from parseSFENBoard() for the position BEFORE
-        // the move.
-        getSANDisambiguation(piece, fromSq, toSq, boardBefore) {
-            if (!boardBefore) return "";
+        // the move. coordStyle selects the returned text's coordinate system:
+        //   "pgn"   (default) \u2014 letter-then-number PGN square convention.
+        //   "shogi" \u2014 native CSL square convention (number-then-letter, e.g. "8g").
+        // Returns { text, type } where type is "none" | "file" | "rank" | "square".
+        getSANDisambiguation(piece, fromSq, toSq, boardBefore, coordStyle = "pgn") {
+            if (!boardBefore) return { text: "", type: "none" };
             const [fromRankIdx, fromFileIdx] = this.parseSquareId(fromSq);
             const [destRankIdx, destFileIdx] = this.parseSquareId(toSq);
 
@@ -13485,20 +13488,30 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                 }
             }
 
-            if (rivals.length === 0) return ""; // sole piece that can reach toSq
+            if (rivals.length === 0) return { text: "", type: "none" }; // sole piece that can reach toSq
 
-            const pgnFrom = this.cslSqToPgn(fromSq);
-            const pgnFileLetter = pgnFrom[0];
-            const pgnRankNumber = pgnFrom.slice(1);
+            let fileText, rankText, squareText;
+            if (coordStyle === "shogi") {
+                // fromSq is already native CSL notation: fileNumber + rankChar (e.g. "8g").
+                const match = fromSq.match(/^(\d+)([a-l])$/);
+                fileText = match ? match[1] : fromSq;
+                rankText = match ? match[2] : "";
+                squareText = fromSq;
+            } else {
+                const pgnFrom = this.cslSqToPgn(fromSq);
+                fileText = pgnFrom[0];
+                rankText = pgnFrom.slice(1);
+                squareText = pgnFrom;
+            }
 
             // File alone suffices when no rival sits on the same internal file column.
             if (!rivals.some((rv) => rv.file === fromFileIdx))
-                return pgnFileLetter;
+                return { text: fileText, type: "file" };
             // Rank alone suffices when no rival sits on the same internal rank row.
             if (!rivals.some((rv) => rv.rank === fromRankIdx))
-                return pgnRankNumber;
+                return { text: rankText, type: "rank" };
             // Both needed.
-            return pgnFrom;
+            return { text: squareText, type: "square" };
         }
 
         // For a pass move (from === to, no midpoint), find an empty square that is a
@@ -13565,10 +13578,74 @@ impossible to fulfill for either player, the game is considered a draw.</p>
             return null; // all candidate squares are occupied \u2014 shouldn't happen in practice
         }
 
+        // PGN-style move-number prefix for half-move index i (0-based), given
+        // whether black moved first (blackStarted). Mirrors standard PGN
+        // numbering: white's ply opens a numbered pair ("N. "), black's ply
+        // has no prefix at all EXCEPT when black is the very first mover of
+        // the whole game, which gets the special "1... " form. Shared by
+        // buildPGNString and the move-history list display so both stay in
+        // sync.
+        getPGNMoveNumberPrefix(i, blackStarted) {
+            const isWhiteTurn = blackStarted ? i % 2 === 1 : i % 2 === 0;
+            if (blackStarted && i === 0) {
+                return "1... ";
+            }
+            if (isWhiteTurn) {
+                const moveNum = blackStarted
+                    ? Math.floor((i + 1) / 2) + 1
+                    : Math.floor(i / 2) + 1;
+                return `${moveNum}. `;
+            }
+            return "";
+        }
+
+        // Build one SAN label (sequential move number + SAN body) per entry in
+        // this.moveHistory, in order. Used to render the move-history list \u2014
+        // a first step toward supporting branching variations, since
+        // variations are naturally expressed as alternate SAN move sequences
+        // anchored to a specific ply. Numbering here stays the app's existing
+        // sequential "N." per half-move (distinct from the paired white/black
+        // numbering used in buildPGNString's exported PGN move text).
+        buildMoveHistorySANLabels() {
+            const startSFEN = this.startingSFEN || "";
+
+            return this.moveHistory.map((move, index) => {
+                const prevSFENFull =
+                    index === 0
+                        ? startSFEN
+                        : this.moveHistory[index - 1].resultingSFEN || "";
+                const prevBoard = prevSFENFull.split(" ")[0] || "";
+                let boardBefore = null;
+                try {
+                    boardBefore = prevBoard
+                        ? this.parseSFENBoard(prevBoard)
+                        : null;
+                } catch (_) {
+                    /* skip disambiguation on parse error */
+                }
+                const san = this.moveToSAN(
+                    move,
+                    boardBefore,
+                    "captureAware",
+                    "shogi",
+                );
+                return `${index + 1}. ${san}`;
+            });
+        }
+
         // Generate Standard Algebraic Notation for one move.
         // boardBefore is the 12\u00d712 array from parseSFENBoard() for the position BEFORE
         // the move; pass null to skip disambiguation.
-        moveToSAN(move, boardBefore) {
+        // midDestSeparator selects how the midpoint/destination pair of a double
+        // move is joined: "comma" (default, used by PGN export) always uses ",";
+        // "captureAware" (used by the move-history list) uses "x" when the final
+        // destination square was captured, or "-" when it was empty or was the
+        // piece's own origin square (return/pass moves).
+        // coordStyle selects the square notation: "pgn" (default, used by PGN
+        // export) or "shogi" (used by the move-history list) \u2014 native CSL
+        // squares (fileNumber + rankChar, e.g. "8g"), used as-is with no
+        // conversion since move.from/to/midpoint are already stored this way.
+        moveToSAN(move, boardBefore, midDestSeparator = "comma", coordStyle = "pgn") {
             const piece = move.piece;
             const pieceLtr = piece.type; // e.g. "K", "N", "+H"
 
@@ -13582,7 +13659,22 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                 move.from,
                 move.to,
                 boardBefore,
+                coordStyle,
             );
+
+            // In Shogi-style coordinates the piece letter/disambiguator is
+            // always separated from the coordinate of the very first square
+            // the piece moves to (the midpoint for a double move, or the
+            // destination for a regular move) by a dedicated "-"/"x": "x" if
+            // a capture was made on that square, "-" if it was empty. This
+            // also resolves what would otherwise be ambiguous concatenation
+            // for a bare file disambiguation (a number) running into a
+            // number-then-letter square (e.g. "8" + "7g" reading as "87g").
+            // PGN coordinates never need this separator.
+            const useShogiSeparator = coordStyle === "shogi";
+
+            const toSq = (sq) =>
+                coordStyle === "shogi" ? sq : this.cslSqToPgn(sq);
 
             let body;
             if (move.midpoint || isPassMove) {
@@ -13598,27 +13690,49 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                     );
                     // Fallback (shouldn't occur): reuse the piece's own square so the
                     // output is at least syntactically valid.
-                    midSq = fakeMid
-                        ? this.cslSqToPgn(fakeMid)
-                        : this.cslSqToPgn(move.from);
-                    destSq = this.cslSqToPgn(move.to);
+                    midSq = fakeMid ? toSq(fakeMid) : toSq(move.from);
+                    destSq = toSq(move.to);
                 } else {
-                    midSq = this.cslSqToPgn(move.midpoint);
-                    destSq = this.cslSqToPgn(move.to);
+                    midSq = toSq(move.midpoint);
+                    destSq = toSq(move.to);
                 }
+
+                const midDestSep =
+                    midDestSeparator === "captureAware"
+                        ? move.captured
+                            ? "x"
+                            : "-"
+                        : ",";
+
+                // Prefix before the midpoint square (the first square the
+                // piece moves to): "x" if the midpoint itself was captured,
+                // "-" if it was empty \u2014 always present in Shogi-style output.
+                const midPrefix = useShogiSeparator
+                    ? move.capturedAtMidpoint
+                        ? "x"
+                        : "-"
+                    : anyCapture
+                      ? "x"
+                      : "";
 
                 body =
                     pieceLtr +
-                    disambig +
-                    (anyCapture ? "x" : "") +
+                    disambig.text +
+                    midPrefix +
                     midSq +
-                    "," +
+                    midDestSep +
                     destSq;
             } else {
                 // Regular move: Piece[disambig][x]<destination>
-                const destSq = this.cslSqToPgn(move.to);
-                body =
-                    pieceLtr + disambig + (move.captured ? "x" : "") + destSq;
+                const destSq = toSq(move.to);
+                const prefix = useShogiSeparator
+                    ? move.captured
+                        ? "x"
+                        : "-"
+                    : move.captured
+                      ? "x"
+                      : "";
+                body = pieceLtr + disambig.text + prefix + destSq;
             }
 
             // Suffix: + for promotion, = for deferral, nothing otherwise.
@@ -13696,10 +13810,6 @@ impossible to fulfill for either player, the game is considered a draw.</p>
             for (let i = 0; i < this.moveHistory.length; i++) {
                 const move = this.moveHistory[i];
 
-                // Determine whose turn this half-move slot belongs to, based on
-                // starting player and index \u2014 independent of move.piece.color.
-                const isWhiteTurn = blackStarted ? i % 2 === 1 : i % 2 === 0;
-
                 // Board state BEFORE this move: previous move's resultingSFEN, or
                 // the starting board for the first move.
                 const prevSFENFull =
@@ -13724,19 +13834,8 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                         ? " {" + this.sanitizeCommentForPGN(move.comment) + "}"
                         : "";
 
-                if (blackStarted && i === 0) {
-                    // Only time "N..." appears: black's very first move of the game.
-                    moveTokens.push(`1... ${san}${commentText}`);
-                } else if (isWhiteTurn) {
-                    // White always opens a numbered pair.
-                    const moveNum = blackStarted
-                        ? Math.floor((i + 1) / 2) + 1 // i=1\u21922, i=3\u21923, i=5\u21924 \u2026
-                        : Math.floor(i / 2) + 1; // i=0\u21921, i=2\u21922, i=4\u21923 \u2026
-                    moveTokens.push(`${moveNum}. ${san}${commentText}`);
-                } else {
-                    // Black responds without a number prefix.
-                    moveTokens.push(`${san}${commentText}`);
-                }
+                const prefix = this.getPGNMoveNumberPrefix(i, blackStarted);
+                moveTokens.push(`${prefix}${san}${commentText}`);
             }
 
             // Starting-position comment, if any, appears before the first move token.
