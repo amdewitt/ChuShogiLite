@@ -1353,8 +1353,20 @@
   border-radius: 0 0 4px 4px !important;
   height: 160px !important;
   overflow-y: auto !important;
+  overflow-x: auto !important;
   padding: 12px !important;
-  overflow-wrap: break-word !important;
+}
+
+/* Block-mode tree: let content declare its true width so the horizontal
+   scrollbar activates when nesting is deep.  Scoped so it doesn't affect
+   the inline notation view. */
+.chushogi-move-tree-block {
+  min-width: max-content !important;
+}
+
+.chushogi-move-tree-block .chushogi-move-item,
+.chushogi-move-tree-block .chushogi-variation-move {
+  white-space: nowrap !important;
 }
 
 /* Displayed Position styling - match move history container */
@@ -1453,6 +1465,39 @@
 .chushogi-move-item-inline.selected {
   background: var(--move-selected-background) !important;
   color: white !important;
+}
+
+/* Variation tree display */
+.chushogi-variation-block {
+  border-left: 2px solid var(--border-light) !important;
+  padding-left: 6px !important;
+  margin-top: 1px !important;
+  margin-bottom: 1px !important;
+}
+
+.chushogi-variation-move {
+  opacity: 0.75 !important;
+  font-size: 13px !important;
+}
+
+.chushogi-variation-move:hover {
+  opacity: 1 !important;
+  background: var(--background-sidebar) !important;
+}
+
+.chushogi-variation-move.current,
+.chushogi-variation-move.selected {
+  opacity: 1 !important;
+}
+
+/* Keep selected/current background when a variation move is hovered —
+   mirrors the main-line behaviour where .selected comes after :hover. */
+.chushogi-variation-move.current:hover {
+  background: var(--move-current-background) !important;
+}
+
+.chushogi-variation-move.selected:hover {
+  background: var(--move-selected-background) !important;
 }
 
 .chushogi-last-move {

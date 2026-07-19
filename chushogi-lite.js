@@ -885,6 +885,11 @@
             this.currentPlayer = "b";
             this.startingPlayer = "b"; // Remember the starting player for proper undo behavior
             this.moveHistory = [];
+            // Move tree: a sentinel root node whose children are the first moves.
+            // Each node in moveHistory is also a MoveNode (has parent, children, ply, id).
+            // moveHistory always reflects the path from root to the live leaf of the
+            // currently-active branch; the tree preserves alternate branches.
+            this.moveTree = { id: "root", children: [], parent: null, ply: 0 };
             this.selectedSquare = null;
             this.validMoves = [];
             this.repeatPromotionMoves = []; // Moves that violate repetition but are promotion-eligible
@@ -913,6 +918,12 @@
             this.doubleMoveDestinations = [];
             this.doubleMoveRepeatToOrigin = false; // Flag if return to origin would violate repetition
             this.currentNavigationIndex = null; // Track current move index during navigation
+            // Primary navigation cursor into the move tree.
+            // null  = at the live leaf (normal gameplay / end of branch).
+            // moveTree = at the starting position (before any moves).
+            // moveHistory[k] = viewing the position after the k-th move in the current branch.
+            this.currentNode = null;
+            this._moveNodeCounter = 0; // Monotonically-increasing ID source for MoveNodes.
 
             // Puzzle mode state
             this.puzzleSolution = []; // Stores the complete solution moves for puzzle mode
@@ -1091,16 +1102,45 @@
             console.log("Post-init: All initialization completed successfully");
         }
 
+        // Remove all ( … ) variation groups from a CSL string, preserving
+        // { … } comments and handling arbitrarily nested parentheses.
+        _stripCSLVariations(str) {
+            let result = "";
+            let depth = 0;
+            let inComment = false;
+            for (let i = 0; i < str.length; i++) {
+                const ch = str[i];
+                if (inComment) {
+                    result += ch;
+                    if (ch === "}") inComment = false;
+                } else if (ch === "{") {
+                    inComment = true;
+                    result += ch;
+                } else if (ch === "(") {
+                    depth++;
+                } else if (ch === ")") {
+                    if (depth > 0) depth--;
+                } else if (depth === 0) {
+                    result += ch;
+                }
+            }
+            return result.replace(/\s+/g, " ").trim();
+        }
+
         // PUZZLE MODE FUNCTIONALITY
         initializePuzzle(gameData) {
             try {
+                // Strip variations before any parsing so puzzle mode only sees
+                // the main line.
+                const strippedData = this._stripCSLVariations(gameData);
+
                 console.log(
                     "Puzzle: Initializing puzzle mode with data:",
-                    gameData,
+                    strippedData,
                 );
 
                 // Use unified loader to parse game data (same logic as importGame)
-                const loadResult = this.loadGame(gameData);
+                const loadResult = this.loadGame(strippedData);
 
                 if (!loadResult.success) {
                     console.error("Puzzle: Load error:", loadResult.error);
@@ -1169,6 +1209,8 @@
 
                 // Clear move history since we're only showing the starting position
                 this.moveHistory = [];
+                this.moveTree = { id: "root", children: [], parent: null, ply: 0 };
+                this.currentNode = null;
                 this.lastMove = null;
 
                 // Set the starting position
@@ -4192,14 +4234,6 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                 }
             }
 
-            // Prevent moves during navigation (only for normal play mode)
-            if (this.isNavigating) {
-                console.log(
-                    "Cannot make moves while navigating history. Use the navigation buttons to return to current position first.",
-                );
-                return;
-            }
-
             // Lion return prompt clicks are now handled by the promotion system below
             // (Lion return reuses promotion UI for consistency)
 
@@ -4830,9 +4864,13 @@ impossible to fulfill for either player, the game is considered a draw.</p>
 
         // Get all pieces that can move for the current player (with caching)
         getMoveablePieces() {
-            // Create cache key based on current game state
-            // Include allowIllegalMoves in cache key since it affects which pieces are moveable
-            const cacheKey = `${this.currentPlayer}_${this.moveHistory.length}_${this.config.allowIllegalMoves}`;
+            // Create cache key based on the currently displayed position.
+            // Using the displayed node's id (not moveHistory.length) so that navigation
+            // and variation play — both of which leave moveHistory.length unchanged —
+            // correctly bust the cache and recompute for the new board state.
+            const _displayedNode = this.currentNode ?? this.getLiveNode();
+            const _displayedId = _displayedNode?.id ?? "root";
+            const cacheKey = `${this.currentPlayer}_${_displayedId}_${this.config.allowIllegalMoves}`;
 
             // Return cached result if available
             if (
@@ -5517,6 +5555,31 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                 this.lastLionCapture = null;
             }
 
+            // If this exact move already exists as a child of the parent node,
+            // navigate to that existing node instead of creating a duplicate variation.
+            if (!this.isImporting && !this.isBatchImporting) {
+                const _earlyParentNode = this.currentNode ?? this.getLiveNode();
+                const _duplicateChild = _earlyParentNode.children.find(child =>
+                    child.from === fromSquare &&
+                    child.to === toSquare &&
+                    !!child.promoted === !!promote &&
+                    child.piece?.type === movingPiece?.type
+                );
+                if (_duplicateChild) {
+                    // If the duplicate is on the main line, use navigateToPosition so
+                    // currentNavigationIndex advances correctly and back/forward remain sane.
+                    // For off-branch nodes navigateToNode is fine (it intentionally leaves
+                    // currentNavigationIndex pointing at the main-line anchor).
+                    const _dupMainIdx = this.moveHistory.indexOf(_duplicateChild);
+                    if (_dupMainIdx !== -1) {
+                        this.navigateToPosition(_dupMainIdx);
+                    } else {
+                        this.navigateToNode(_duplicateChild);
+                    }
+                    return _duplicateChild;
+                }
+            }
+
             // Move piece
             utils.board.setPieceAt(this.board, toSquare, { ...movingPiece });
             utils.board.setPieceAt(this.board, fromSquare, null);
@@ -5569,7 +5632,14 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                 capturedPiece,
                 promote,
             );
-            this.moveHistory.push({
+            // Determine parent node before building the record (needed for previousLionCapture).
+            // currentNode is null when at the live leaf (normal play), or a tree node when
+            // navigating — in which case we extend (leaf) or create a variation (non-leaf).
+            const _parentNode = this.currentNode ?? this.getLiveNode();
+            // Capture whether the parent is a leaf BEFORE the new node is prepended.
+            // If it already has children, the new move is an alternative (isBranch).
+            const _parentWasLeaf = _parentNode.children.length === 0;
+            const _newNode = this.makeMoveNode({
                 from: fromSquare,
                 to: toSquare,
                 piece: { ...movingPiece }, // Store original piece state for undo
@@ -5578,22 +5648,36 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                 notation: moveNotation,
                 lionCapture: this.lastLionCapture, // Store Lion capture state with each move
                 previousLionCapture:
-                    this.moveHistory.length > 0
-                        ? this.moveHistory[this.moveHistory.length - 1]
-                              .lionCapture
+                    _parentNode !== this.moveTree
+                        ? _parentNode.lionCapture
                         : this.lastLionCapture, // Preserve previous state for proper tracking
                 resultingSFEN: "", // Will be set after player update
                 comment: "", // Comment for this move
-            });
-            this.lastMove = this.moveHistory[this.moveHistory.length - 1];
+            }, _parentNode);
+            // Prepend so this move becomes the preferred (first) continuation of its parent.
+            _parentNode.children.unshift(_newNode);
+            if (this.currentNode !== null) {
+                // Never rebuild moveHistory — the original main line must stay.
+                // Tag isBranch only when the parent is ON the main line (i.e. the
+                // new move is the first step of a new variation).  If the parent is
+                // already inside a variation, the new move is a plain continuation
+                // of that variation and should not be flagged as a branch root.
+                if (this.moveHistory.includes(_parentNode)) {
+                    _newNode.isBranch = true;
+                }
+            } else {
+                this.moveHistory.push(_newNode);
+            }
+            this.lastMove = _newNode;
 
             // Update current player based on last move
             // allowIllegalMoves should only affect move validation, not turn order
             this.updateCurrentPlayer();
 
-            // Update the stored SFEN with correct player turn
-            // For allowIllegalMoves mode, resultingSFEN should show the non-moving player
-            if (this.config.allowIllegalMoves && this.lastMove.piece) {
+            // Store SFEN with the correct next player.  Always derive from the piece
+            // that just moved — exportSFEN() reads isNavigating + currentNavigationIndex
+            // which are stale during a variation play and return the wrong player.
+            if (this.lastMove.piece) {
                 this.lastMove.resultingSFEN = this.exportSFENWithPlayer(
                     this.lastMove.piece.color === "b" ? "w" : "b",
                 );
@@ -5608,13 +5692,22 @@ impossible to fulfill for either player, the game is considered a draw.</p>
             // Clear selection after normal move
             this.clearSelection();
 
-            // Reset navigation state to current position after making a move
+            // After any variation play, stay pinned at the new leaf so the user
+            // sees the new move and can continue extending it.
             this.currentNavigationIndex = null;
-            this.isNavigating = false;
+            if (this.currentNode !== null) {
+                this._viewedNode = _newNode;
+                this.isNavigating = true;
+                this.currentNode = _newNode;
+            } else {
+                this.isNavigating = false;
+                this.currentNode = null; // null = at live leaf
+            }
 
             // Update display
             this.updateBoard();
             this.updateDisplay();
+            this.updateButtonStates();
         }
 
         // CENTRALIZED HIGHLIGHT MANAGER
@@ -5709,11 +5802,15 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                     ? "last-move-outline"
                     : "last-move";
 
-                // Pre-calculate moveable pieces if setting is enabled (not during edit or navigation)
+                // Pre-calculate moveable pieces if setting is enabled.
+                // Moves are always allowed (from any position they create a variation
+                // or extend a leaf branch), so show highlights whenever the mode permits.
+                const _isAtPlayableLeaf =
+                    this.currentTab !== "edit";
                 const moveablePieces =
                     this.config.showMoveablePieces &&
                     this.currentTab !== "edit" &&
-                    this.currentNavigationIndex === null
+                    _isAtPlayableLeaf
                         ? this.getMoveablePieces()
                         : null;
 
@@ -6456,8 +6553,10 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                     moveNotation,
                 );
 
-                // Validate move in puzzle mode (after promotion prompt handling)
-                if (this.config.appletMode === "puzzle") {
+                // Validate move in puzzle mode (after promotion prompt handling).
+                // Skip during import — imported moves (including variation branches)
+                // must not be checked against the active puzzle solution.
+                if (this.config.appletMode === "puzzle" && !context.skipPromotionPrompt) {
                     const validation = this.validatePuzzleMove(moveNotation);
                     if (!validation.valid) {
                         console.log(
@@ -6742,6 +6841,31 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                     }
                 }
 
+                // If this exact move already exists as a child of the parent node,
+                // navigate to that existing node instead of creating a duplicate variation.
+                if (!this.isImporting && !this.isBatchImporting) {
+                    const _earlyParentNode = this.currentNode ?? this.getLiveNode();
+                    const _duplicateChild = _earlyParentNode.children.find(child =>
+                        child.from === from &&
+                        child.to === to &&
+                        !!child.promoted === !!moveData.promoted &&
+                        child.piece?.type === piece?.type
+                    );
+                    if (_duplicateChild) {
+                        // If the duplicate is on the main line, use navigateToPosition so
+                        // currentNavigationIndex advances correctly and back/forward remain sane.
+                        // For off-branch nodes navigateToNode is fine (it intentionally leaves
+                        // currentNavigationIndex pointing at the main-line anchor).
+                        const _dupMainIdx = this.moveHistory.indexOf(_duplicateChild);
+                        if (_dupMainIdx !== -1) {
+                            this.navigateToPosition(_dupMainIdx);
+                        } else {
+                            this.navigateToNode(_duplicateChild);
+                        }
+                        return _duplicateChild;
+                    }
+                }
+
                 // Apply the move to the board
                 if (!this.isBatchImporting) {
                     console.log(
@@ -6778,6 +6902,9 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                     capturedAtMidpoint,
                 );
 
+                // Resolve parent before building the move record (needed for previousLionCapture).
+                const _parentNode = this.currentNode ?? this.getLiveNode();
+
                 // Create move record with proper SFEN
                 const moveRecord = {
                     from,
@@ -6788,9 +6915,8 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                     notation,
                     lionCapture: this.lastLionCapture,
                     previousLionCapture:
-                        this.moveHistory.length > 0
-                            ? this.moveHistory[this.moveHistory.length - 1]
-                                  .lionCapture
+                        _parentNode !== this.moveTree
+                            ? _parentNode.lionCapture
                             : this.startingLionCapture,
                     resultingSFEN: "", // Will be set after player update
                     comment: "", // Comment for this move
@@ -6801,9 +6927,37 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                     ...(isLionReturn && { isLionDouble: true }),
                 };
 
-                // Add move to history first
-                this.moveHistory.push(moveRecord);
-                this.lastMove = moveRecord;
+                // Capture whether the parent is a leaf BEFORE the new node is prepended.
+                // If it already has children, the new move is an alternative (isBranch).
+                const _parentWasLeaf = _parentNode.children.length === 0;
+
+                // Wrap record in a tree node and link into the move tree.
+                const _newNode = this.makeMoveNode(moveRecord, _parentNode);
+                _parentNode.children.unshift(_newNode); // prepend → new move is main continuation
+                if (this.currentNode !== null) {
+                    if (this.isImporting) {
+                        // Inside import — rebuild moveHistory through the new node.
+                        // (The importer batch-tags isBranch; don't set it here.)
+                        const _parentPath = [];
+                        let _pathCur = _parentNode;
+                        while (_pathCur !== this.moveTree) {
+                            _parentPath.unshift(_pathCur);
+                            _pathCur = _pathCur.parent;
+                        }
+                        this.moveHistory = [..._parentPath, _newNode];
+                    } else {
+                        // Interactive play while navigating — never rebuild moveHistory.
+                        // Tag isBranch only when the parent is on the main line (first
+                        // step of a new variation).  If the parent is already inside a
+                        // variation, the move continues that branch without a new flag.
+                        if (this.moveHistory.includes(_parentNode)) {
+                            _newNode.isBranch = true;
+                        }
+                    }
+                } else {
+                    this.moveHistory.push(_newNode);
+                }
+                this.lastMove = _newNode;
 
                 // Handle puzzle mode - attach comment and execute opponent response
                 if (this.config.appletMode === "puzzle") {
@@ -6878,21 +7032,27 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                 // allowIllegalMoves should only affect move validation, not turn order
                 this.updateCurrentPlayer();
 
-                // Store SFEN with correct player turn and move count
-                // For allowIllegalMoves mode, resultingSFEN should show the non-moving player
-                if (this.config.allowIllegalMoves) {
-                    moveRecord.resultingSFEN = this.exportSFENWithPlayer(
-                        piece.color === "b" ? "w" : "b",
-                    );
-                } else {
-                    moveRecord.resultingSFEN = this.exportSFEN();
-                }
+                // Store SFEN with the correct next player.  Always derive from the piece
+                // that just moved — exportSFEN() reads isNavigating + currentNavigationIndex
+                // which are stale during a variation play and return the wrong player.
+                this.lastMove.resultingSFEN = this.exportSFENWithPlayer(
+                    piece.color === "b" ? "w" : "b",
+                );
 
-                // Reset navigation state to current position after making a move
-                // Skip this during import - state will be set correctly after import completes
+                // Reset navigation state after a move.
+                // Skip during import — state is managed by the importer.
                 if (!this.isImporting) {
-                    this.currentNavigationIndex = null; // null = at current position
-                    this.isNavigating = false;
+                    this.currentNavigationIndex = null;
+                    if (this.currentNode !== null) {
+                        // Played from inside a variation — stay pinned at the new leaf.
+                        this._viewedNode = _newNode;
+                        this.isNavigating = true;
+                        this.currentNode = _newNode;
+                    } else {
+                        this.isNavigating = false;
+                        this.currentNode = null; // null = at live leaf
+                        this._viewedNode = null;
+                    }
                 }
 
                 // Clear selection and update display (skip expensive operations during batch import)
@@ -6920,6 +7080,7 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                         "About to call updateDisplay after move execution",
                     );
                     this.updateDisplay();
+                    this.updateButtonStates();
                     console.log("updateDisplay completed after move execution");
                 }
 
@@ -8301,6 +8462,25 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                         };
                         this.currentNavigationIndex =
                             updates.currentNavigationIndex;
+                        // Keep the tree cursor in sync with the integer index.
+                        if (updates.currentNavigationIndex === null) {
+                            this.currentNode = null; // live leaf
+                        } else if (updates.currentNavigationIndex === -1) {
+                            this.currentNode = this.moveTree; // start position
+                        } else {
+                            this.currentNode =
+                                this.moveHistory[updates.currentNavigationIndex] ??
+                                null;
+                        }
+                    }
+
+                    // Handle moveTree changes (rarely needed; included for completeness)
+                    if (updates.moveTree !== undefined) {
+                        changes.moveTree = {
+                            from: this.moveTree,
+                            to: updates.moveTree,
+                        };
+                        this.moveTree = updates.moveTree;
                     }
 
                     // Handle edit mode state
@@ -8405,10 +8585,24 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                 if (!Array.isArray(this.moveHistory)) {
                     console.warn("Invalid moveHistory structure detected");
                     this.moveHistory = [];
+                    this.moveTree = { id: "root", children: [], parent: null, ply: 0 };
+                    this.currentNode = null;
                 }
 
-                // Ensure navigation state consistency
-                if (this.isNavigating && this.currentNavigationIndex === null) {
+                // Ensure moveTree sentinel is present and valid
+                if (!this.moveTree || typeof this.moveTree !== "object") {
+                    console.warn("Invalid moveTree detected, reinitializing");
+                    this.moveTree = { id: "root", children: [], parent: null, ply: 0 };
+                    this.moveHistory = [];
+                    this.currentNode = null;
+                }
+
+                // Ensure navigation state consistency.
+                // isNavigating=true with currentNavigationIndex=null is valid when
+                // _viewedNode is set — it means we are viewing an off-branch variation
+                // node (not a main-line position).  Only treat it as an inconsistency
+                // when _viewedNode is also absent.
+                if (this.isNavigating && this.currentNavigationIndex === null && !this._viewedNode) {
                     console.warn("Navigation state inconsistency detected");
                     this.isNavigating = false;
                 }
@@ -8649,21 +8843,6 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                     this.handleEditModeBoardClick(squareId);
                     return;
                 }
-            }
-
-            // Prevent moves during navigation (only for normal play mode).
-            // Pieces are not movable while viewing a non-current position, so
-            // clicks are treated the same way as clicking an immovable piece:
-            // show its info instead of allowing selection/movement.
-            if (this.isNavigating) {
-                const navPiece = this.board[rank][file];
-                if (navPiece) {
-                    this.inspectSquare(squareId);
-                } else {
-                    this.inspectedSquare = null;
-                    this.updatePieceInfoPanel();
-                }
-                return;
             }
 
             // Lion return prompt clicks are now handled by the promotion system below
@@ -11476,19 +11655,33 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                         shouldDisableUndo ? "not-allowed" : "pointer",
                         "important",
                     );
-                    // Show \u2702 when undo would trim moves after the displayed position,
-                    // \u21b6 when it would simply undo the last move.
-                    const isTrimmingMode =
-                        this.isNavigating &&
-                        this.currentNavigationIndex !== null &&
-                        (this.currentNavigationIndex === -1
-                            ? this.moveHistory.length > 0
-                            : this.currentNavigationIndex <
-                              this.moveHistory.length - 1);
+                    // Show ✂ when pressing undo would clip/trim moves, ↶ when it
+                    // simply removes the last move.
+                    let isTrimmingMode;
+                    let undoTitle;
+                    if (this._viewedNode && this.isNavigating) {
+                        // Off-branch variation node.
+                        // Leaf  → ↶ (undo the one variation move)
+                        // Non-leaf → ✂ (clip children of this node)
+                        isTrimmingMode = this._viewedNode.children.length > 0;
+                        undoTitle = isTrimmingMode
+                            ? "Clip variation to displayed position"
+                            : "Undo last variation move";
+                    } else {
+                        // Main-line navigation.
+                        isTrimmingMode =
+                            this.isNavigating &&
+                            this.currentNavigationIndex !== null &&
+                            (this.currentNavigationIndex === -1
+                                ? this.moveHistory.length > 0
+                                : this.currentNavigationIndex <
+                                  this.moveHistory.length - 1);
+                        undoTitle = isTrimmingMode
+                            ? "Trim game to displayed position"
+                            : "Undo last move";
+                    }
                     undoBtn.textContent = isTrimmingMode ? "\u2702" : "\u21b6";
-                    undoBtn.title = isTrimmingMode
-                        ? "Trim game to displayed position"
-                        : "Undo last move";
+                    undoBtn.title = undoTitle;
                 }
 
                 // Disable/enable other buttons based on edit mode or puzzle opponent thinking
@@ -12027,7 +12220,10 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                 const moveNumber =
                     this.container.querySelector("[data-move-number]");
                 if (moveNumber) {
-                    if (this.currentNavigationIndex === -1) {
+                    if (this._viewedNode) {
+                        // Off-branch: show 1-based position within the current branch.
+                        moveNumber.textContent = this._branchPosition(this._viewedNode).current.toString();
+                    } else if (this.currentNavigationIndex === -1) {
                         // At starting position
                         moveNumber.textContent = "1";
                     } else if (
@@ -12153,48 +12349,49 @@ impossible to fulfill for either player, the game is considered a draw.</p>
 
         updateMoveHistory() {
             const moveList = this.container.querySelector("[data-move-list]");
-            if (moveList) {
-                const sanLabels = this.buildMoveHistorySANLabels();
-                if (this.config.displayInlineNotation) {
-                    // Inline notation: display all moves in a single line using spans
-                    const startingSpan =
-                        '<span class="chushogi-move-item-inline clickable" data-move="start" title="Click to navigate here">Starting Position</span>';
-                    const moveSpans = sanLabels
-                        .map(
-                            (label, index) =>
-                                `<span class="chushogi-move-item-inline clickable" data-move="${index}" title="Click to navigate here">${label}</span>`,
-                        )
-                        .join(" ");
-                    moveList.innerHTML =
-                        startingSpan +
-                        (this.moveHistory.length > 0 ? " " + moveSpans : "");
-                } else {
-                    // Default: display moves in individual rows
-                    moveList.innerHTML =
-                        '<div class="chushogi-move-item clickable" data-move="start" title="Click to navigate here">Starting Position</div>' +
-                        sanLabels
-                            .map(
-                                (label, index) =>
-                                    `<div class="chushogi-move-item clickable" data-move="${index}" title="Click to navigate here">${label}</div>`,
-                            )
-                            .join("");
-                }
+            if (!moveList) return;
 
-                // Add click handlers to move items
-                const moveItems = moveList.querySelectorAll(
-                    ".chushogi-move-item.clickable, .chushogi-move-item-inline.clickable",
-                );
-                moveItems.forEach((item) => {
-                    item.addEventListener("click", (e) => {
-                        const moveIndex = e.target.getAttribute("data-move");
-                        if (moveIndex === "start") {
-                            this.navigateToPosition("start");
-                        } else {
-                            this.navigateToPosition(parseInt(moveIndex));
-                        }
-                    });
-                });
+            if (this.config.displayInlineNotation) {
+                // Inline: starting position + moves/variations as spans
+                const startSpan =
+                    '<span class="chushogi-move-item-inline clickable" data-move="start" title="Click to navigate here">Starting Position</span>';
+                const movesHtml = this.buildMoveTreeInlineHTML();
+                moveList.innerHTML =
+                    startSpan + (movesHtml ? " " + movesHtml : "");
+            } else {
+                // Default: starting position + lishogi-style tree rows
+                const startDiv =
+                    '<div class="chushogi-move-item clickable" data-move="start" title="Click to navigate here">Starting Position</div>';
+                moveList.innerHTML = startDiv + this.buildMoveTreeHTML();
             }
+
+            // Click: starting position
+            const startEl = moveList.querySelector('[data-move="start"]');
+            if (startEl) {
+                startEl.addEventListener("click", () =>
+                    this.navigateToPosition("start"),
+                );
+            }
+
+            // Click: every tree node (main-line and variation)
+            moveList.querySelectorAll("[data-node-id]").forEach((el) => {
+                el.addEventListener("click", () => {
+                    const nodeId = parseInt(
+                        el.getAttribute("data-node-id"),
+                        10,
+                    );
+                    const node = this._nodeMap?.get(nodeId);
+                    if (!node) return;
+                    // If the node is on the current main line, use the index-based
+                    // navigator so isNavigating behaves correctly.
+                    const mainLineIdx = this.moveHistory.indexOf(node);
+                    if (mainLineIdx >= 0) {
+                        this.navigateToPosition(mainLineIdx);
+                    } else {
+                        this.navigateToNode(node);
+                    }
+                });
+            });
         }
 
         clearHighlights() {
@@ -12239,6 +12436,7 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                 selectedSquare: null,
                 validMoves: [],
                 moveHistory: [],
+                moveTree: { id: "root", children: [], parent: null, ply: 0 },
                 isNavigating: false,
                 currentNavigationIndex: null,
                 editMode: {
@@ -12835,8 +13033,26 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                 }
             }
 
-            // Check all move history
-            for (const move of this.moveHistory) {
+            // When navigating, moveHistory contains "future" moves beyond the branch
+            // point that haven't been reached from this position — checking them would
+            // falsely flag the next main-line move as a repetition.  Instead, walk the
+            // ancestor chain of currentNode, which is exactly the positions played so
+            // far on the path leading to the current branch point.
+            let historyToCheck;
+            if (this.currentNode !== null) {
+                const ancestorPath = [];
+                let n = this.currentNode;
+                while (n && n !== this.moveTree) {
+                    ancestorPath.unshift(n);
+                    n = n.parent;
+                }
+                historyToCheck = ancestorPath;
+            } else {
+                historyToCheck = this.moveHistory;
+            }
+
+            // Check the relevant history
+            for (const move of historyToCheck) {
                 if (move.resultingSFEN) {
                     const historyParts = move.resultingSFEN.split(" ");
                     if (
@@ -13256,36 +13472,236 @@ impossible to fulfill for either player, the game is considered a draw.</p>
             });
         }
 
+        // ── CSL EXPORT (variation-aware) ─────────────────────────────────────────
+
+        // Serialize the full game tree – main line + all alternate branches – to
+        // a CSL string.  Alternate branches are emitted as ( … ) variation groups
+        // immediately after the comment (if any) of the move they diverge from,
+        // matching the PGN convention.
+        buildCSLString() {
+            let out = this.startingSFEN || this.exportSFEN();
+
+            if (this.startingComment && this.startingComment.trim()) {
+                out += " {" + this.escapeComment(this.startingComment) + "}";
+            }
+
+            // Walk the main line (moveHistory).  For each node, after its USI move
+            // and optional comment, emit every sibling child of its parent as a
+            // ( … ) variation.
+            for (let i = 0; i < this.moveHistory.length; i++) {
+                const node   = this.moveHistory[i];
+                const parent = i === 0 ? this.moveTree : this.moveHistory[i - 1];
+
+                const usi = this.moveToUSI(node);
+                if (!usi) continue;
+
+                out += " " + usi;
+
+                if (node.comment && node.comment.trim()) {
+                    out += " {" + this.escapeComment(node.comment) + "}";
+                }
+
+                // PGN-style sibling variations: other children of parent that
+                // are alternatives to this node.  Skip isKIFBranch nodes —
+                // those are responses to the *previous* node and are serialized
+                // below after that node (when i-1 is processed).
+                // children[] is newest-first (unshift), so iterate in reverse to
+                // restore the original import order.
+                for (let k = parent.children.length - 1; k >= 0; k--) {
+                    const sibling = parent.children[k];
+                    if (sibling === node) continue;
+                    if (sibling.isKIFBranch) continue;
+                    for (const body of this._serializeVariation(sibling)) {
+                        out += " (" + body + ")";
+                    }
+                }
+
+                // Raw PGN variations stored on parent (first move failed).
+                if (parent.rawVariations) {
+                    for (const rv of parent.rawVariations) {
+                        const rawMoves = rv && rv.isKIF ? null : (rv.moves || rv);
+                        if (!rawMoves) continue;
+                        for (const body of this._serializeRawMoves(rawMoves)) {
+                            out += " (" + body + ")";
+                        }
+                    }
+                }
+
+                // KIF-style variations: branch children of this node that are
+                // responses to this move (isKIFBranch).  Emitted after this
+                // node's token, matching the CSL "(…)" placement convention.
+                for (let k = node.children.length - 1; k >= 0; k--) {
+                    const child = node.children[k];
+                    if (!child.isKIFBranch) continue;
+                    for (const body of this._serializeVariation(child)) {
+                        out += " (" + body + ")";
+                    }
+                }
+
+                // Raw KIF variations stored on this node (first move failed).
+                if (node.rawVariations) {
+                    for (const rv of node.rawVariations) {
+                        const rawMoves = rv && rv.isKIF ? rv.moves : null;
+                        if (!rawMoves) continue;
+                        for (const body of this._serializeRawMoves(rawMoves)) {
+                            out += " (" + body + ")";
+                        }
+                    }
+                }
+            }
+
+            return out;
+        }
+
+        // Serialize a raw parsed-move array (from _parseCSLLevel) back to a
+        // single-element array containing the body string.  Sub-variations of
+        // every move are nested inline immediately after that move, matching the
+        // CSL convention that ( … ) blocks follow the move they branch from.
+        _serializeRawMoves(moves) {
+            if (!moves || moves.length === 0) return [];
+            const tokens = [];
+
+            for (const m of moves) {
+                let token = m.usi;
+                if (m.comment && m.comment.trim()) {
+                    token += " {" + this.escapeComment(m.comment) + "}";
+                }
+                tokens.push(token);
+
+                // Sub-variations appear immediately after the move they follow.
+                for (const subVar of (m.variations || [])) {
+                    for (const body of this._serializeRawMoves(subVar)) {
+                        tokens.push("(" + body + ")");
+                    }
+                }
+            }
+
+            const mainBody = tokens.join(" ");
+            return mainBody.length > 0 ? [mainBody] : [];
+        }
+
+        // Recursively serialize one variation branch starting at `startNode`.
+        //
+        // Returns a single-element array [ body ] where body is the complete
+        // space-separated move sequence with nested ( … ) blocks.
+        //
+        // Mirrors the display logic in buildChain / renderChain:
+        //   • Emit node N's token.
+        //   • After emitting the main continuation (node N+1), immediately emit
+        //     the alternatives to N+1 — i.e. the branch children of node N —
+        //     so they appear right after N+1 in the output.
+        //   • After the last node in the chain, emit its own branch children.
+        //
+        // "Main continuation" = the last child that does NOT have isBranch:true.
+        _serializeVariation(startNode) {
+            const tokens = [];
+            let cur = startNode;
+            let prevNode = null;
+            let prevContIdx = -1;
+
+            while (cur) {
+                const usi = this.moveToUSI(cur);
+                if (!usi) break;
+
+                let token = usi;
+                if (cur.comment && cur.comment.trim()) {
+                    token += " {" + this.escapeComment(cur.comment) + "}";
+                }
+                tokens.push(token);
+
+                // 1. KIF children of cur: responses to cur; emit immediately
+                //    after cur's token (before its main continuation).
+                for (let k = cur.children.length - 1; k >= 0; k--) {
+                    if (!cur.children[k].isKIFBranch) continue;
+                    for (const body of this._serializeVariation(cur.children[k])) {
+                        tokens.push("(" + body + ")");
+                    }
+                }
+                // KIF raw variations stored on cur.
+                if (cur.rawVariations) {
+                    for (const rv of cur.rawVariations) {
+                        if (!rv || !rv.isKIF) continue;
+                        for (const body of this._serializeRawMoves(rv.moves)) {
+                            tokens.push("(" + body + ")");
+                        }
+                    }
+                }
+
+                // 2. PGN siblings of cur: non-KIF, non-main children of
+                //    prevNode.  Emit after cur (and its KIF children above).
+                if (prevNode !== null) {
+                    for (let k = prevNode.children.length - 1; k >= 0; k--) {
+                        if (k === prevContIdx) continue;
+                        if (prevNode.children[k].isKIFBranch) continue;
+                        for (const body of this._serializeVariation(prevNode.children[k])) {
+                            tokens.push("(" + body + ")");
+                        }
+                    }
+                    if (prevNode.rawVariations) {
+                        for (const rv of prevNode.rawVariations) {
+                            const rawMoves = rv && rv.isKIF ? null : (rv.moves || rv);
+                            if (!rawMoves) continue;
+                            for (const body of this._serializeRawMoves(rawMoves)) {
+                                tokens.push("(" + body + ")");
+                            }
+                        }
+                    }
+                }
+
+                // Advance to the main continuation of cur.
+                prevNode = cur;
+                prevContIdx = -1;
+                for (let j = cur.children.length - 1; j >= 0; j--) {
+                    if (!cur.children[j].isBranch) { prevContIdx = j; break; }
+                }
+                cur = prevContIdx >= 0 ? cur.children[prevContIdx] : null;
+            }
+
+            // After the last node: emit its KIF children, then its PGN subs.
+            if (prevNode !== null) {
+                for (let k = prevNode.children.length - 1; k >= 0; k--) {
+                    if (!prevNode.children[k].isKIFBranch) continue;
+                    for (const body of this._serializeVariation(prevNode.children[k])) {
+                        tokens.push("(" + body + ")");
+                    }
+                }
+                if (prevNode.rawVariations) {
+                    for (const rv of prevNode.rawVariations) {
+                        if (!rv || !rv.isKIF) continue;
+                        for (const body of this._serializeRawMoves(rv.moves)) {
+                            tokens.push("(" + body + ")");
+                        }
+                    }
+                }
+                for (let k = prevNode.children.length - 1; k >= 0; k--) {
+                    if (k === prevContIdx) continue;
+                    if (prevNode.children[k].isKIFBranch) continue;
+                    for (const body of this._serializeVariation(prevNode.children[k])) {
+                        tokens.push("(" + body + ")");
+                    }
+                }
+                if (prevNode.rawVariations) {
+                    for (const rv of prevNode.rawVariations) {
+                        const rawMoves = rv && rv.isKIF ? null : (rv.moves || rv);
+                        if (!rawMoves) continue;
+                        for (const body of this._serializeRawMoves(rawMoves)) {
+                            tokens.push("(" + body + ")");
+                        }
+                    }
+                }
+            }
+
+            const mainBody = tokens.join(" ");
+            return mainBody.length > 0 ? [mainBody] : [];
+        }
+
         // Export game in CSL format (starting SFEN + space-separated moves)
         exportGame() {
             const exportTextarea =
                 this.container.querySelector("[data-game-export]");
             if (!exportTextarea) return;
 
-            // Start with the starting SFEN
-            let gameExport = this.startingSFEN || this.exportSFEN();
-
-            // Add starting position comment if it exists
-            if (this.startingComment && this.startingComment.trim()) {
-                gameExport +=
-                    " {" + this.escapeComment(this.startingComment) + "}";
-            }
-
-            // Add moves in USI notation with comments
-            if (this.moveHistory.length > 0) {
-                for (const move of this.moveHistory) {
-                    const usi = this.moveToUSI(move);
-                    if (usi) {
-                        gameExport += " " + usi;
-                        // Add comment for this move if it exists
-                        if (move.comment && move.comment.trim()) {
-                            gameExport +=
-                                " {" + this.escapeComment(move.comment) + "}";
-                        }
-                    }
-                }
-            }
-
+            const gameExport = this.buildCSLString();
             exportTextarea.value = gameExport;
 
             // Copy to clipboard without selecting the text
@@ -13312,32 +13728,7 @@ impossible to fulfill for either player, the game is considered a draw.</p>
             const exportTextarea =
                 this.container.querySelector("[data-game-export]");
             if (!exportTextarea) return;
-
-            // Start with the starting SFEN
-            let gameExport = this.startingSFEN || this.exportSFEN();
-
-            // Add starting position comment if it exists
-            if (this.startingComment && this.startingComment.trim()) {
-                gameExport +=
-                    " {" + this.escapeComment(this.startingComment) + "}";
-            }
-
-            // Add moves in USI notation with comments
-            if (this.moveHistory.length > 0) {
-                for (const move of this.moveHistory) {
-                    const usi = this.moveToUSI(move);
-                    if (usi) {
-                        gameExport += " " + usi;
-                        // Add comment for this move if it exists
-                        if (move.comment && move.comment.trim()) {
-                            gameExport +=
-                                " {" + this.escapeComment(move.comment) + "}";
-                        }
-                    }
-                }
-            }
-
-            exportTextarea.value = gameExport;
+            exportTextarea.value = this.buildCSLString();
         }
 
         // Render a SFEN board string as a PGN comment block (text drawing).
@@ -13632,6 +14023,371 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                 return `${index + 1}. ${san}`;
             });
         }
+
+        // ── Move-tree UI helpers ──────────────────────────────────────────────
+
+        // Generate a SAN label for any node in the tree (main-line or variation).
+        // Uses the parent node's resultingSFEN (or startingSFEN for root children)
+        // so it works for nodes that are not in the current moveHistory.
+        _getNodeSAN(node) {
+            const parentSFEN =
+                node.parent === this.moveTree
+                    ? this.startingSFEN || ""
+                    : node.parent.resultingSFEN || "";
+            const boardStr = parentSFEN.split(" ")[0] || "";
+            let boardBefore = null;
+            try {
+                boardBefore = boardStr ? this.parseSFENBoard(boardStr) : null;
+            } catch (_) {
+                /* skip disambiguation on parse error */
+            }
+            const san = this.moveToSAN(
+                node,
+                boardBefore,
+                "captureAware",
+                "shogi",
+            );
+            return `${node.ply}. ${san}`;
+        }
+
+        // Rebuild this._nodeMap (Map<nodeId → node>) by walking the full tree.
+        // Called at the start of every move-list render so click handlers can
+        // resolve a node from its id attribute.
+        _buildNodeMap() {
+            this._nodeMap = new Map();
+            const walk = (n) => {
+                if (n !== this.moveTree) this._nodeMap.set(n.id, n);
+                for (const child of n.children) walk(child);
+            };
+            walk(this.moveTree);
+        }
+
+        // Build lishogi-style tree HTML for the default (non-inline) move list.
+        // Main line (moveHistory) is rendered at depth 0.
+        // At each main-line node, sibling alternatives are rendered at depth 1,
+        // and their own sub-variations at depth 2, and so on.
+        buildMoveTreeHTML() {
+            this._buildNodeMap();
+            const parts = [];
+
+            // Find the main continuation of a node: last child without isBranch.
+            // Returns the index, or -1 if all children are branches (leaf or
+            // all-branch node).
+            const mainContinuationIdx = (node) => {
+                for (let j = node.children.length - 1; j >= 0; j--) {
+                    if (!node.children[j].isBranch) return j;
+                }
+                return -1;
+            };
+
+            // Render a variation chain starting at startNode at the given depth.
+            // Sub-variations of node N are rendered AFTER N's continuation so that
+            // "(alt)" appears after the move it is alternative to, not before it.
+            // prevNode carries N across iterations so its sub-vars are emitted
+            // once cur (the continuation) has been rendered.
+            const renderChain = (startNode, depth) => {
+                parts.push(
+                    `<div class="chushogi-variation-block" style="margin-left:12px">`,
+                );
+                let cur = startNode;
+                let prevNode = null;
+                let prevContIdx = -1;
+                while (cur) {
+                    const label = this._getNodeSAN(cur);
+                    parts.push(
+                        `<div class="chushogi-move-item clickable chushogi-variation-move" ` +
+                            `data-node-id="${cur.id}" ` +
+                            `title="Click to navigate here">${label}</div>`,
+                    );
+                    // 1. KIF children of cur: responses to cur; emit immediately
+                    //    after cur (before its main continuation).
+                    for (let k = cur.children.length - 1; k >= 0; k--) {
+                        if (cur.children[k].isKIFBranch) {
+                            renderChain(cur.children[k], depth + 1);
+                        }
+                    }
+                    // 2. PGN siblings of cur: non-KIF, non-main children of
+                    //    prevNode.  Emit after cur (and its KIF children above).
+                    if (prevNode !== null) {
+                        for (let k = prevNode.children.length - 1; k >= 0; k--) {
+                            if (k === prevContIdx) continue;
+                            if (prevNode.children[k].isKIFBranch) continue;
+                            renderChain(prevNode.children[k], depth + 1);
+                        }
+                    }
+                    prevNode = cur;
+                    prevContIdx = mainContinuationIdx(cur);
+                    cur = prevContIdx >= 0 ? cur.children[prevContIdx] : null;
+                }
+                // After the last node: emit its KIF children, then its PGN subs.
+                if (prevNode !== null) {
+                    for (let k = prevNode.children.length - 1; k >= 0; k--) {
+                        if (prevNode.children[k].isKIFBranch) {
+                            renderChain(prevNode.children[k], depth + 1);
+                        }
+                    }
+                    for (let k = prevNode.children.length - 1; k >= 0; k--) {
+                        if (k === prevContIdx) continue;
+                        if (prevNode.children[k].isKIFBranch) continue;
+                        renderChain(prevNode.children[k], depth + 1);
+                    }
+                }
+                parts.push("</div>");
+            };
+
+            // Walk the main line at depth 0.  After each main-line node:
+            //   1. Render PGN siblings (alternative first moves from the same
+            //      parent position), skipping isKIFBranch nodes.
+            //   2. Render KIF variations (branch children of this node — the
+            //      opponent's responses to this move).
+            // This ensures each variation block appears immediately after the
+            // move it is a response or alternative to.
+            for (let i = 0; i < this.moveHistory.length; i++) {
+                const node = this.moveHistory[i];
+
+                // Main-line node
+                const label = this._getNodeSAN(node);
+                parts.push(
+                    `<div class="chushogi-move-item clickable" ` +
+                        `data-node-id="${node.id}" ` +
+                        `title="Click to navigate here">${label}</div>`,
+                );
+
+                // PGN siblings: other children of node.parent.  Oldest first
+                // (high-index → low-index, since new nodes are prepended).
+                // Skip isKIFBranch nodes — those are shown after the node they
+                // respond to (the *previous* main-line node).
+                const par = node.parent;
+                for (let k = par.children.length - 1; k >= 0; k--) {
+                    const sib = par.children[k];
+                    if (sib === node) continue;
+                    if (sib.isKIFBranch) continue;
+                    renderChain(sib, 1);
+                }
+
+                // KIF variations: branch children of this node (isKIFBranch).
+                for (let k = node.children.length - 1; k >= 0; k--) {
+                    const child = node.children[k];
+                    if (!child.isKIFBranch) continue;
+                    renderChain(child, 1);
+                }
+            }
+
+            // Frontier pass: render children of the last main-line node that have
+            // no successor in moveHistory (i.e. after an undo).
+            //   • The promoted child (isBranch=false): walk its full chain inline,
+            //     exactly like the main loop does, so it appears at the same level
+            //     as the main-line moves above it.  Its non-main siblings appear as
+            //     indented variation blocks after the move they diverge from.
+            //   • If all children are branches (no promotion), render each via
+            //     renderChain as a variation block.
+            {
+                const _frontier =
+                    this.moveHistory.length > 0
+                        ? this.moveHistory[this.moveHistory.length - 1]
+                        : this.moveTree;
+                const _promotedIdx = mainContinuationIdx(_frontier);
+                if (_promotedIdx >= 0) {
+                    let _fcur = _frontier.children[_promotedIdx];
+                    let _fprev = _frontier;
+                    let _fprevContIdx = _promotedIdx;
+                    while (_fcur) {
+                        const label = this._getNodeSAN(_fcur);
+                        parts.push(
+                            `<div class="chushogi-move-item clickable" ` +
+                                `data-node-id="${_fcur.id}" ` +
+                                `title="Click to navigate here">${label}</div>`,
+                        );
+                        // Non-main, non-KIF siblings of _fcur (other children of _fprev):
+                        for (let k = _fprev.children.length - 1; k >= 0; k--) {
+                            if (k === _fprevContIdx) continue;
+                            if (_fprev.children[k].isKIFBranch) continue;
+                            renderChain(_fprev.children[k], 1);
+                        }
+                        // KIF children of _fcur:
+                        for (let k = _fcur.children.length - 1; k >= 0; k--) {
+                            if (_fcur.children[k].isKIFBranch) {
+                                renderChain(_fcur.children[k], 1);
+                            }
+                        }
+                        _fprev = _fcur;
+                        _fprevContIdx = mainContinuationIdx(_fcur);
+                        _fcur =
+                            _fprevContIdx >= 0
+                                ? _fcur.children[_fprevContIdx]
+                                : null;
+                    }
+                    // Trailing non-main branches of the last promoted node:
+                    if (_fprev !== _frontier) {
+                        for (let k = _fprev.children.length - 1; k >= 0; k--) {
+                            if (k === _fprevContIdx) continue;
+                            if (_fprev.children[k].isKIFBranch) continue;
+                            renderChain(_fprev.children[k], 1);
+                        }
+                    }
+                } else {
+                    // No promoted child — render all non-KIF frontier children as
+                    // variation blocks.
+                    for (let k = _frontier.children.length - 1; k >= 0; k--) {
+                        if (_frontier.children[k].isKIFBranch) continue;
+                        renderChain(_frontier.children[k], 1);
+                    }
+                }
+            }
+
+            return `<div class="chushogi-move-tree-block">${parts.join("")}</div>`;
+        }
+
+        // Build inline-notation HTML for the move list when displayInlineNotation
+        // is true.  Variations are rendered as parenthetical spans just like CSL.
+        buildMoveTreeInlineHTML() {
+            this._buildNodeMap();
+            const parts = [];
+
+            const mainContinuationIdx = (node) => {
+                for (let j = node.children.length - 1; j >= 0; j--) {
+                    if (!node.children[j].isBranch) return j;
+                }
+                return -1;
+            };
+
+            const buildChain = (startNode) => {
+                const chunks = [];
+                let cur = startNode;
+                let prevNode = null;
+                let prevContIdx = -1;
+                while (cur) {
+                    const label = this._getNodeSAN(cur);
+                    chunks.push(
+                        `<span class="chushogi-move-item-inline clickable chushogi-variation-move" ` +
+                            `data-node-id="${cur.id}" ` +
+                            `title="Click to navigate here">${label}</span>`,
+                    );
+                    // 1. KIF children of cur: responses to cur; emit immediately
+                    //    after cur (before its main continuation).
+                    for (let k = cur.children.length - 1; k >= 0; k--) {
+                        if (cur.children[k].isKIFBranch) {
+                            chunks.push("(" + buildChain(cur.children[k]) + ")");
+                        }
+                    }
+                    // 2. PGN siblings of cur: non-KIF, non-main children of
+                    //    prevNode.  Emit after cur (and its KIF children above).
+                    if (prevNode !== null) {
+                        for (let k = prevNode.children.length - 1; k >= 0; k--) {
+                            if (k === prevContIdx) continue;
+                            if (prevNode.children[k].isKIFBranch) continue;
+                            chunks.push("(" + buildChain(prevNode.children[k]) + ")");
+                        }
+                    }
+                    prevNode = cur;
+                    prevContIdx = mainContinuationIdx(cur);
+                    cur = prevContIdx >= 0 ? cur.children[prevContIdx] : null;
+                }
+                // After the last node: emit its KIF children, then its PGN subs.
+                if (prevNode !== null) {
+                    for (let k = prevNode.children.length - 1; k >= 0; k--) {
+                        if (prevNode.children[k].isKIFBranch) {
+                            chunks.push("(" + buildChain(prevNode.children[k]) + ")");
+                        }
+                    }
+                    for (let k = prevNode.children.length - 1; k >= 0; k--) {
+                        if (k === prevContIdx) continue;
+                        if (prevNode.children[k].isKIFBranch) continue;
+                        chunks.push("(" + buildChain(prevNode.children[k]) + ")");
+                    }
+                }
+                return chunks.join(" ");
+            };
+
+            for (let i = 0; i < this.moveHistory.length; i++) {
+                const node = this.moveHistory[i];
+
+                const label = this._getNodeSAN(node);
+                parts.push(
+                    `<span class="chushogi-move-item-inline clickable" ` +
+                        `data-node-id="${node.id}" ` +
+                        `title="Click to navigate here">${label}</span>`,
+                );
+
+                // PGN siblings: other children of node.parent that are NOT
+                // isKIFBranch (KIF branches are shown after the node they
+                // respond to).  Oldest first (high-index → low-index).
+                const par = node.parent;
+                for (let k = par.children.length - 1; k >= 0; k--) {
+                    const sib = par.children[k];
+                    if (sib === node) continue;
+                    if (sib.isKIFBranch) continue;
+                    parts.push("(" + buildChain(sib) + ")");
+                }
+
+                // KIF variations: branch children of this node.
+                for (let k = node.children.length - 1; k >= 0; k--) {
+                    const child = node.children[k];
+                    if (!child.isKIFBranch) continue;
+                    parts.push("(" + buildChain(child) + ")");
+                }
+            }
+
+            // Frontier pass: mirrors buildMoveTreeHTML's frontier pass.
+            //   • Promoted child (isBranch=false): walk its chain inline as main-line
+            //     spans; siblings appear as parenthetical variations.
+            //   • All branches (no promotion): render each as a parenthetical.
+            {
+                const _frontier =
+                    this.moveHistory.length > 0
+                        ? this.moveHistory[this.moveHistory.length - 1]
+                        : this.moveTree;
+                const _promotedIdx = mainContinuationIdx(_frontier);
+                if (_promotedIdx >= 0) {
+                    let _fcur = _frontier.children[_promotedIdx];
+                    let _fprev = _frontier;
+                    let _fprevContIdx = _promotedIdx;
+                    while (_fcur) {
+                        const label = this._getNodeSAN(_fcur);
+                        parts.push(
+                            `<span class="chushogi-move-item-inline clickable" ` +
+                                `data-node-id="${_fcur.id}" ` +
+                                `title="Click to navigate here">${label}</span>`,
+                        );
+                        // Non-main, non-KIF siblings (other children of _fprev):
+                        for (let k = _fprev.children.length - 1; k >= 0; k--) {
+                            if (k === _fprevContIdx) continue;
+                            if (_fprev.children[k].isKIFBranch) continue;
+                            parts.push("(" + buildChain(_fprev.children[k]) + ")");
+                        }
+                        // KIF children of _fcur:
+                        for (let k = _fcur.children.length - 1; k >= 0; k--) {
+                            if (_fcur.children[k].isKIFBranch) {
+                                parts.push("(" + buildChain(_fcur.children[k]) + ")");
+                            }
+                        }
+                        _fprev = _fcur;
+                        _fprevContIdx = mainContinuationIdx(_fcur);
+                        _fcur =
+                            _fprevContIdx >= 0
+                                ? _fcur.children[_fprevContIdx]
+                                : null;
+                    }
+                    // Trailing non-main branches of the last promoted node:
+                    if (_fprev !== _frontier) {
+                        for (let k = _fprev.children.length - 1; k >= 0; k--) {
+                            if (k === _fprevContIdx) continue;
+                            if (_fprev.children[k].isKIFBranch) continue;
+                            parts.push("(" + buildChain(_fprev.children[k]) + ")");
+                        }
+                    }
+                } else {
+                    for (let k = _frontier.children.length - 1; k >= 0; k--) {
+                        if (_frontier.children[k].isKIFBranch) continue;
+                        parts.push("(" + buildChain(_frontier.children[k]) + ")");
+                    }
+                }
+            }
+
+            return parts.join(" ");
+        }
+
+        // ── End move-tree UI helpers ──────────────────────────────────────────
 
         // Generate Standard Algebraic Notation for one move.
         // boardBefore is the 12\u00d712 array from parseSFENBoard() for the position BEFORE
@@ -15060,29 +15816,87 @@ impossible to fulfill for either player, the game is considered a draw.</p>
             this.navigateToPosition("start");
         }
 
-        goBackOneMove() {
-            if (this.moveHistory.length === 0) return; // No moves to navigate
+        // Returns the preferred continuation child of a node: the last child
+        // without isBranch=true (children are prepended, so last = oldest =
+        // the main line).  Returns null at a leaf or if all children are branches.
+        _mainContinuationOf(node) {
+            for (let j = node.children.length - 1; j >= 0; j--) {
+                if (!node.children[j].isBranch) return node.children[j];
+            }
+            return null;
+        }
 
+        // Follows _mainContinuationOf to the deepest leaf of the current branch.
+        _lastInBranch(node) {
+            let cur = node;
+            while (true) {
+                const next = this._mainContinuationOf(cur);
+                if (!next) return cur;
+                cur = next;
+            }
+        }
+
+        // Returns { current, total } for the viewed node's global depth.
+        // current: number of moves from the start position to node (all
+        //          ancestors on any line, plus node itself).
+        // total:   same depth but to the leaf of the current branch
+        //          continuation — includes all ancestors plus all remaining
+        //          branch moves.
+        _branchPosition(node) {
+            // Walk up to moveTree, counting every ancestor.
+            let current = 0;
+            let cur = node;
+            while (cur && cur !== this.moveTree) {
+                current++;
+                cur = cur.parent;
+            }
+            // Extend forward along the main continuation to the leaf.
+            let total = current;
+            cur = node;
+            while (true) {
+                const next = this._mainContinuationOf(cur);
+                if (!next) break;
+                cur = next;
+                total++;
+            }
+            return { current, total };
+        }
+
+        goBackOneMove() {
+            // Off-branch: navigate within the variation tree.
+            if (this._viewedNode !== null) {
+                const parent = this._viewedNode.parent;
+                if (!parent || parent === this.moveTree) {
+                    // Reached the root — go to start position.
+                    this.navigateToPosition("start");
+                } else {
+                    const mainLineIdx = this.moveHistory.indexOf(parent);
+                    if (mainLineIdx >= 0) {
+                        // Parent is on the main line — re-enter main-line navigation.
+                        this.navigateToPosition(mainLineIdx);
+                    } else {
+                        // Parent is also off-branch — stay in the variation tree.
+                        this.navigateToNode(parent);
+                    }
+                }
+                return;
+            }
+
+            // Main-line navigation.
+            if (this.moveHistory.length === 0) return;
             if (
                 this.currentNavigationIndex === null ||
                 this.currentNavigationIndex === this.moveHistory.length - 1
             ) {
-                // Currently at current position, go to position before last move
                 if (this.moveHistory.length > 1) {
                     this.navigateToPosition(this.moveHistory.length - 2);
-                } else if (this.moveHistory.length === 1) {
-                    // Only one move, go to start position
+                } else {
                     this.navigateToPosition("start");
                 }
             } else if (this.currentNavigationIndex > 0) {
-                // Go back one more move
                 this.navigateToPosition(this.currentNavigationIndex - 1);
             } else if (this.currentNavigationIndex === 0) {
-                // Go to start position
                 this.navigateToPosition("start");
-            } else if (this.currentNavigationIndex === -1) {
-                // Already at start, can't go back further
-                return;
             }
         }
 
@@ -15107,30 +15921,44 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                 return;
             }
 
+            // Off-branch: follow the main continuation within this branch.
+            if (this._viewedNode !== null) {
+                const next = this._mainContinuationOf(this._viewedNode);
+                if (next) this.navigateToNode(next);
+                // At a variation leaf — nothing to do.
+                return;
+            }
+
+            // Main-line navigation.
             if (
                 this.currentNavigationIndex === null ||
                 this.currentNavigationIndex === this.moveHistory.length - 1
             ) {
-                // Already at current position
+                // Already at the live position.
                 return;
             }
-
             if (
                 this.currentNavigationIndex === -1 &&
                 this.moveHistory.length > 0
             ) {
-                // At start position, go to position after first move
                 this.navigateToPosition(0);
             } else if (
                 this.currentNavigationIndex >= 0 &&
                 this.currentNavigationIndex < this.moveHistory.length - 1
             ) {
-                // Go forward one move
                 this.navigateToPosition(this.currentNavigationIndex + 1);
             }
         }
 
         goToCurrent() {
+            // Off-branch: go to the last move in this variation branch.
+            if (this._viewedNode !== null) {
+                const leaf = this._lastInBranch(this._viewedNode);
+                if (leaf !== this._viewedNode) this.navigateToNode(leaf);
+                // Already at the leaf — nothing to do.
+                return;
+            }
+            // Main line: go to the live position.
             this.navigateToPosition("current");
         }
 
@@ -15392,14 +16220,10 @@ impossible to fulfill for either player, the game is considered a draw.</p>
             this.updateDisplay();
         }
 
-        // Check if we can make moves (not navigating)
+        // Check if we can make moves.
+        // Navigation no longer blocks moves — playing from any position creates a
+        // variation (or extends a leaf branch) in the move tree.
         canMakeMove() {
-            if (this.isNavigating) {
-                console.log(
-                    "Cannot make moves while navigating history. Use the navigation buttons to return to current position first.",
-                );
-                return false;
-            }
             return true;
         }
 
@@ -15498,30 +16322,7 @@ impossible to fulfill for either player, the game is considered a draw.</p>
 
         getCurrentGameState() {
             // Generate the same format as exportGame() but return as string instead of setting textarea
-            let gameExport = this.startingSFEN || this.exportSFEN();
-
-            // Add starting position comment if it exists
-            if (this.startingComment && this.startingComment.trim()) {
-                gameExport +=
-                    " {" + this.escapeComment(this.startingComment) + "}";
-            }
-
-            // Add moves in USI notation with comments
-            if (this.moveHistory.length > 0) {
-                for (const move of this.moveHistory) {
-                    const usi = this.moveToUSI(move);
-                    if (usi) {
-                        gameExport += " " + usi;
-                        // Add comment for this move if it exists
-                        if (move.comment && move.comment.trim()) {
-                            gameExport +=
-                                " {" + this.escapeComment(move.comment) + "}";
-                        }
-                    }
-                }
-            }
-
-            return gameExport;
+            return this.buildCSLString();
         }
 
         reset() {
@@ -15545,6 +16346,7 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                 this.startingSFEN = this.sanitizeSFEN(standardSFEN);
                 this.loadSFEN(standardSFEN);
                 this.moveHistory = [];
+                this.moveTree = { id: "root", children: [], parent: null, ply: 0 };
                 this.lastMove = null;
                 this.lastLionCapture = null;
                 this.startingLionCapture = null;
@@ -15553,6 +16355,7 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                 // Reset navigation state
                 this.currentNavigationIndex = -1;
                 this.isNavigating = false;
+                this.currentNode = this.moveTree;
             }
             this.updateDisplay();
             this.updateMoveHistoryHighlight();
@@ -15631,6 +16434,8 @@ impossible to fulfill for either player, the game is considered a draw.</p>
 
             this.loadSFEN(newStartingSFEN);
             this.moveHistory = [];
+            this.moveTree = { id: "root", children: [], parent: null, ply: 0 };
+            this.currentNode = null;
             this.lastMove = null;
 
             // Set the starting Counter-strike state to match what was set during editing
@@ -16068,12 +16873,73 @@ impossible to fulfill for either player, the game is considered a draw.</p>
             this.startingSFEN = this.sanitizeSFEN(sfen);
             this.loadSFEN(sfen);
             this.moveHistory = [];
+            this.moveTree = { id: "root", children: [], parent: null, ply: 0 };
+            this.currentNode = null;
             this.lastMove = null;
             this.lastLionCapture = null;
             this.startingLionCapture = null;
             this.clearSelection();
             this.updateDisplay();
         }
+
+        // ── Move-tree helpers ─────────────────────────────────────────────────
+
+        /**
+         * Wrap a plain move-data object in a MoveNode, linking it to its parent.
+         * The caller is responsible for pushing the node into parent.children and
+         * into this.moveHistory.
+         */
+        makeMoveNode(moveData, parent) {
+            return Object.assign({}, moveData, {
+                id: ++this._moveNodeCounter,
+                parent,
+                children: [],
+                ply: parent.ply + 1,
+            });
+        }
+
+        /**
+         * Recursively sever node and all its descendants from the tree.
+         * Removes node from parent.children and nulls the parent pointer.
+         * Safe to call on an already-detached node (parent === null → no-op).
+         */
+        detachSubtree(node) {
+            // Detach children depth-first so references are cleaned before the parent
+            for (const child of [...node.children]) {
+                this.detachSubtree(child);
+            }
+            node.children = [];
+            if (node.parent) {
+                const idx = node.parent.children.indexOf(node);
+                if (idx >= 0) node.parent.children.splice(idx, 1);
+                node.parent = null;
+            }
+        }
+
+        /**
+         * Count how many nodes exist in the subtree rooted at `node`
+         * (the node itself plus every descendant across all branches).
+         * Used to give accurate move counts in undo confirmation prompts.
+         */
+        countSubtreeNodes(node) {
+            let count = 1;
+            for (const child of node.children) {
+                count += this.countSubtreeNodes(child);
+            }
+            return count;
+        }
+
+        /**
+         * Return the live leaf: the last node in moveHistory, or moveTree if no
+         * moves have been played yet.
+         */
+        getLiveNode() {
+            return this.moveHistory.length > 0
+                ? this.moveHistory[this.moveHistory.length - 1]
+                : this.moveTree;
+        }
+
+        // ── End move-tree helpers ─────────────────────────────────────────────
 
         undo() {
             // Block undo in viewOnly mode
@@ -16145,6 +17011,74 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                 });
             }
 
+            // ── Off-branch variation undo / clip ─────────────────────────────
+            // When the user is viewing an off-branch node (_viewedNode is set):
+            //   Leaf node    → ↶  remove just that node, navigate to parent.
+            //   Non-leaf node → ✂  clip all children of this node (making it a
+            //                      leaf), stay at the node.  Sibling branches
+            //                      that diverge from an ancestor are untouched.
+            if (this._viewedNode) {
+                const node = this._viewedNode;
+
+                if (node.children.length === 0) {
+                    // ── Leaf undo ──────────────────────────────────────────
+                    // No confirmation needed for a single move.
+                    // goBackOneMove already handles both the "parent is on the
+                    // main line" and "parent is also off-branch" cases, and
+                    // calls updateDisplay / updateButtonStates internally.
+                    const _leafParent = node.parent;
+                    this.goBackOneMove();
+                    this.detachSubtree(node);
+                    // After deletion, any surviving sibling still carries
+                    // isBranch=true.  Promote the highest-priority one so the
+                    // tree always has a clear main continuation at this position.
+                    if (
+                        _leafParent &&
+                        _leafParent.children.length > 0 &&
+                        _leafParent.children[0].isBranch
+                    ) {
+                        _leafParent.children[0].isBranch = false;
+                    }
+                    // Refresh so the deleted node disappears from the move list.
+                    this.clearAllDrawings();
+                    this.updateDisplay();
+                    this.updateButtonStates();
+                    this.highlightManager.updateAllIntelligent();
+                } else {
+                    // ── Non-leaf clip ──────────────────────────────────────
+                    // Clip only the current-branch continuation — the main
+                    // continuation child (_mainContinuationOf, i.e. the last
+                    // non-branch child, oldest in prepend order) — so that
+                    // any sibling sub-branches attached to this node survive.
+                    // After the clip the first remaining child automatically
+                    // becomes the new continuation (it already has isBranch=false
+                    // within a variation).
+                    const _cont =
+                        this._mainContinuationOf(node) ?? node.children[0];
+                    const totalToDelete = this.countSubtreeNodes(_cont);
+                    if (totalToDelete > 9) {
+                        const confirmed = confirm(
+                            `Delete ${totalToDelete} moves?`,
+                        );
+                        if (!confirmed) return;
+                    }
+                    this.detachSubtree(_cont);
+                    // Sibling branches carry isBranch=true. After removing the
+                    // main continuation the highest-priority surviving child
+                    // (children[0], most recently prepended) must be promoted to
+                    // isBranch=false so it becomes the new continuation.
+                    if (node.children.length > 0 && node.children[0].isBranch) {
+                        node.children[0].isBranch = false;
+                    }
+                    // Stay at this node; refresh UI.
+                    this.clearAllDrawings();
+                    this.updateDisplay();
+                    this.updateButtonStates();
+                    this.highlightManager.updateAllIntelligent();
+                }
+                return;
+            }
+
             // Check if we're in navigation mode (not at current position)
             if (this.isNavigating && this.currentNavigationIndex !== null) {
                 // Calculate how many moves will be deleted
@@ -16161,10 +17095,19 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                 }
 
                 if (movesToDelete > 0) {
-                    // Show confirmation prompt if more than 9 moves will be deleted
-                    if (movesToDelete > 9) {
+                    // Count the full subtree being removed (main-line nodes + all
+                    // variation branches hanging off them) for the confirm prompt.
+                    const targetLength =
+                        currentPosition === -1 ? 0 : currentPosition + 1;
+                    const firstRemoved = this.moveHistory[targetLength];
+                    const totalToDelete = firstRemoved
+                        ? this.countSubtreeNodes(firstRemoved)
+                        : movesToDelete;
+
+                    // Show confirmation prompt if more than 9 nodes will be deleted
+                    if (totalToDelete > 9) {
                         const confirmed = confirm(
-                            `Delete ${movesToDelete} moves?`,
+                            `Delete ${totalToDelete} moves?`,
                         );
                         if (!confirmed) {
                             console.log(
@@ -16176,9 +17119,31 @@ impossible to fulfill for either player, the game is considered a draw.</p>
 
                     // Delete moves from the current navigation position to the end
                     const newMoveHistory = [...this.moveHistory];
-                    const targetLength =
-                        currentPosition === -1 ? 0 : currentPosition + 1;
-                    newMoveHistory.splice(targetLength);
+                    const removedNodes = newMoveHistory.splice(targetLength);
+
+                    // Detach only the main-line continuation (removedNodes[0]).
+                    // Sibling variation branches hanging off the clip-point node
+                    // are children of newMoveHistory's last element, not of
+                    // removedNodes[0], so detachSubtree leaves them untouched.
+                    if (removedNodes.length > 0) this.detachSubtree(removedNodes[0]);
+
+                    // Promote the nearest surviving child of the clip-point node
+                    // (if any) to become the new main line.  New moves are
+                    // prepended (unshift), so children[0] is the most-recently
+                    // added — that is also the "nearest" branch.
+                    const _pivot =
+                        newMoveHistory.length > 0
+                            ? newMoveHistory[newMoveHistory.length - 1]
+                            : this.moveTree;
+                    let _promoteCur =
+                        _pivot.children.length > 0
+                            ? _pivot.children[0]
+                            : null;
+                    while (_promoteCur) {
+                        _promoteCur.isBranch = false;
+                        newMoveHistory.push(_promoteCur);
+                        _promoteCur = this._mainContinuationOf(_promoteCur);
+                    }
 
                     this.gameStateManager.updateGameState({
                         moveHistory: newMoveHistory,
@@ -16190,9 +17155,11 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                         fromPosition: currentPosition,
                     });
 
-                    // Reset navigation state - stay at the current displayed position
+                    // Reset navigation state - go to the live position (end of
+                    // the possibly-extended new main line).
                     this.currentNavigationIndex = null;
                     this.isNavigating = false;
+                    this.currentNode = null;
 
                     // Clear all drawings when undoing
                     this.clearAllDrawings();
@@ -16224,9 +17191,30 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                 this.navigateToPosition("start");
             }
 
-            // Now remove the move from history using centralized state management
+            // Pop the move from history.
+            //   • lastMove.isBranch === false  →  it was the main continuation;
+            //     delete it from the tree entirely, then promote the highest-priority
+            //     remaining child (if any, if still tagged isBranch=true) to be the
+            //     new main continuation.
+            //   • lastMove.isBranch === true   →  it was a variation the user played
+            //     into a position that already had a continuation.  Leave it in the
+            //     tree; the original main continuation (isBranch=false) is still
+            //     there and needs no further action.
             const newMoveHistory = [...this.moveHistory];
             newMoveHistory.pop();
+            if (lastMove) {
+                const _pivot =
+                    newMoveHistory.length > 0
+                        ? newMoveHistory[newMoveHistory.length - 1]
+                        : this.moveTree;
+                if (!lastMove.isBranch) {
+                    this.detachSubtree(lastMove);
+                    if (_pivot.children.length > 0 && _pivot.children[0].isBranch) {
+                        _pivot.children[0].isBranch = false;
+                    }
+                }
+                // else: was a variation — leave it; isBranch=false sibling stays put.
+            }
 
             this.gameStateManager.updateGameState({
                 moveHistory: newMoveHistory,
@@ -16241,6 +17229,7 @@ impossible to fulfill for either player, the game is considered a draw.</p>
             // The user should be at the current position after undo, not in navigation mode
             this.currentNavigationIndex = null;
             this.isNavigating = false;
+            this.currentNode = null;
 
             console.log("Undo: Reset navigation state - moves now allowed");
 
@@ -16316,7 +17305,10 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                     const newMoveHistory = [...this.moveHistory];
                     const targetLength =
                         currentPosition === -1 ? 0 : currentPosition + 1;
-                    newMoveHistory.splice(targetLength);
+                    const removedNodes = newMoveHistory.splice(targetLength);
+
+                    // Detach all removed nodes (and their branches) from the tree.
+                    if (removedNodes.length > 0) this.detachSubtree(removedNodes[0]);
 
                     this.gameStateManager.updateGameState({
                         moveHistory: newMoveHistory,
@@ -16331,6 +17323,7 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                     // Reset navigation state - stay at the current displayed position
                     this.currentNavigationIndex = null;
                     this.isNavigating = false;
+                    this.currentNode = null;
 
                     // Clear all drawings when undoing
                     this.clearAllDrawings();
@@ -16448,6 +17441,22 @@ impossible to fulfill for either player, the game is considered a draw.</p>
             const newMoveHistory = [...this.moveHistory];
             newMoveHistory.pop();
 
+            // lastMove.isBranch === false → was main continuation; delete it and
+            // promote the highest-priority remaining sibling if needed.
+            // lastMove.isBranch === true  → was a user-played variation; leave it.
+            if (lastMove) {
+                const _pivot =
+                    newMoveHistory.length > 0
+                        ? newMoveHistory[newMoveHistory.length - 1]
+                        : this.moveTree;
+                if (!lastMove.isBranch) {
+                    this.detachSubtree(lastMove);
+                    if (_pivot.children.length > 0 && _pivot.children[0].isBranch) {
+                        _pivot.children[0].isBranch = false;
+                    }
+                }
+            }
+
             this.gameStateManager.updateGameState({
                 moveHistory: newMoveHistory,
             });
@@ -16459,6 +17468,7 @@ impossible to fulfill for either player, the game is considered a draw.</p>
 
             this.currentNavigationIndex = null;
             this.isNavigating = false;
+            this.currentNode = null;
             this.clearAllDrawings();
             this.updateDisplay();
 
@@ -16582,6 +17592,9 @@ impossible to fulfill for either player, the game is considered a draw.</p>
 
         // Centralized navigation function - handles all position loading scenarios
         navigateToPosition(target) {
+            // Returning to main-line navigation clears any off-branch view.
+            this._viewedNode = null;
+
             // Clear any selections and highlights
             this.clearSelection();
             this.clearHighlights();
@@ -16681,6 +17694,17 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                     isNavigating: isNav,
                 });
 
+                // Keep currentNode in sync so makeMove branches from the right node.
+                // At the live position currentNode stays null (getLiveNode() handles it).
+                // At the start sentinel use moveTree; otherwise use the move-history node.
+                if (resolvesToLivePosition) {
+                    this.currentNode = null;
+                } else if (target === "start" || target === -1) {
+                    this.currentNode = this.moveTree;
+                } else {
+                    this.currentNode = this.moveHistory[targetIndex] ?? null;
+                }
+
                 // Load the SFEN position
                 this.applySFENPosition(targetSFEN);
 
@@ -16706,7 +17730,52 @@ impossible to fulfill for either player, the game is considered a draw.</p>
             }
         }
 
+        // Navigate to any node in the move tree, including off-branch variation
+        // nodes.  moveHistory is intentionally left unchanged so the rendered
+        // tree order stays stable.  The clicked node is stored in _viewedNode
+        // so updateMoveHistoryHighlight can locate and highlight it.
+        navigateToNode(node) {
+            this.clearSelection();
+            this.clearHighlights();
+            this.inspectedSquare = null;
+            this.updatePieceInfoPanel();
+            this.promotionPromptActive = false;
+            this.lionReturnPromptActive = false;
+            this.clearAllDrawings();
+
+            // Track which off-branch node is being viewed (for highlighting).
+            // Do NOT touch moveHistory — the tree render order must stay the same.
+            this._viewedNode = node;
+
+            // Mark as navigating without using the integer index (which is
+            // meaningless for off-branch nodes).  Set currentNode so that any
+            // move played from here branches off this node.
+            this.isNavigating = true;
+            this.currentNode = node;
+            // Leave currentNavigationIndex unchanged so goBack/goForward still
+            // walk the main line correctly.
+
+            // Apply board state
+            const targetSFEN = node.resultingSFEN;
+            if (targetSFEN) {
+                this.applySFENPosition(targetSFEN);
+                const sfenParts = targetSFEN.split(" ");
+                if (sfenParts.length >= 2) {
+                    this.setCurrentPlayer(sfenParts[1]);
+                }
+            }
+
+            this.updateDisplay();
+            this.updateMoveHistoryHighlight();
+            this.updateSquareHighlights();
+            this.updateButtonStates();
+        }
+
         getNavigationDisplayMove() {
+            // When viewing an off-branch variation node, highlight that node's move.
+            if (this._viewedNode && this.isNavigating) {
+                return this._viewedNode;
+            }
             // Return the move that should be highlighted based on current navigation state
             if (this.currentNavigationIndex === -1) {
                 // At starting position, no move to highlight
@@ -16728,6 +17797,10 @@ impossible to fulfill for either player, the game is considered a draw.</p>
         }
 
         getNavigationDisplaySFEN() {
+            // When viewing an off-branch variation node, use that node's SFEN.
+            if (this._viewedNode && this.isNavigating) {
+                return this._viewedNode.resultingSFEN || this.exportSFEN();
+            }
             // Return the SFEN that represents the currently displayed position
             if (this.currentNavigationIndex === -1) {
                 // At starting position
@@ -16751,7 +17824,10 @@ impossible to fulfill for either player, the game is considered a draw.</p>
             // Return the comment for the currently displayed position
             let comment = "";
 
-            if (this.currentNavigationIndex === -1) {
+            // When viewing an off-branch variation node, use that node's comment.
+            if (this._viewedNode && this.isNavigating) {
+                comment = this._viewedNode.comment || "";
+            } else if (this.currentNavigationIndex === -1) {
                 // At starting position
                 comment = this.startingComment;
             } else if (
@@ -16792,7 +17868,22 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                 item.classList.remove("selected", "current");
             });
 
-            // Determine current state
+            // Off-branch variation node being viewed via navigateToNode.
+            // Leaf nodes (end of branch, moves allowed) show as "current";
+            // non-leaf nodes (mid-branch, read-only) show as "selected".
+            if (this._viewedNode && this.isNavigating) {
+                const isLeaf = this._viewedNode.children.length === 0;
+                const el = this.container.querySelector(
+                    `[data-node-id="${this._viewedNode.id}"]`,
+                );
+                if (el) {
+                    el.classList.add(isLeaf ? "current" : "selected");
+                    this._scrollMoveIntoView(el);
+                }
+                return;
+            }
+
+            // Determine whether the viewed position is the live (most-recent) one
             const isAtCurrentPosition =
                 !this.isNavigating &&
                 (this.currentNavigationIndex === null ||
@@ -16800,7 +17891,7 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                         this.moveHistory.length - 1);
 
             if (this.currentNavigationIndex === -1) {
-                // Highlight starting position
+                // At starting position
                 const startItem = this.container.querySelector(
                     '[data-move="start"]',
                 );
@@ -16809,35 +17900,56 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                         isAtCurrentPosition ? "current" : "selected",
                     );
                 }
-            } else if (
+                return;
+            }
+
+            // Resolve the node that should be highlighted
+            let targetNode = null;
+            if (
                 this.currentNavigationIndex !== null &&
-                this.currentNavigationIndex >= 0
+                this.currentNavigationIndex >= 0 &&
+                this.currentNavigationIndex < this.moveHistory.length
             ) {
-                // Highlight specific move
-                const moveItem = this.container.querySelector(
-                    `[data-move="${this.currentNavigationIndex}"]`,
+                targetNode = this.moveHistory[this.currentNavigationIndex];
+            } else if (
+                this.currentNavigationIndex === null &&
+                this.moveHistory.length > 0
+            ) {
+                // At live position — highlight the last move
+                targetNode =
+                    this.moveHistory[this.moveHistory.length - 1];
+            }
+
+            if (targetNode) {
+                const el = this.container.querySelector(
+                    `[data-node-id="${targetNode.id}"]`,
                 );
-                if (moveItem) {
-                    moveItem.classList.add(
+                if (el) {
+                    el.classList.add(
                         isAtCurrentPosition ? "current" : "selected",
                     );
+                    this._scrollMoveIntoView(el);
                 }
-            } else if (this.moveHistory.length > 0) {
-                // Default to last move if no navigation index set
-                const lastMoveItem = this.container.querySelector(
-                    `[data-move="${this.moveHistory.length - 1}"]`,
-                );
-                if (lastMoveItem) {
-                    lastMoveItem.classList.add("current");
-                }
-            } else {
-                // No moves, highlight starting position
+            } else if (this.moveHistory.length === 0) {
+                // No moves yet — highlight starting position
                 const startItem = this.container.querySelector(
                     '[data-move="start"]',
                 );
-                if (startItem) {
-                    startItem.classList.add("current");
-                }
+                if (startItem) startItem.classList.add("current");
+            }
+        }
+
+        // Scroll a move-list item into view within its own scrollable container
+        // only — never scrolls the page.
+        _scrollMoveIntoView(el) {
+            const scroller = el.closest(".chushogi-move-list");
+            if (!scroller) return;
+            const sr = scroller.getBoundingClientRect();
+            const er = el.getBoundingClientRect();
+            if (er.top < sr.top) {
+                scroller.scrollTop -= sr.top - er.top + 4;
+            } else if (er.bottom > sr.bottom) {
+                scroller.scrollTop += er.bottom - sr.bottom + 4;
             }
         }
 
@@ -17037,6 +18149,196 @@ impossible to fulfill for either player, the game is considered a draw.</p>
             return { textParts, commentMap, commentOnly };
         }
 
+        // ── CSL TOKENIZER (variation-aware) ──────────────────────────────────────
+
+        // Tokenize a CSL game string into a flat list recognising:
+        //   { type:'word',    value }  – a non-whitespace, non-bracket token
+        //   { type:'comment', value }  – content of a { … } block (unescaped)
+        //   { type:'open'  }           – a bare '('
+        //   { type:'close' }           – a bare ')'
+        //
+        // Returns { items } on success or { error } on malformed input.
+        tokenizeCSLFull(gameString) {
+            const items = [];
+            let i = 0;
+            const len = gameString.length;
+
+            while (i < len) {
+                const ch = gameString[i];
+
+                // Skip whitespace
+                if (ch === " " || ch === "\t" || ch === "\n" || ch === "\r") {
+                    i++;
+                    continue;
+                }
+
+                if (ch === "{") {
+                    // Find the unescaped closing }
+                    let j = i + 1;
+                    let closed = false;
+                    while (j < len) {
+                        if (gameString[j] === "}") {
+                            let backslashes = 0;
+                            let k = j - 1;
+                            while (k > i && gameString[k] === "\\") {
+                                backslashes++;
+                                k--;
+                            }
+                            if (backslashes % 2 === 0) {
+                                closed = true;
+                                break;
+                            }
+                        }
+                        j++;
+                    }
+                    if (!closed) {
+                        return {
+                            error: "Unclosed comment: missing closing bracket }",
+                        };
+                    }
+                    items.push({
+                        type: "comment",
+                        value: this.unescapeComment(
+                            gameString.substring(i + 1, j),
+                        ),
+                    });
+                    i = j + 1;
+                } else if (ch === "(") {
+                    items.push({ type: "open" });
+                    i++;
+                } else if (ch === ")") {
+                    items.push({ type: "close" });
+                    i++;
+                } else {
+                    // Word: read until whitespace or structural character
+                    let j = i;
+                    while (
+                        j < len &&
+                        gameString[j] !== " " &&
+                        gameString[j] !== "\t" &&
+                        gameString[j] !== "\n" &&
+                        gameString[j] !== "\r" &&
+                        gameString[j] !== "{" &&
+                        gameString[j] !== "(" &&
+                        gameString[j] !== ")"
+                    ) {
+                        j++;
+                    }
+                    if (j > i) {
+                        items.push({
+                            type: "word",
+                            value: gameString.substring(i, j),
+                        });
+                    }
+                    i = j;
+                }
+            }
+
+            return { items };
+        }
+
+        // Recursively parse one nesting level of CSL tokens.
+        // If inVariation=true, parsing stops on the first 'close' token
+        // (which is consumed).  Returns { moves, preComment, endIdx, error }.
+        // Each move: { usi, comment, variations: [[move, …], …] }.
+        _parseCSLLevel(items, startIdx, inVariation) {
+            const moves = [];
+            let preComment = ""; // comment that appears before any word token
+            let i = startIdx;
+
+            while (i < items.length) {
+                const item = items[i];
+
+                if (item.type === "close") {
+                    if (inVariation) {
+                        i++; // consume ')'
+                        break;
+                    }
+                    // Stray ')' at top level – ignore
+                    console.warn("CSL parser: unexpected ) at top level");
+                    i++;
+                    continue;
+                }
+
+                if (item.type === "open") {
+                    i++; // consume '('
+                    const sub = this._parseCSLLevel(items, i, true);
+                    if (sub.error) return sub;
+                    i = sub.endIdx;
+                    // Attach sub-variation to the last move seen at this level
+                    if (moves.length > 0) {
+                        moves[moves.length - 1].variations.push(sub.moves);
+                    }
+                    continue;
+                }
+
+                if (item.type === "comment") {
+                    i++;
+                    if (moves.length > 0) {
+                        // Last comment for a word wins (matches PGN style)
+                        moves[moves.length - 1].comment = item.value;
+                    } else {
+                        preComment = item.value; // starting comment
+                    }
+                    continue;
+                }
+
+                // item.type === 'word'
+                moves.push({ usi: item.value, comment: "", variations: [] });
+                i++;
+            }
+
+            return { moves, preComment, endIdx: i };
+        }
+
+        // Parse a CSL game string with full variation support.
+        // Returns { sfen, startingComment, moves, commentOnly, hasNoData } or { error }.
+        // Each move: { usi, comment, variations: [[move,…],…] }
+        parseCSLWithVariations(gameString) {
+            const tokenResult = this.tokenizeCSLFull(gameString.trim());
+            if (tokenResult.error) return tokenResult; // { error }
+
+            const parseResult = this._parseCSLLevel(
+                tokenResult.items,
+                0,
+                false,
+            );
+            if (parseResult.error) return parseResult;
+
+            const allItems = parseResult.moves; // all word-level items (SFEN parts + moves)
+            const preComment = parseResult.preComment;
+
+            // Reconstruct word list and commentMap for parseSfenFromParts
+            const words = allItems.map((item) => item.usi);
+            const commentMap = new Map();
+            if (preComment) commentMap.set(-1, preComment);
+            allItems.forEach((item, idx) => {
+                if (item.comment) commentMap.set(idx, item.comment);
+            });
+
+            const parsed = this.parseSfenFromParts(words, commentMap);
+            const sfenParts = parsed.sfenParts; // 0 / 3 / 4
+
+            // Slice off the SFEN word-items; the rest are the moves
+            const movesData = allItems.slice(sfenParts).map((item, relIdx) => ({
+                usi: item.usi,
+                comment: item.comment || parsed.moveComments[relIdx] || "",
+                variations: item.variations,
+            }));
+
+            const commentOnly =
+                words.length === 0 && (!!preComment || commentMap.size > 0);
+            const hasNoData = words.length === 0 && !commentOnly;
+
+            return {
+                sfen: parsed.sfen,
+                startingComment: parsed.startingComment,
+                moves: movesData,
+                commentOnly,
+                hasNoData,
+            };
+        }
+
         // Parse SFEN and moves from text parts with simplified logic:
         // If first field is a position (not a move), always use first 4 fields as SFEN
         parseSfenFromParts(parts, commentMap = new Map()) {
@@ -17191,59 +18493,48 @@ impossible to fulfill for either player, the game is considered a draw.</p>
             };
         }
 
-        // Import game in USI format (SFEN + space-separated moves, or just moves)
+        // Import game in CSL format (SFEN + space-separated moves, or just moves).
+        // Supports PGN-style ( … ) variation groups – alternate branches are added
+        // to the move tree as sibling children of the move they deviate from.
         importGame(gameString) {
-            // Use unified loader to parse game data
-            const loadResult = this.loadGame(gameString);
+            // Parse with full variation support
+            const parsed = this.parseCSLWithVariations(gameString.trim());
 
-            if (!loadResult.success) {
-                alert("Import error: " + loadResult.error);
+            if (parsed.error) {
+                alert("Import error: " + parsed.error);
                 return false;
             }
 
-            const {
-                sfen,
-                moves,
-                startingComment,
-                moveComments,
-                commentOnly,
-                hasNoData,
-            } = loadResult;
+            const { sfen, startingComment, moves, commentOnly, hasNoData } =
+                parsed;
 
-            // Special case: If only a comment was provided (no text parts)
-            // This should clear all moves and reset to starting position
+            // Special case: only a {comment} was provided – clear moves and set comment
             if (commentOnly) {
-                if (startingComment !== undefined && startingComment !== "") {
-                    // Reset to starting position and clear all moves
+                if (startingComment) {
                     const resetSFEN =
                         this.startingSFEN ||
                         "lfcsgekgscfl/a1b1txot1b1a/mvrhdqndhrvm/pppppppppppp/3i4i3/12/12/3I4I3/PPPPPPPPPPPP/MVRHDNQDHRVM/A1B1TOXT1B1A/LFCSGKEGSCFL b - 1";
-
                     if (!this.loadSFEN(resetSFEN)) {
                         alert("Failed to reset position.");
                         return false;
                     }
-
-                    // Set the starting comment
                     this.startingComment = startingComment;
                     console.log(
                         `Import: Cleared moves and set starting comment: "${startingComment}"`,
                     );
-
-                    // Update display to show the new comment and cleared moves
                     this.updateDisplay();
                     return true;
-                } else {
-                    // No text parts and no comment - this is an error
-                    alert("No game data provided.");
-                    return false;
                 }
+                alert("No game data provided.");
+                return false;
             }
 
-            // Store starting comment
-            this.startingComment = startingComment;
+            if (hasNoData) {
+                alert("No game data provided.");
+                return false;
+            }
 
-            // fixedStart mode restriction: only allow imports with same starting position
+            // fixedStart mode restriction
             if (
                 this.config.appletMode === "fixedStart" ||
                 this.config.appletMode === "fixedStartAndRules" ||
@@ -17252,7 +18543,6 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                 const expectedStartingSFEN =
                     this.startingSFEN ||
                     "lfcsgekgscfl/a1b1txot1b1a/mvrhdqndhrvm/pppppppppppp/3i4i3/12/12/3I4I3/PPPPPPPPPPPP/MVRHDNQDHRVM/A1B1TOXT1B1A/LFCSGKEGSCFL b - 1";
-
                 if (sfen !== expectedStartingSFEN) {
                     alert(
                         "Import rejected: Only imports with the same starting position or moves-only format are allowed.",
@@ -17261,7 +18551,10 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                 }
             }
 
-            // Load the starting position (this clears move history)
+            // Store starting comment before loadSFEN (which resets the tree)
+            this.startingComment = startingComment || "";
+
+            // Load the starting position (resets move history and tree)
             if (!this.loadSFEN(sfen)) {
                 alert("Invalid starting position in game import.");
                 return false;
@@ -17270,54 +18563,27 @@ impossible to fulfill for either player, the game is considered a draw.</p>
             // Clear any remaining state that might interfere
             this.clearSelection();
             this.clearHighlights();
-
-            // Clear all prompt states
             this.promotionPromptActive = false;
             this.lionReturnPromptActive = false;
 
-            // Set import mode flag to skip promotion prompts and batch updates
+            // Set import mode flags to skip promotion prompts and batch updates
             this.isImporting = true;
-            this.isBatchImporting = true; // New flag for performance optimization
+            this.isBatchImporting = true;
 
-            // Execute moves one by one with reduced logging
-            let moveCount = 0;
-            for (const usiMove of moves) {
-                // Reduce console logging during batch import
-                if (moveCount % 50 === 0) {
-                    console.log(
-                        `Importing moves... ${moveCount}/${moves.length}`,
-                    );
-                }
-
-                if (!this.executeUSIMove(usiMove)) {
-                    alert(
-                        `Invalid move at position ${moveCount + 1}: ${usiMove}. Import stopped.`,
-                    );
-                    break;
-                }
-
-                // Assign comment to the move that was just added to history
-                if (
-                    moveCount < moveComments.length &&
-                    this.moveHistory.length > 0
-                ) {
-                    const lastMoveIndex = this.moveHistory.length - 1;
-                    this.moveHistory[lastMoveIndex].comment =
-                        moveComments[moveCount];
-                }
-
-                moveCount++;
-            }
+            // Execute main line and embedded variations recursively.
+            // Board is at startingSFEN; currentNode is null (live leaf at root).
+            const startSFEN = this.startingSFEN;
+            this._importCSLSequence(moves, this.moveTree, startSFEN);
 
             // Clear import mode flags
             this.isImporting = false;
             this.isBatchImporting = false;
 
-            // Set last move highlighting from the most recent move in history
+
+            // Set last move highlighting from the most recent main-line move
             if (this.moveHistory.length > 0) {
                 const lastMoveInHistory =
                     this.moveHistory[this.moveHistory.length - 1];
-                // Use the complete move object from history for proper highlighting
                 this.lastMove = {
                     from: lastMoveInHistory.from,
                     to: lastMoveInHistory.to,
@@ -17336,28 +18602,23 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                 console.log("Import: No moves to highlight");
             }
 
-            // Update display and highlighting - force synchronous DOM updates
-            // After batch import, need to refresh board visual state
-            this.updateBoard(); // Regenerate board HTML and reattach listeners
+            // Refresh board visual state after batch import
+            this.updateBoard();
             this.updateMoveHistoryHighlight();
-
-            // Force update square highlights to show last move BEFORE state update
             this.updateSquareHighlights();
 
-            // Reset navigation state to current position after import using centralized state management
-            // When not navigating, currentNavigationIndex should be null to indicate we're at the current position
-            // IMPORTANT: Must be called AFTER updateBoard() and updateSquareHighlights() so the DOM and highlights are ready
+            // Reset navigation state to current position
             this.gameStateManager.updateGameState({
                 currentNavigationIndex: null,
                 isNavigating: false,
             });
 
-            // Force update display to refresh comment panel
-            // The gameStateManager.updateGameState call above may be a no-op if state is already null,
-            // so we need to explicitly call updateDisplay() to ensure the comment textarea is updated
+            // Force display refresh (comment panel, etc.)
             this.updateDisplay();
 
-            console.log(`Successfully imported ${moveCount} moves from game.`);
+            console.log(
+                `Successfully imported ${this.moveHistory.length} main-line moves from game.`,
+            );
             return true;
         }
 
@@ -17366,6 +18627,181 @@ impossible to fulfill for either player, the game is considered a draw.</p>
             if (this.resizeListener) {
                 window.removeEventListener("resize", this.resizeListener);
             }
+        }
+
+        // ── CSL VARIATION IMPORT HELPERS ─────────────────────────────────────────
+
+        // Recursively execute a parsed CSL move sequence (main line or variation).
+        //
+        // Invariant on entry:
+        //   • The board position is at parentSFEN.
+        //   • this.currentNode is set so that executeUSIMove will attach the next
+        //     move as a child of parentNode:
+        //       – null  → parentNode is the live leaf (standard append)
+        //       – parentNode → branching case (creates sibling child)
+        //
+        // For each move data item the function:
+        //   1. Executes the USI move (creates a MoveNode as child of parentNode).
+        //   2. Assigns the comment.
+        //   3. For every variation belonging to that move:
+        //        a. Saves the current moveHistory.
+        //        b. Restores board + moveHistory to the parentNode position.
+        //        c. Sets currentNode = parentNode so the variation branches off it.
+        //        d. Recurses.
+        //        e. Restores moveHistory + board back to just after the main move.
+        //   4. Advances parentNode / parentSFEN for the next iteration.
+        // isVariation=false  → top-level main-line call: sub-variations are
+        //                       alternatives to the current move, so they branch off
+        //                       parentNode (position before the move).
+        // isVariation=true   → inside a variation: sub-variations are alternatives
+        //                       to the NEXT continuation, so they branch off newNode
+        //                       (position after the move just played).
+        _importCSLSequence(moves, parentNode, parentSFEN, isVariation = false) {
+            for (let i = 0; i < moves.length; i++) {
+                const moveData = moves[i];
+
+                // Execute the move.  currentNode is already correct on entry.
+                // On failure, stop processing this sequence here but keep any
+                // nodes that were already built (valid prefix is preserved).
+                if (!this.executeUSIMove(moveData.usi)) {
+                    const _failPiece = (() => {
+                        try {
+                            const c = this.parseUSICoordinates(moveData.usi.replace(/\+$/,''));
+                            if (!c) return 'no-coords';
+                            const [r,f] = this.parseSquareId(c.fromSquare);
+                            const p = this.board[r]?.[f];
+                            return p ? `${p.color}${p.type}@${c.fromSquare}→${c.toSquare}` : `empty@${c.fromSquare}`;
+                        } catch { return 'err'; }
+                    })();
+                    console.warn(
+                        `CSL import: stopping at invalid move "${moveData.usi}" player=${this.currentPlayer} piece=${_failPiece} isImporting=${this.isImporting} histLen=${this.moveHistory.length}`,
+                    );
+                    break;
+                }
+                // The moveExecutor skips `currentNode = null` when isImporting=true.
+                // Reset it explicitly so the NEXT move uses getLiveNode() as parent.
+                this.currentNode = null;
+
+                const newNode = this.moveHistory[this.moveHistory.length - 1];
+                if (newNode && moveData.comment) {
+                    newNode.comment = moveData.comment;
+                }
+                const newSFEN = newNode?.resultingSFEN || "";
+
+                if (moveData.variations && moveData.variations.length > 0) {
+                    const savedHistory = [...this.moveHistory];
+
+                    for (const varMoves of moveData.variations) {
+                        if (!varMoves || varMoves.length === 0) continue;
+
+                        // Detect KIF vs PGN style.
+                        //
+                        // The board is currently at newSFEN (restored at the end
+                        // of the previous variation iteration, or from the main
+                        // move execution on the first pass).
+                        //
+                        //   KIF: the variation's first move is by the player whose
+                        //        turn it is in newSFEN (the opponent's response to
+                        //        the main move).  Branch from newNode / newSFEN so
+                        //        the variation becomes a child of the main-line node.
+                        //
+                        //   PGN: the variation's first move is by the same player
+                        //        as the main move (an alternative to it).  Branch
+                        //        from parentNode / parentSFEN so the variation
+                        //        becomes a sibling of the main-line node.
+                        let _isKIF = false;
+                        if (newSFEN && varMoves.length > 0) {
+                            try {
+                                const _fvc = this.parseUSICoordinates(
+                                    varMoves[0].usi.replace(/\+$/, ""),
+                                );
+                                if (_fvc) {
+                                    const [_vr, _vf] = this.parseSquareId(
+                                        _fvc.fromSquare,
+                                    );
+                                    const _vp = this.board[_vr]?.[_vf];
+                                    if (_vp) {
+                                        const _newPlayer = newSFEN.split(" ")[1];
+                                        _isKIF = _vp.color === _newPlayer;
+                                    }
+                                }
+                            } catch { /* default PGN */ }
+                        }
+                        const _varBranch = _isKIF ? newNode : parentNode;
+                        const _varBranchSFEN = _isKIF ? newSFEN : parentSFEN;
+
+                        this._restoreBoardForImport(_varBranchSFEN);
+
+                        if (_varBranch === this.moveTree) {
+                            this.moveHistory = [];
+                        } else {
+                            const _bi = savedHistory.findIndex(
+                                (n) => n === _varBranch,
+                            );
+                            this.moveHistory =
+                                _bi >= 0
+                                    ? savedHistory.slice(0, _bi + 1)
+                                    : [...savedHistory];
+                        }
+
+                        this.currentNode = _varBranch;
+
+                        const _childsBefore = _varBranch.children.length;
+
+                        this._importCSLSequence(
+                            varMoves,
+                            _varBranch,
+                            _varBranchSFEN,
+                            true,
+                        );
+
+                        // Tag every child added by this variation as a branch.
+                        // KIF branches additionally get isKIFBranch so renderers
+                        // and serializers can show them after the parent node
+                        // (the move they respond to) rather than before it.
+                        // New nodes are unshifted (prepended) so they appear at
+                        // indices 0 … (newLen - _childsBefore - 1).
+                        const _addedCount =
+                            _varBranch.children.length - _childsBefore;
+                        for (let k = 0; k < _addedCount; k++) {
+                            _varBranch.children[k].isBranch = true;
+                            if (_isKIF) {
+                                _varBranch.children[k].isKIFBranch = true;
+                            }
+                        }
+
+                        // If nothing was added (first move illegal), store raw
+                        // moves so the serializer can re-emit them verbatim.
+                        if (_addedCount === 0) {
+                            if (!_varBranch.rawVariations)
+                                _varBranch.rawVariations = [];
+                            _varBranch.rawVariations.push(
+                                _isKIF ? { moves: varMoves, isKIF: true } : varMoves,
+                            );
+                        }
+
+                        this.moveHistory = [...savedHistory];
+                        this.currentNode = null;
+                        this._restoreBoardForImport(newSFEN);
+                    }
+                }
+
+                parentNode = newNode;
+                parentSFEN = newSFEN;
+            }
+            return true;
+        }
+
+        // Restore the board position from a SFEN string without touching the move
+        // tree or move history.  Used during variation import to set up board state
+        // for branching without disrupting the already-built tree.
+        _restoreBoardForImport(sfen) {
+            if (!sfen) return;
+            this.applySFENPosition(sfen);
+            this.moveablePiecesCache = null;
+            // Ensure navigation flags are clear so executeUSIMove behaves normally
+            this.isNavigating = false;
+            this.currentNavigationIndex = null;
         }
 
         // Execute a single USI move (like "7i7h" or "7g7f+" for promotion)
@@ -19093,19 +20529,26 @@ impossible to fulfill for either player, the game is considered a draw.</p>
         }
 
         updateCurrentPlayer() {
-            // Instead of simple alternating, determine player from current SFEN position
-            const currentSFEN = this.exportSFEN();
-            const sfenParts = currentSFEN.split(" ");
-            const sfenPlayer = sfenParts.length >= 2 ? sfenParts[1] : "b";
-
             const previousPlayer = this.currentPlayer;
+            let nextPlayer;
 
-            // Set player based on SFEN rather than simple alternation
-            this.gameStateManager.updateGameState({
-                currentPlayer: sfenPlayer,
-            });
+            // When a move was just made, the next player is simply the opposite of
+            // whoever moved.  Using lastMove.piece.color is always correct and avoids
+            // exportSFEN(), which reads isNavigating + currentNavigationIndex — both of
+            // which are stale during a variation play (they still point at the
+            // pre-variation position in the main line).
+            if (this.lastMove && this.lastMove.piece) {
+                nextPlayer = this.lastMove.piece.color === "b" ? "w" : "b";
+            } else {
+                // No last move yet (e.g. game just started) — fall back to SFEN.
+                const currentSFEN = this.exportSFEN();
+                const sfenParts = currentSFEN.split(" ");
+                nextPlayer = sfenParts.length >= 2 ? sfenParts[1] : "b";
+            }
 
-            console.log("Turn updated from SFEN:", {
+            this.gameStateManager.updateGameState({ currentPlayer: nextPlayer });
+
+            console.log("Turn updated:", {
                 from: previousPlayer,
                 to: this.currentPlayer,
                 moveCount: this.moveHistory.length,
@@ -19136,7 +20579,13 @@ impossible to fulfill for either player, the game is considered a draw.</p>
 
         // Helper function to get position display text
         getPositionDisplayText() {
-            // Calculate current position based on navigation state
+            // Off-branch: show position within the current variation branch.
+            if (this._viewedNode) {
+                const { current, total } = this._branchPosition(this._viewedNode);
+                return `<span translate="yes">Position</span> ${current} / ${total}`;
+            }
+
+            // Main-line: calculate current position based on navigation state.
             let currentPosition;
             if (this.currentNavigationIndex === null) {
                 // At current position (not navigating) - show total moves
