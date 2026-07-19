@@ -17155,11 +17155,44 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                         fromPosition: currentPosition,
                     });
 
-                    // Reset navigation state - go to the live position (end of
-                    // the possibly-extended new main line).
-                    this.currentNavigationIndex = null;
-                    this.isNavigating = false;
-                    this.currentNode = null;
+                    // If the promotion loop extended newMoveHistory past the
+                    // clip point (a branch was promoted as the new main line),
+                    // stay at the clip point so the user's view doesn't jump
+                    // to the newly-promoted live end.
+                    // Otherwise, the clip point IS the new live end — go there.
+                    const _wasExtended = this.moveHistory.length > targetLength;
+                    if (_wasExtended) {
+                        const _clipIdx = targetLength - 1;
+                        if (_clipIdx < 0) {
+                            // Clipped from start position.
+                            this.currentNavigationIndex = -1;
+                            this.isNavigating = true;
+                            this.currentNode = this.moveTree;
+                            this._viewedNode = null;
+                            if (this.startingSFEN) {
+                                this.applySFENPosition(this.startingSFEN);
+                                const _sp = this.startingSFEN.split(" ");
+                                if (_sp.length >= 2) this.setCurrentPlayer(_sp[1]);
+                            }
+                        } else {
+                            const _clipNode = this.moveHistory[_clipIdx];
+                            this.currentNavigationIndex = _clipIdx;
+                            this.isNavigating = true;
+                            this.currentNode = _clipNode ?? null;
+                            this._viewedNode = null;
+                            if (_clipNode?.resultingSFEN) {
+                                this.applySFENPosition(_clipNode.resultingSFEN);
+                                const _sp = _clipNode.resultingSFEN.split(" ");
+                                if (_sp.length >= 2) this.setCurrentPlayer(_sp[1]);
+                            }
+                        }
+                    } else {
+                        // No promotion — clip point is new live end.
+                        this.currentNavigationIndex = null;
+                        this.isNavigating = false;
+                        this.currentNode = null;
+                        this._viewedNode = null;
+                    }
 
                     // Clear all drawings when undoing
                     this.clearAllDrawings();
