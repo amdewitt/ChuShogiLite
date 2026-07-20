@@ -8,7 +8,7 @@ This is a piece of Chu Shogi infrastructure that can be very easily embedded in 
 * Easy exports and imports for games (albeit to a simplistic plaintext that fits everything in a single line)
 * Easy editing of all aspects of the board position with the mouse
 * The ability to export and import games via KIF and PGN
-* Support for branching variations (except for KIF/PGN exports/imports and puzzles)
+* Support for branching variations (except for puzzles)
 
 As a bonus, a collection of tsume puzzles and a couple of helpful tools are included.
 

@@ -14563,8 +14563,14 @@ impossible to fulfill for either player, the game is considered a draw.</p>
             // cslStartPlayer "w" means gote (PGN black) moves first.
             const blackStarted = cslStartPlayer === "w";
 
+            // After any variation block the next black main-line move needs its
+            // number re-shown (e.g. "1... ") so the reader knows whose turn it is.
+            let needsMoveNumber = false;
+
             for (let i = 0; i < this.moveHistory.length; i++) {
                 const move = this.moveHistory[i];
+                const parent =
+                    i === 0 ? this.moveTree : this.moveHistory[i - 1];
 
                 // Board state BEFORE this move: previous move's resultingSFEN, or
                 // the starting board for the first move.
@@ -14590,8 +14596,64 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                         ? " {" + this.sanitizeCommentForPGN(move.comment) + "}"
                         : "";
 
-                const prefix = this.getPGNMoveNumberPrefix(i, blackStarted);
+                // After a variation block, black's move also needs its number.
+                let prefix = this.getPGNMoveNumberPrefix(i, blackStarted);
+                if (needsMoveNumber && prefix === "") {
+                    const moveNum = blackStarted
+                        ? Math.floor((i + 1) / 2) + 1
+                        : Math.floor(i / 2) + 1;
+                    prefix = `${moveNum}... `;
+                }
                 moveTokens.push(`${prefix}${san}${commentText}`);
+
+                // ── Variations ──────────────────────────────────────────────────
+                // Mirror buildCSLString's pattern:
+                //   1. PGN siblings of this move (alternatives to this move,
+                //      i.e. other non-KIF children of parent). Board = prevSFENFull,
+                //      ply = i.
+                //   2. KIF branches of this move (responses to this move, i.e.
+                //      isKIFBranch children of move). Board = move.resultingSFEN,
+                //      ply = i + 1.
+                let emittedAnyVar = false;
+
+                // 1. PGN siblings
+                for (
+                    let k = parent.children.length - 1;
+                    k >= 0;
+                    k--
+                ) {
+                    const sibling = parent.children[k];
+                    if (sibling === move) continue;
+                    if (sibling.isKIFBranch) continue;
+                    const vt = this._serializePGNVariationChain(
+                        sibling,
+                        prevSFENFull,
+                        i,
+                        blackStarted,
+                    );
+                    if (vt.length > 0) {
+                        moveTokens.push("(" + vt.join(" ") + ")");
+                        emittedAnyVar = true;
+                    }
+                }
+
+                // 2. KIF branches
+                const afterSFEN = move.resultingSFEN || "";
+                for (let k = move.children.length - 1; k >= 0; k--) {
+                    if (!move.children[k].isKIFBranch) continue;
+                    const vt = this._serializePGNVariationChain(
+                        move.children[k],
+                        afterSFEN,
+                        i + 1,
+                        blackStarted,
+                    );
+                    if (vt.length > 0) {
+                        moveTokens.push("(" + vt.join(" ") + ")");
+                        emittedAnyVar = true;
+                    }
+                }
+
+                needsMoveNumber = emittedAnyVar;
             }
 
             // Starting-position comment, if any, appears before the first move token.
@@ -14612,6 +14674,174 @@ impossible to fulfill for either player, the game is considered a draw.</p>
             if (boardComment) output += boardComment + "\n\n";
             output += moveText;
             return output;
+        }
+
+        // Recursively serialize one variation branch starting at `startNode` into
+        // an array of PGN token strings (move-number prefix + SAN + comment +
+        // nested variation blocks).  Join with " " to get the variation body.
+        //
+        //   startNode   — first branch node in this variation
+        //   sfenBefore  — full SFEN of the position BEFORE startNode's move
+        //   startPly    — 0-based half-move index of startNode in the game
+        //   blackStarted — whether gote (CSL "w") plays the game's first move
+        //
+        // Ordering mirrors buildCSLString / _serializeVariation:
+        //   • After emitting node N's token, emit PGN siblings of N (alternatives
+        //     to N, i.e. non-KIF, non-main children of prevNode) then KIF branches
+        //     of N (responses to N, isKIFBranch children of N).  This produces the
+        //     standard PGN "move (alternatives) continuation" ordering.
+        _serializePGNVariationChain(startNode, sfenBefore, startPly, blackStarted) {
+            const tokens = [];
+            let cur = startNode;
+            let prevNode = null;
+            let prevContIdx = -1;
+            let plyIndex = startPly;
+            // sfenCur = full SFEN before cur's move
+            let sfenCur = sfenBefore;
+            // sfenPrevAfter = resultingSFEN of prevNode (= sfenCur of prev iteration)
+            // — needed for PGN siblings whose board = sfenCur at the time they're
+            //   the peers of cur (which equals sfenPrevAfter).
+            let sfenPrevAfter = null;
+            let isFirst = true;       // first move in this variation?
+            let needsNumber = false;  // re-number after a sub-variation?
+
+            while (cur) {
+                // ── Board before cur ─────────────────────────────────────────
+                const prevBoardStr = sfenCur ? sfenCur.split(" ")[0] : "";
+                let boardBefore = null;
+                try {
+                    boardBefore = prevBoardStr
+                        ? this.parseSFENBoard(prevBoardStr)
+                        : null;
+                } catch (_) { /* skip on error */ }
+
+                const san = boardBefore
+                    ? this.moveToSAN(cur, boardBefore)
+                    : "?";
+
+                // ── Move-number prefix ───────────────────────────────────────
+                const isWhiteTurn = blackStarted
+                    ? plyIndex % 2 === 1
+                    : plyIndex % 2 === 0;
+                const moveNum = blackStarted
+                    ? Math.floor((plyIndex + 1) / 2) + 1
+                    : Math.floor(plyIndex / 2) + 1;
+
+                let prefix;
+                if (isFirst || needsNumber) {
+                    // First move in variation (or after a sub-variation): always
+                    // show the number so the reader knows whose turn it is.
+                    prefix = isWhiteTurn
+                        ? `${moveNum}. `
+                        : `${moveNum}... `;
+                } else {
+                    // Inside the variation: only white's moves get a number.
+                    prefix = isWhiteTurn ? `${moveNum}. ` : "";
+                }
+                isFirst = false;
+
+                const commentText =
+                    cur.comment && cur.comment.trim()
+                        ? " {" +
+                          this.sanitizeCommentForPGN(cur.comment) +
+                          "}"
+                        : "";
+
+                tokens.push(`${prefix}${san}${commentText}`);
+
+                // ── Board after cur (for sub-variations) ─────────────────────
+                const sfenAfterCur = cur.resultingSFEN || "";
+                let emittedSubVars = false;
+
+                // 1. PGN siblings of cur (alternatives to cur):
+                //    non-KIF, non-main children of prevNode.
+                //    Board = sfenCur (= board before cur = board after prevNode).
+                //    Ply  = plyIndex (same as cur).
+                if (prevNode !== null) {
+                    for (
+                        let k = prevNode.children.length - 1;
+                        k >= 0;
+                        k--
+                    ) {
+                        if (k === prevContIdx) continue; // skip cur
+                        if (prevNode.children[k].isKIFBranch) continue;
+                        const vt = this._serializePGNVariationChain(
+                            prevNode.children[k],
+                            sfenCur,
+                            plyIndex,
+                            blackStarted,
+                        );
+                        if (vt.length > 0) {
+                            tokens.push("(" + vt.join(" ") + ")");
+                            emittedSubVars = true;
+                        }
+                    }
+                }
+
+                // 2. KIF branches of cur (responses to cur):
+                //    isKIFBranch children of cur.
+                //    Board = sfenAfterCur.  Ply = plyIndex + 1.
+                for (let k = cur.children.length - 1; k >= 0; k--) {
+                    if (!cur.children[k].isKIFBranch) continue;
+                    const vt = this._serializePGNVariationChain(
+                        cur.children[k],
+                        sfenAfterCur,
+                        plyIndex + 1,
+                        blackStarted,
+                    );
+                    if (vt.length > 0) {
+                        tokens.push("(" + vt.join(" ") + ")");
+                        emittedSubVars = true;
+                    }
+                }
+
+                needsNumber = emittedSubVars;
+
+                // ── Advance to main continuation ─────────────────────────────
+                sfenPrevAfter = sfenCur;
+                sfenCur = sfenAfterCur;
+                prevNode = cur;
+                prevContIdx = -1;
+                for (let j = cur.children.length - 1; j >= 0; j--) {
+                    if (!cur.children[j].isBranch) {
+                        prevContIdx = j;
+                        break;
+                    }
+                }
+                cur =
+                    prevContIdx >= 0
+                        ? cur.children[prevContIdx]
+                        : null;
+                plyIndex++;
+            }
+
+            // ── Post-loop: last node's remaining non-KIF children ────────────
+            // (The main continuation was null, so prevContIdx stayed at -1 when
+            //  the loop advanced past the final node.  Any non-KIF children of
+            //  the last node are sub-branches at the terminal position.)
+            if (prevNode !== null) {
+                // KIF children of prevNode were already emitted inside the loop
+                // on prevNode's own iteration.  Emit the non-KIF, non-main ones.
+                for (
+                    let k = prevNode.children.length - 1;
+                    k >= 0;
+                    k--
+                ) {
+                    if (k === prevContIdx) continue; // prevContIdx=-1 → no skip
+                    if (prevNode.children[k].isKIFBranch) continue;
+                    const vt = this._serializePGNVariationChain(
+                        prevNode.children[k],
+                        sfenCur, // = prevNode.resultingSFEN (set at end of last iter)
+                        plyIndex,
+                        blackStarted,
+                    );
+                    if (vt.length > 0) {
+                        tokens.push("(" + vt.join(" ") + ")");
+                    }
+                }
+            }
+
+            return tokens;
         }
 
         updatePGNExport() {
@@ -14721,7 +14951,11 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                 lines.push(moveLines);
             }
 
-            return lines.join("\n");
+            const numWidth = this.getKIFNumWidth();
+            let result = lines.join("\n");
+            const varSection = this.buildKIFVariationSection(numWidth);
+            if (varSection) result += varSection;
+            return result;
         }
 
         // Shared move-number column width used by both the move list and the
@@ -14851,6 +15085,405 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                 }
             });
             return lines.join("\n");
+        }
+
+        // ── KIF variation export helpers ─────────────────────────────────────
+
+        // Append the KIF move line(s) for a single tree node to `lines`.
+        // `sfenBefore` is the full SFEN of the position before this node's
+        // move (needed only for the じっと / pass case).
+        // `plyNum` is the 1-based absolute ply index used as the move number.
+        // `numWidth` is the column width (same as getKIFNumWidth for the game).
+        _appendKIFNodeLines(node, sfenBefore, plyNum, numWidth, lines) {
+            const num = String(plyNum).padStart(numWidth, " ");
+            const promoSuffix = node.promoted ? "\u6210" : "";
+            const pieceName = this.getKIFPieceName(node.piece.type);
+            const isReturnToOrigin = node.to === node.from;
+
+            if (node.midpoint && isReturnToOrigin) {
+                // 居食い: stationary capture double move
+                lines.push(
+                    `${num} \u624b\u76ee\u4e00\u6b69\u76ee ${this.kifSquareToken(node.midpoint)}${pieceName} \uff08\u2190${this.kifSquareToken(node.from)}\uff09`,
+                );
+                lines.push(
+                    `${num} \u624b\u76ee\u4e8c\u6b69\u76ee ${this.kifSquareToken(node.to)}${pieceName}${promoSuffix}\uff08\u5c45\u98df\u3044\uff09 \uff08\u2190${this.kifSquareToken(node.midpoint)}\uff09`,
+                );
+            } else if (node.midpoint) {
+                // Normal double move
+                lines.push(
+                    `${num} \u624b\u76ee\u4e00\u6b69\u76ee ${this.kifSquareToken(node.midpoint)}${pieceName} \uff08\u2190${this.kifSquareToken(node.from)}\uff09`,
+                );
+                lines.push(
+                    `${num} \u624b\u76ee\u4e8c\u6b69\u76ee ${this.kifSquareToken(node.to)}${pieceName}${promoSuffix} \uff08\u2190${this.kifSquareToken(node.midpoint)}\uff09`,
+                );
+            } else if (isReturnToOrigin) {
+                // じっと: pass move, rendered as a fake double move
+                const prevBoardStr = sfenBefore
+                    ? sfenBefore.split(" ")[0]
+                    : "";
+                let boardBefore = null;
+                try {
+                    boardBefore = prevBoardStr
+                        ? this.parseSFENBoard(prevBoardStr)
+                        : null;
+                } catch (_) { /* fall through */ }
+                const fakeMid = this.findPassMidpoint(node.from, boardBefore);
+                const midSq = fakeMid || node.from;
+                lines.push(
+                    `${num} \u624b\u76ee\u4e00\u6b69\u76ee ${this.kifSquareToken(midSq)}${pieceName} \uff08\u2190${this.kifSquareToken(node.from)}\uff09`,
+                );
+                lines.push(
+                    `${num} \u624b\u76ee\u4e8c\u6b69\u76ee ${this.kifSquareToken(node.to)}${pieceName}${promoSuffix}(\u3058\u3063\u3068) \uff08\u2190${this.kifSquareToken(midSq)}\uff09`,
+                );
+            } else {
+                // Normal single-leg move
+                lines.push(
+                    `${num} \u624b\u76ee ${this.kifSquareToken(node.to)}${pieceName}${promoSuffix} \uff08\u2190${this.kifSquareToken(node.from)}\uff09`,
+                );
+            }
+
+            // Comment lines
+            if (node.comment && node.comment.trim()) {
+                const commentPad = " ".repeat(numWidth - 1);
+                node.comment.split("\n").forEach((cl) => {
+                    lines.push(`${commentPad}* ${cl}`);
+                });
+            }
+        }
+
+        // Collect all KIF variation blocks rooted at `startNode` (the first
+        // node of one branch) into `blocks` (an array of string-arrays, each
+        // being the lines of one 変化：N手 block, header first).
+        //
+        // Sub-variations are pushed AFTER the parent block so that the stack-
+        // based KIF parser reconstructs the correct nesting (higher ply →
+        // child of preceding lower-ply block; equal or lower ply → sibling).
+        // Within the same ply, blocks are emitted in "game order" (oldest
+        // branch first), satisfying rule 5c.
+        _collectKIFVarBlocks(startNode, sfenBefore, startPly, numWidth, blocks) {
+            // ── Step 1: walk this variation's chain and render its move lines.
+            //    Simultaneously, collect deferred calls for sub-variations.
+            const moveLines = [];
+            const subVarQueue = []; // { node, sfenBefore, ply }
+
+            let cur = startNode;
+            let prevNode = null;
+            let prevContIdx = -1;
+            let ply = startPly;
+            let sfenCur = sfenBefore;
+
+            while (cur) {
+                this._appendKIFNodeLines(cur, sfenCur, ply, numWidth, moveLines);
+
+                const sfenAfterCur = cur.resultingSFEN || "";
+
+                // PGN siblings of cur (alternatives to cur at ply `ply`):
+                // children of prevNode that are not the main continuation and
+                // not KIF branches.  Oldest first (k from length-1 down to 0).
+                if (prevNode !== null) {
+                    for (
+                        let k = prevNode.children.length - 1;
+                        k >= 0;
+                        k--
+                    ) {
+                        if (k === prevContIdx) continue;
+                        if (prevNode.children[k].isKIFBranch) continue;
+                        subVarQueue.push({
+                            node: prevNode.children[k],
+                            sfenBefore: sfenCur,
+                            ply,
+                        });
+                    }
+                }
+
+                // KIF branches of cur (responses to cur, start at ply+1).
+                for (let k = cur.children.length - 1; k >= 0; k--) {
+                    if (!cur.children[k].isKIFBranch) continue;
+                    subVarQueue.push({
+                        node: cur.children[k],
+                        sfenBefore: sfenAfterCur,
+                        ply: ply + 1,
+                    });
+                }
+
+                sfenCur = sfenAfterCur;
+                prevNode = cur;
+                prevContIdx = -1;
+                for (let j = cur.children.length - 1; j >= 0; j--) {
+                    if (!cur.children[j].isBranch) {
+                        prevContIdx = j;
+                        break;
+                    }
+                }
+                cur =
+                    prevContIdx >= 0
+                        ? cur.children[prevContIdx]
+                        : null;
+                ply++;
+            }
+
+            // Post-loop: KIF branches of last node (at ply = current ply),
+            // then PGN non-main siblings of last node.
+            if (prevNode !== null) {
+                for (
+                    let k = prevNode.children.length - 1;
+                    k >= 0;
+                    k--
+                ) {
+                    if (!prevNode.children[k].isKIFBranch) continue;
+                    subVarQueue.push({
+                        node: prevNode.children[k],
+                        sfenBefore: sfenCur,
+                        ply,
+                    });
+                }
+                for (
+                    let k = prevNode.children.length - 1;
+                    k >= 0;
+                    k--
+                ) {
+                    if (k === prevContIdx) continue;
+                    if (prevNode.children[k].isKIFBranch) continue;
+                    subVarQueue.push({
+                        node: prevNode.children[k],
+                        sfenBefore: sfenCur,
+                        ply,
+                    });
+                }
+            }
+
+            // ── Step 2: push THIS variation's block (header + move lines).
+            blocks.push([`\u5909\u5316\uff1a${startPly}\u624b`, ...moveLines]);
+
+            // ── Step 3: recursively emit sub-variations.
+            // Sort descending by ply so higher-ply blocks are emitted first
+            // (the KIF stack parser then correctly treats them as children of
+            // this block).  Stable sort preserves game-order within same ply.
+            subVarQueue.sort((a, b) => b.ply - a.ply);
+            for (const sv of subVarQueue) {
+                this._collectKIFVarBlocks(
+                    sv.node,
+                    sv.sfenBefore,
+                    sv.ply,
+                    numWidth,
+                    blocks,
+                );
+            }
+        }
+
+        // Build the 変化：N手 section that follows the main KIF move list.
+        // Returns an empty string when there are no variations.
+        buildKIFVariationSection(numWidth) {
+            const blocks = [];
+
+            // Walk the main line right-to-left (highest ply first), so that
+            // top-level variations appear in descending order of their
+            // branching move number (rule 5a).
+            for (
+                let i = this.moveHistory.length - 1;
+                i >= 0;
+                i--
+            ) {
+                const node = this.moveHistory[i];
+                const parent =
+                    i === 0 ? this.moveTree : this.moveHistory[i - 1];
+                const plyNum = i + 1; // 1-based
+                const sfenBefore =
+                    i === 0
+                        ? this.startingSFEN || this.exportSFEN()
+                        : this.moveHistory[i - 1].resultingSFEN || "";
+                const sfenAfter = node.resultingSFEN || "";
+
+                // PGN siblings: alternatives to `node` at ply `plyNum`.
+                // Iterate oldest-first (k from length-1 to 0).
+                for (
+                    let k = parent.children.length - 1;
+                    k >= 0;
+                    k--
+                ) {
+                    if (parent.children[k] === node) continue;
+                    if (parent.children[k].isKIFBranch) continue;
+                    this._collectKIFVarBlocks(
+                        parent.children[k],
+                        sfenBefore,
+                        plyNum,
+                        numWidth,
+                        blocks,
+                    );
+                }
+
+                // KIF branches: responses to `node`, starting at plyNum+1.
+                for (let k = node.children.length - 1; k >= 0; k--) {
+                    if (!node.children[k].isKIFBranch) continue;
+                    this._collectKIFVarBlocks(
+                        node.children[k],
+                        sfenAfter,
+                        plyNum + 1,
+                        numWidth,
+                        blocks,
+                    );
+                }
+            }
+
+            if (blocks.length === 0) return "";
+
+            // Each block is separated from the preceding content by a blank
+            // line.  The leading "\n" ensures there is a blank line after the
+            // last main-line move even when the main move list ends without one.
+            return blocks
+                .map((b) => "\n\n" + b.join("\n"))
+                .join("");
+        }
+
+        // ── KIF variation import helpers ─────────────────────────────────────
+
+        // Parse a segment of KIF lines (starting at `startIdx`) as move lines
+        // until a 変化： header or end of input is reached.
+        // Returns { entries: [{usi, comments}], nextIdx }.
+        // Non-fatal: unrecognised lines are silently skipped.
+        _parseKIFMoveSegment(lines, startIdx) {
+            const NUM_RE =
+                /^\s*(\d+)\s*\u624b\u76ee(\u4e00\u6b69\u76ee|\u4e8c\u6b69\u76ee)?\s*/;
+            const FROM_RE =
+                /\uff08\u2190(\d{1,2}(?:\u5341\u4e00|\u5341\u4e8c|[\u4e00\u4e8c\u4e09\u56db\u4e94\u516d\u4e03\u516b\u4e5d\u5341]))\uff09\s*$/;
+            const DEST_RE =
+                /^(\d{1,2}(?:\u5341\u4e00|\u5341\u4e8c|[\u4e00\u4e8c\u4e09\u56db\u4e94\u516d\u4e03\u516b\u4e5d\u5341]))/;
+            const COMMENT_RE = /^\s*\*\s?(.*)$/;
+
+            const entries = [];
+            let currentEntry = null;
+            let pending = null;
+            let idx = startIdx;
+
+            for (; idx < lines.length; idx++) {
+                const rawLine = lines[idx];
+                const trimmed = rawLine.trim();
+
+                if (trimmed === "") continue;
+                // Stop at the next variation header
+                if (trimmed.startsWith("\u5909\u5316\uff1a")) break;
+
+                const commentMatch = rawLine.match(COMMENT_RE);
+                if (commentMatch) {
+                    if (currentEntry)
+                        currentEntry.comments.push(commentMatch[1]);
+                    continue;
+                }
+
+                const numMatch = rawLine.match(NUM_RE);
+                if (!numMatch) continue; // skip unrecognised lines (non-fatal)
+
+                const leg = numMatch[2] || null;
+                let rest = rawLine.slice(numMatch[0].length);
+
+                const fromMatch = rest.match(FROM_RE);
+                if (!fromMatch) continue;
+
+                const fromToken = fromMatch[1];
+                rest = rest.slice(0, fromMatch.index).trim();
+
+                let marker = null;
+                if (rest.includes("\uff08\u5c45\u98df\u3044\uff09")) {
+                    marker = "istick";
+                    rest = rest
+                        .replace("\uff08\u5c45\u98df\u3044\uff09", "")
+                        .trim();
+                } else if (/\(\u3058\u3063\u3068\)/.test(rest)) {
+                    marker = "pass";
+                    rest = rest.replace(/\(\u3058\u3063\u3068\)/, "").trim();
+                }
+
+                let promoted = false;
+                if (rest.endsWith("\u6210")) {
+                    promoted = true;
+                    rest = rest.slice(0, -1).trim();
+                }
+
+                const destMatch = rest.match(DEST_RE);
+                if (!destMatch) continue;
+
+                const fromSq = this.kifTokenToSquare(fromToken);
+                const destSq = this.kifTokenToSquare(destMatch[1]);
+                if (!fromSq || !destSq) continue;
+
+                if (leg === "\u4e00\u6b69\u76ee") {
+                    pending = { fromSq, midSq: destSq };
+                    continue;
+                }
+
+                let usi;
+                if (leg === "\u4e8c\u6b69\u76ee") {
+                    if (!pending) continue;
+                    const { fromSq: origFrom, midSq } = pending;
+                    pending = null;
+                    usi =
+                        marker === "pass"
+                            ? origFrom + origFrom
+                            : origFrom +
+                              midSq +
+                              destSq +
+                              (promoted ? "+" : "");
+                } else {
+                    usi = fromSq + destSq + (promoted ? "+" : "");
+                }
+
+                const entry = { usi, comments: [] };
+                entries.push(entry);
+                currentEntry = entry;
+            }
+
+            return { entries, nextIdx: idx };
+        }
+
+        // Recursively convert a parsed KIF variation node (with its nested
+        // children) into an array of CSL parts (USI strings, "{comment}"
+        // strings, and "(sub-variation)" strings).
+        //
+        //   varData    — { startPly, entries: [{usi,comments}], children: [...] }
+        //   boardBefore — deep copy of the board state before this var's first move
+        //
+        // Children are attached at the position whose absoluteAbsPly == child.startPly.
+        _kifVariationToCSLParts(varData, boardBefore) {
+            const parts = [];
+            // Mutate a local board copy
+            const board = boardBefore.map((row) =>
+                row.map((c) => (c ? { ...c } : null)),
+            );
+
+            for (let i = 0; i < varData.entries.length; i++) {
+                const entry = varData.entries[i];
+                const currentAbsPly = varData.startPly + i;
+
+                // Snapshot BEFORE applying this entry — this is the correct
+                // boardBefore for any child variation that is an alternative
+                // to this entry (child.startPly === currentAbsPly).
+                const boardBeforeEntry = board.map((row) =>
+                    row.map((c) => (c ? { ...c } : null)),
+                );
+
+                parts.push(entry.usi);
+                if (entry.comments.length) {
+                    parts.push("{" + entry.comments.join("\n") + "}");
+                }
+                this.applyUSIToBoard(entry.usi, board);
+
+                // Children whose startPly === currentAbsPly are PGN-style
+                // alternatives to this entry.  In CSL they appear immediately
+                // AFTER this move's USI token.  Their boardBefore is the board
+                // state just before this entry (after the preceding one).
+                for (const child of varData.children || []) {
+                    if (child.startPly !== currentAbsPly) continue;
+                    const childParts = this._kifVariationToCSLParts(
+                        child,
+                        boardBeforeEntry,
+                    );
+                    if (childParts.length > 0) {
+                        parts.push("(" + childParts.join(" ") + ")");
+                    }
+                }
+            }
+
+            return parts;
         }
 
         updateKIFExport() {
@@ -15069,7 +15702,11 @@ impossible to fulfill for either player, the game is considered a draw.</p>
             }
             const startingComment = startingCommentLines.join("\n");
 
-            // Parse the move list.
+            // ── Parse the main move list (stop at first 変化：header) ─────────
+            // We reuse _parseKIFMoveSegment for the main line too, but we need
+            // strict error-on-unknown-line semantics for the main line that the
+            // shared helper doesn't provide.  Run the original strict loop,
+            // extended to break (rather than error) on 変化：lines.
             const NUM_RE = /^\s*(\d+)\s*\u624b\u76ee(\u4e00\u6b69\u76ee|\u4e8c\u6b69\u76ee)?\s*/;
             const FROM_RE =
                 /\uff08\u2190(\d{1,2}(?:\u5341\u4e00|\u5341\u4e8c|[\u4e00\u4e8c\u4e09\u56db\u4e94\u516d\u4e03\u516b\u4e5d\u5341]))\uff09\s*$/;
@@ -15083,6 +15720,9 @@ impossible to fulfill for either player, the game is considered a draw.</p>
             for (; idx < lines.length; idx++) {
                 const rawLine = lines[idx];
                 if (isBlank(rawLine)) continue;
+
+                // Variation header — end of main line.
+                if (rawLine.trim().startsWith("\u5909\u5316\uff1a")) break;
 
                 const commentMatch = rawLine.match(COMMENT_RE);
                 if (commentMatch) {
@@ -15156,13 +15796,8 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                     const { fromSq: origFrom, midSq } = pending;
                     pending = null;
                     if (marker === "pass") {
-                        // \u3058\u3063\u3068: the recorded midpoint is a display-only
-                        // placeholder (findPassMidpoint) \u2014 CSL represents a
-                        // pass as a plain two-square "stay" token.
                         usi = origFrom + origFrom;
                     } else {
-                        // \u5c45\u98df\u3044 (marker === "istick") or a normal double
-                        // move both keep the real midpoint.
                         usi = origFrom + midSq + destSq + (promoted ? "+" : "");
                     }
                 } else {
@@ -15180,6 +15815,99 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                 };
             }
 
+            // ── Parse variation sections (変化：N手 blocks) ─────────────────
+            // Each block: header line then move lines, separated from the next
+            // by blank lines.  Non-fatal: bad blocks are warned and skipped.
+            const varSections = []; // { startPly, entries }
+            const VAR_HDR_RE = /^\u5909\u5316\uff1a(\d+)\u624b\s*$/;
+
+            while (idx < lines.length) {
+                if (isBlank(lines[idx])) { idx++; continue; }
+                const hdrMatch = lines[idx].trim().match(VAR_HDR_RE);
+                if (!hdrMatch) { idx++; continue; }
+
+                const startPly = parseInt(hdrMatch[1], 10);
+                idx++; // consume header line
+
+                const seg = this._parseKIFMoveSegment(lines, idx);
+                idx = seg.nextIdx;
+                varSections.push({ startPly, entries: seg.entries, children: [] });
+            }
+
+            // ── Build variation tree via stack (rule 5b) ─────────────────────
+            // If variation V2's startPly > preceding V1's startPly, V2 is a
+            // child of V1; otherwise pop the stack until the right level.
+            const rootVars = []; // top-level variations attached to the main line
+            const stack = []; // { ply, varData }
+
+            for (const vs of varSections) {
+                while (
+                    stack.length > 0 &&
+                    stack[stack.length - 1].ply >= vs.startPly
+                ) {
+                    stack.pop();
+                }
+                const parentVarData =
+                    stack.length > 0 ? stack[stack.length - 1].varData : null;
+                const varData = vs; // already has { startPly, entries, children }
+                if (parentVarData) {
+                    parentVarData.children.push(varData);
+                } else {
+                    rootVars.push(varData);
+                }
+                stack.push({ ply: vs.startPly, varData });
+            }
+
+            // ── Build board states for main line ─────────────────────────────
+            // boardStates[0] = initial board; boardStates[i] = after i-th move.
+            // Used to supply the correct pre-move board for top-level variations.
+            const boardStates = [];
+            try {
+                const tempBoard = this.parseSFENBoard(boardPart);
+                boardStates.push(
+                    tempBoard.map((row) => row.map((c) => (c ? { ...c } : null))),
+                );
+                for (const e of entries) {
+                    this.applyUSIToBoard(e.usi, tempBoard);
+                    boardStates.push(
+                        tempBoard.map((row) =>
+                            row.map((c) => (c ? { ...c } : null)),
+                        ),
+                    );
+                }
+            } catch (_) {
+                // If board-state computation fails, skip all variations.
+                boardStates.length = 0;
+            }
+
+            // ── Convert root variations to CSL (…) tokens ────────────────────
+            // Map: ply (1-based) → array of CSL variation strings to insert
+            //   AFTER the main-line move at that ply.
+            const varAtPly = {}; // plyNum -> string[]
+            for (const rv of rootVars) {
+                const N = rv.startPly;
+                if (N < 1 || N > boardStates.length - 1) {
+                    // Out of range — would reference a board beyond the main line
+                    console.warn(
+                        `KIF import: skipped variation at ply ${N} (main line has ${entries.length} moves)`,
+                    );
+                    continue;
+                }
+                const boardBefore = boardStates[N - 1].map((row) =>
+                    row.map((c) => (c ? { ...c } : null)),
+                );
+                try {
+                    const parts = this._kifVariationToCSLParts(rv, boardBefore);
+                    if (parts.length > 0) {
+                        if (!varAtPly[N]) varAtPly[N] = [];
+                        varAtPly[N].push("(" + parts.join(" ") + ")");
+                    }
+                } catch (err) {
+                    console.warn(`KIF import: skipped variation at ply ${N} — ${err}`);
+                }
+            }
+
+            // ── Assemble final CSL string ─────────────────────────────────────
             let csl =
                 boardPart +
                 " " +
@@ -15188,10 +15916,16 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                 (counterStrikeSquare || "-") +
                 " 1";
             if (startingComment) csl += " {" + startingComment + "}";
-            for (const entry of entries) {
-                csl += " " + entry.usi;
-                if (entry.comments.length) {
-                    csl += " {" + entry.comments.join("\n") + "}";
+            for (let i = 0; i < entries.length; i++) {
+                const plyNum = i + 1;
+                csl += " " + entries[i].usi;
+                if (entries[i].comments.length) {
+                    csl += " {" + entries[i].comments.join("\n") + "}";
+                }
+                if (varAtPly[plyNum]) {
+                    for (const varCSL of varAtPly[plyNum]) {
+                        csl += " " + varCSL;
+                    }
                 }
             }
 
@@ -15265,14 +15999,17 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                     if (i < n) i++; // skip closing '}'
                     tokens.push({ type: "comment", text: comment });
                 } else if (ch === "(") {
-                    // Variation \u2014 skip, respecting nesting
+                    // Variation — capture inner content (respecting nesting)
                     let depth = 1;
                     i++;
+                    let varContent = "";
                     while (i < n && depth > 0) {
                         if (text[i] === "(") depth++;
                         else if (text[i] === ")") depth--;
+                        if (depth > 0) varContent += text[i];
                         i++;
                     }
+                    tokens.push({ type: "variation", text: varContent });
                 } else if (ch === ";") {
                     // Semicolon line comment \u2014 skip to end of line
                     while (i < n && text[i] !== "\n") i++;
@@ -15591,6 +16328,11 @@ impossible to fulfill for either player, the game is considered a draw.</p>
             const cslParts = [];
             let firstMoveEmitted = false;
 
+            // Track board state before the last move so that any variation
+            // token immediately following can branch from the correct position.
+            let boardBeforeLastMove = null;
+            let colorBeforeLastMove = currentPgnColor;
+
             for (const tok of tokens) {
                 if (tok.type === "comment") {
                     // Comments are passed through verbatim, wrapped in CSL { }
@@ -15600,6 +16342,13 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                         cslParts.push("{" + tok.text + "}");
                     }
                 } else if (tok.type === "move") {
+                    // Snapshot before applying this move (needed by any
+                    // variation token that follows it).
+                    colorBeforeLastMove = currentPgnColor;
+                    boardBeforeLastMove = board.map((row) =>
+                        row.map((c) => (c ? { ...c } : null)),
+                    );
+
                     const usi = this.sanToUSI(tok.text, currentPgnColor, board);
                     if (!usi) {
                         return {
@@ -15610,6 +16359,32 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                     this.applyUSIToBoard(usi, board);
                     currentPgnColor = currentPgnColor === "w" ? "b" : "w";
                     firstMoveEmitted = true;
+                } else if (tok.type === "variation") {
+                    // Variation block: alternative starting from the position
+                    // BEFORE the last main-line move.  Non-fatal — skip on error.
+                    if (boardBeforeLastMove !== null) {
+                        const innerToks = this.tokenizePGNMoveText(tok.text);
+                        // Fresh board copy so sibling variations are independent.
+                        const varBoard = boardBeforeLastMove.map((row) =>
+                            row.map((c) => (c ? { ...c } : null)),
+                        );
+                        const subResult =
+                            this._convertPGNVariationToCSLParts(
+                                innerToks,
+                                varBoard,
+                                colorBeforeLastMove,
+                            );
+                        if (subResult.error) {
+                            console.warn(
+                                "PGN import: skipped variation —",
+                                subResult.error,
+                            );
+                        } else if (subResult.parts.length > 0) {
+                            cslParts.push(
+                                "(" + subResult.parts.join(" ") + ")",
+                            );
+                        }
+                    }
                 }
             }
 
@@ -15619,6 +16394,71 @@ impossible to fulfill for either player, the game is considered a draw.</p>
             if (cslParts.length) csl += " " + cslParts.join(" ");
 
             return { csl };
+        }
+
+        // Recursively convert a tokenized PGN variation into an array of CSL
+        // parts (USI strings, "{comment}" strings, "(sub-variation)" strings).
+        //
+        //   tokens        — output of tokenizePGNMoveText for the variation text
+        //   board         — MUTABLE board snapshot at the start of the variation
+        //                   (caller must pass a deep copy; this function mutates it)
+        //   firstPgnColor — PGN color ("w"/"b") to move first in this variation
+        //
+        // Returns { parts } on success or { error } on failure.
+        _convertPGNVariationToCSLParts(tokens, board, firstPgnColor) {
+            const parts = [];
+            let currentPgnColor = firstPgnColor;
+
+            // Snapshot of the board before the last move (for sub-variations).
+            let boardBeforeLastMove = null;
+            let colorBeforeLastMove = firstPgnColor;
+
+            for (const tok of tokens) {
+                if (tok.type === "comment") {
+                    parts.push("{" + tok.text + "}");
+                } else if (tok.type === "move") {
+                    colorBeforeLastMove = currentPgnColor;
+                    boardBeforeLastMove = board.map((row) =>
+                        row.map((c) => (c ? { ...c } : null)),
+                    );
+
+                    const usi = this.sanToUSI(tok.text, currentPgnColor, board);
+                    if (!usi) {
+                        return {
+                            error: `Could not convert move "${tok.text}" in variation.`,
+                        };
+                    }
+                    parts.push(usi);
+                    this.applyUSIToBoard(usi, board);
+                    currentPgnColor = currentPgnColor === "w" ? "b" : "w";
+                } else if (tok.type === "variation") {
+                    // Sub-variation: branch from position before last move.
+                    if (boardBeforeLastMove !== null) {
+                        const innerToks = this.tokenizePGNMoveText(tok.text);
+                        const varBoard = boardBeforeLastMove.map((row) =>
+                            row.map((c) => (c ? { ...c } : null)),
+                        );
+                        const subResult =
+                            this._convertPGNVariationToCSLParts(
+                                innerToks,
+                                varBoard,
+                                colorBeforeLastMove,
+                            );
+                        if (subResult.error) {
+                            console.warn(
+                                "PGN import: skipped sub-variation —",
+                                subResult.error,
+                            );
+                        } else if (subResult.parts.length > 0) {
+                            parts.push(
+                                "(" + subResult.parts.join(" ") + ")",
+                            );
+                        }
+                    }
+                }
+            }
+
+            return { parts };
         }
 
         // Read PGN from [data-pgn-import], convert it to CSL notation, and
