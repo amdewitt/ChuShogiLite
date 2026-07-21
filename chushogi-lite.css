@@ -1365,6 +1365,11 @@
   padding: 12px !important;
 }
 
+/* Defend the [hidden] attribute from host-page CSS resets that un-hide elements. */
+.chushogi-container [hidden] {
+  display: none !important;
+}
+
 /* Variation manipulation controls — appear below the move list */
 .chushogi-variation-controls {
   display: flex !important;
