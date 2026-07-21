@@ -297,11 +297,19 @@
   transition: background-color 0.2s !important;
   box-sizing: border-box !important;
   user-select: none !important;
+  white-space: nowrap !important;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
   color: var(--container-button-text-color) !important;
   text-decoration: none !important;
   display: inline-block !important;
   vertical-align: middle !important;
+}
+
+/* Keep nav-prev/next buttons the same width regardless of ←/↑ or →/↓ label */
+.chushogi-container [data-nav-prev],
+.chushogi-container [data-nav-next] {
+  min-width: 2em !important;
+  text-align: center !important;
 }
 
 .chushogi-btn:hover {

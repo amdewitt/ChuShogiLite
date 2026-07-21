@@ -23,7 +23,12 @@
     const PIECE_DEFINITIONS = {
         // Basic pieces that do promote (corrected based on Wikipedia)
         P: { name: "Pawn", kanji: "\u6b69", movement: "P", promotes: "+P" },
-        I: { name: "Go-Between", kanji: "\u4ef2", movement: "I", promotes: "+I" },
+        I: {
+            name: "Go-Between",
+            kanji: "\u4ef2",
+            movement: "I",
+            promotes: "+I",
+        },
         C: {
             name: "Copper General",
             kanji: "\u9285",
@@ -36,14 +41,24 @@
             movement: "S",
             promotes: "+S",
         },
-        G: { name: "Gold General", kanji: "\u91d1", movement: "G", promotes: "+G" },
+        G: {
+            name: "Gold General",
+            kanji: "\u91d1",
+            movement: "G",
+            promotes: "+G",
+        },
         F: {
             name: "Ferocious Leopard",
             kanji: "\u8c79",
             movement: "F",
             promotes: "+F",
         },
-        T: { name: "Blind Tiger", kanji: "\u864e", movement: "T", promotes: "+T" },
+        T: {
+            name: "Blind Tiger",
+            kanji: "\u864e",
+            movement: "T",
+            promotes: "+T",
+        },
         E: {
             name: "Drunk Elephant",
             kanji: "\u8c61",
@@ -59,7 +74,12 @@
             movement: "A",
             promotes: "+A",
         },
-        M: { name: "Side Mover", kanji: "\u6a2a", movement: "M", promotes: "+M" },
+        M: {
+            name: "Side Mover",
+            kanji: "\u6a2a",
+            movement: "M",
+            promotes: "+M",
+        },
         V: {
             name: "Vertical Mover",
             kanji: "\u7aea",
@@ -68,8 +88,18 @@
         },
         B: { name: "Bishop", kanji: "\u89d2", movement: "B", promotes: "+B" },
         R: { name: "Rook", kanji: "\u98db", movement: "R", promotes: "+R" },
-        H: { name: "Dragon Horse", kanji: "\u99ac", movement: "H", promotes: "+H" },
-        D: { name: "Dragon King", kanji: "\u9f8d", movement: "D", promotes: "+D" },
+        H: {
+            name: "Dragon Horse",
+            kanji: "\u99ac",
+            movement: "H",
+            promotes: "+H",
+        },
+        D: {
+            name: "Dragon King",
+            kanji: "\u9f8d",
+            movement: "D",
+            promotes: "+D",
+        },
 
         // Basic pieces that don't promote
         Q: { name: "Queen", kanji: "\u5954", movement: "Q", promotes: null },
@@ -85,14 +115,24 @@
             movement: "+T",
             promotes: null,
         }, // Blind Tiger -> Flying Stag
-        "+E": { name: "Prince", kanji: "\u592a", movement: "K", promotes: null }, // Drunk Elephant -> Prince (same as King)
+        "+E": {
+            name: "Prince",
+            kanji: "\u592a",
+            movement: "K",
+            promotes: null,
+        }, // Drunk Elephant -> Prince (same as King)
         "+L": {
             name: "White Horse",
             kanji: "\u99d2",
             movement: "+L",
             promotes: null,
         }, // Lance -> White Horse
-        "+A": { name: "Whale", kanji: "\u9be8", movement: "+A", promotes: null }, // Reverse Chariot -> Whale
+        "+A": {
+            name: "Whale",
+            kanji: "\u9be8",
+            movement: "+A",
+            promotes: null,
+        }, // Reverse Chariot -> Whale
         "+M": {
             name: "Free Boar",
             kanji: "\u732a",
@@ -144,7 +184,12 @@
             promotes: null,
         }, // Silver General -> Vertical Mover
         "+G": { name: "Rook", kanji: "\u98db", movement: "R", promotes: null }, // Gold General -> Rook
-        "+F": { name: "Bishop", kanji: "\u89d2", movement: "B", promotes: null }, // Ferocious Leopard -> Bishop
+        "+F": {
+            name: "Bishop",
+            kanji: "\u89d2",
+            movement: "B",
+            promotes: null,
+        }, // Ferocious Leopard -> Bishop
         "+X": { name: "Queen", kanji: "\u5954", movement: "Q", promotes: null }, // Phoenix -> Queen
         "+O": { name: "Lion", kanji: "\u7345", movement: "N", promotes: null }, // Kirin -> Lion
         "+B": {
@@ -923,6 +968,7 @@
             // moveTree = at the starting position (before any moves).
             // moveHistory[k] = viewing the position after the k-th move in the current branch.
             this.currentNode = null;
+            this._viewedNode = null; // null = on main line; non-null = viewing off-branch node.
             this._moveNodeCounter = 0; // Monotonically-increasing ID source for MoveNodes.
 
             // Puzzle mode state
@@ -1209,8 +1255,14 @@
 
                 // Clear move history since we're only showing the starting position
                 this.moveHistory = [];
-                this.moveTree = { id: "root", children: [], parent: null, ply: 0 };
+                this.moveTree = {
+                    id: "root",
+                    children: [],
+                    parent: null,
+                    ply: 0,
+                };
                 this.currentNode = null;
+                this._viewedNode = null;
                 this.lastMove = null;
 
                 // Set the starting position
@@ -1630,6 +1682,20 @@
             );
         }
 
+        isMouseOverContainer() {
+            // Check if mouse is anywhere within the applet container
+            const rect = this.container.getBoundingClientRect();
+            const mouseX = this.lastMouseX || 0;
+            const mouseY = this.lastMouseY || 0;
+
+            return (
+                mouseX >= rect.left &&
+                mouseX <= rect.right &&
+                mouseY >= rect.top &&
+                mouseY <= rect.bottom
+            );
+        }
+
         getCurrentDrawingColor() {
             const key = `${this.drawingState.shiftPressed},${this.drawingState.altPressed}`;
             return this.drawingColors[key];
@@ -1879,13 +1945,14 @@
             </div>
             <button class="chushogi-btn" onclick="this.closest('.chushogi-container').chuShogiInstance.flipBoard()" title="Flip board view">\ud83d\udd04
             </button>
-            <button class="chushogi-btn" data-nav-start onclick="this.closest('.chushogi-container').chuShogiInstance.goToStart()" title="Go to start position">|&lt;
+            <button class="chushogi-btn" data-nav-start onclick="this.closest('.chushogi-container').chuShogiInstance.goToStart()" title="Go to start position">|\u2190
             </button>
-            <button class="chushogi-btn" data-nav-prev onclick="this.closest('.chushogi-container').chuShogiInstance.goBackOneMove()" title="Go back one move (hold to navigate continuously)">&lt;
+            <button class="chushogi-btn" data-nav-prev onclick="this.closest('.chushogi-container').chuShogiInstance.goBackOneMove()" title="Go back one move (hold to navigate continuously)">\u2190
             </button>
-            <button class="chushogi-btn" data-nav-next onclick="this.closest('.chushogi-container').chuShogiInstance.goForwardOneMove()" title="Go forward one move (hold to navigate continuously)">&gt;
+            ${!isPuzzle ? `<input type="checkbox" data-nav-variations title="Navigate variations">` : ""}
+            <button class="chushogi-btn" data-nav-next onclick="this.closest('.chushogi-container').chuShogiInstance.goForwardOneMove()" title="Go forward one move (hold to navigate continuously)">\u2192
             </button>
-            <button class="chushogi-btn" data-nav-end onclick="this.closest('.chushogi-container').chuShogiInstance.goToCurrent()" title="Go to current position">&gt;|
+            <button class="chushogi-btn" data-nav-end onclick="this.closest('.chushogi-container').chuShogiInstance.goToCurrent()" title="Go to current position">\u2192|
             </button>
             ${
                 !isViewOnly
@@ -2326,7 +2393,7 @@
               !isViewOnly && !isPuzzle
                   ? `<div class="chushogi-setting-group">
             <h4>CSL Import${isFixedStart ? " (Restricted)" : ""}</h4>
-            <textarea class="chushogi-textarea" placeholder="Paste game in CSL notation (i. e. SFEN {StartComment} USIMove1 USIMove2 {Comment2}... or USIMove1 USIMove2...) here..." data-game-import=""></textarea>
+            <textarea class="chushogi-textarea" placeholder="Paste game in CSL notation (i. e. SFEN {StartComment} USIMove1 USIMove2 {Comment2} (Move2Var1) (Move2Var2)... or USIMove1 USIMove2...) here..." data-game-import=""></textarea>
             <button class="chushogi-btn-primary" onclick="this.closest('.chushogi-container').chuShogiInstance.importGameFromInput()" title="Import game from CSL notation">
               \u2191 Import CSL
             </button>
@@ -3896,19 +3963,30 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                 </li>`
                         : ""
                 }
+                ${
+                    !isPuzzle
+                        ? `<li>Move a piece in a non-current position to create a variation
+                </li>`
+                        : ""
+                }
                 <li>Right-click to draw circles, right-click and drag to another square to draw arrows
                 <ul>
-                <li>Use the Shift and Alt keys or the checkboxes at the top to change drawing colors
+                <li>Use the Shift and Alt keys or the checkboxes at the top-left to change drawing colors
                 </li>
                 </ul>
                 </li>
                 <li>\ud83d\udd04 Flip View: Flips the board view</li>
-                <li>|&lt; or \u2191 key: navigates to starting position</li>
-                <li>&lt; or \u2190 key: navigates one move backward</li>
-                <li>> or \u2192 key: navigates one move forward</li>
-                <li>>| or \u2193 key: navigates to current position</li>
-                ${!isViewOnly ? "<li>\u21b6: undoes the last move</li>" : ""}
-                ${!isViewOnly ? "<li>\u2702: trims the game to the displayed position</li>" : ""}
+                <li>|\u2190 or \u2191 key: navigates to starting position</li>
+                <li>\u2190 or \u2190 key: navigates one move backward</li>
+                <li>\u2192 or \u2192 key: navigates one move forward</li>
+                <li>\u2192| or \u2193 key: navigates to current position</li>
+                ${
+                    !isPuzzle
+                        ? "<li>Use the Ctrl key or the checkbox in the top-middle to access the \u2191 and \u2193 buttons</li><li>\u2191 or Ctrl + \u2190 key: navigates one sibling variation upward</li><li>\u2193 or Ctrl + \u2192 key: navigates one sibling variation downward</li>"
+                        : ""
+                }
+                ${!isViewOnly ? "<li>\u21b6: undoes the last move in the current line</li>" : ""}
+                ${!isViewOnly ? "<li>\u2702: trims the current line to the displayed position</li>" : ""}
                 ${!isViewOnly ? "<li>\u232b: starts a new game</li>" : ""}
                 ${!isPuzzle ? "<li>\u27f3: resets the board to its original state</li>" : ""}
               </ul>
@@ -3970,8 +4048,8 @@ impossible to fulfill for either player, the game is considered a draw.</p>
               </ul>`
               }
               <p><strong>Game Export${!isViewOnly && !isPuzzle ? "/Import" : ""}:</strong></p>
-              <p>The \u21c5 Export/Import tab allows for games to be exported to plaintext${!isViewOnly && !isPuzzle ? (isFixedStart ? " and imported from plaintext (imports restricted)." : " and imported from plaintext.") : "."}${isPuzzle ? " For puzzles, a 'View Solution' button to reveal the complete puzzle answer, and imports are not available." : ""}</p><p>The format used for a game's plaintext is called CSL (short for ChuShogiLite) notation and is very simple: an SFEN followed by a sequence of moves in Universal Shogi Notation (USI) and optional comments enclosed in {} curly brackets, all separated by spaces. Alternatively, you can import just the moves (without SFEN) to continue from the current game's starting position.${isFixedStart ? " Imports are restricted to moves-only format or games that start from the same position." : ""} An example is provided in the CSL Export section.</p>
-              <p>SFEN {StartComment} USIMove1 USIMove2 {Comment2}...</p>
+              <p>The \u21c5 Export/Import tab allows for games to be exported to plaintext${!isViewOnly && !isPuzzle ? (isFixedStart ? " and imported from plaintext (imports restricted)." : " and imported from plaintext.") : "."}${isPuzzle ? " For puzzles, a 'View Solution' button to reveal the complete puzzle answer, and imports are not available." : ""}</p><p>The format used for a game's plaintext is called CSL (short for ChuShogiLite) notation and is very simple: an SFEN followed by a sequence of moves in Universal Shogi Notation (USI), optional comments enclosed in {} curly brackets, and variations enclosed in () parentheses, all separated by spaces. Alternatively, you can import just the moves (without SFEN) to continue from the current game's starting position.${isFixedStart ? " Imports are restricted to moves-only format or games that start from the same position." : ""} An example is provided in the CSL Export section.</p>
+              <p>SFEN {StartComment} USIMove1 USIMove2 {Comment2} (Move2Var1) (Move2Var2)...</p>
               <p>A comment for a move is placed immediately after that move, and the comment for the starting position is placed just before the first move.</p>
               <ul>
                 <li>To copy the current game's plaintext, click Export CSL</li>
@@ -3991,7 +4069,7 @@ impossible to fulfill for either player, the game is considered a draw.</p>
               <li><strong>\\\\</strong>: \\ backslash</li>
               <li><strong>\\n</strong>: newline character</li>
               </ul>
-              <p>Games can also be exported to${!isViewOnly && !isPuzzle ? " and imported from" : ""} PGN (Portable Game Notation).</p>
+              <p>Games can also be exported to${!isViewOnly && !isPuzzle ? " and imported from" : ""} KIF (kifu) and PGN (Portable Game Notation).</p>
               ${
                   !isViewOnly && !isFixedStart && !isPuzzle
                       ? `<p><strong>Editing the Board:</strong></p>
@@ -4059,7 +4137,7 @@ impossible to fulfill for either player, the game is considered a draw.</p>
               <ul translate="no">
                 <li><strong>appletMode:</strong> <span style="text-decoration:underline">"sandbox"</span>, "fixedStart", "fixedRules", "fixedSettings", "fixedStartAndRules", "fixedStartAndSettings", "puzzle", "viewOnly"
                 </li>
-                <li><strong>startGame:</strong> CSL notation (i. e. SFEN {StartComment} USIMove1 USIMove2 {Comment2}... or USIMove1 USIMove2...), <span style="text-decoration:underline">null</span></li>
+                <li><strong>startGame:</strong> CSL notation (i. e. SFEN {StartComment} USIMove1 USIMove2 {Comment2} (Move2Var1) (Move2Var2)... or USIMove1 USIMove2...), <span style="text-decoration:underline">null</span></li>
                 <li><strong>allowCustomComments:</strong> <span style="text-decoration:underline">true</span>/false
                     <ul>
                     <li>Defaults to <span style="text-decoration:underline">false</span> when <strong>appletMode</strong> is "puzzle" or "viewOnly"</li>
@@ -4206,7 +4284,9 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                 this.config.appletMode === "puzzle" &&
                 this.puzzleWaitingForAdvance
             ) {
-                console.log("Board clicks blocked - press > or \u2192 to continue");
+                console.log(
+                    "Board clicks blocked - press \u2192 or the \u2192 key to continue",
+                );
                 return;
             }
 
@@ -5559,18 +5639,20 @@ impossible to fulfill for either player, the game is considered a draw.</p>
             // navigate to that existing node instead of creating a duplicate variation.
             if (!this.isImporting && !this.isBatchImporting) {
                 const _earlyParentNode = this.currentNode ?? this.getLiveNode();
-                const _duplicateChild = _earlyParentNode.children.find(child =>
-                    child.from === fromSquare &&
-                    child.to === toSquare &&
-                    !!child.promoted === !!promote &&
-                    child.piece?.type === movingPiece?.type
+                const _duplicateChild = _earlyParentNode.children.find(
+                    (child) =>
+                        child.from === fromSquare &&
+                        child.to === toSquare &&
+                        !!child.promoted === !!promote &&
+                        child.piece?.type === movingPiece?.type,
                 );
                 if (_duplicateChild) {
                     // If the duplicate is on the main line, use navigateToPosition so
                     // currentNavigationIndex advances correctly and back/forward remain sane.
                     // For off-branch nodes navigateToNode is fine (it intentionally leaves
                     // currentNavigationIndex pointing at the main-line anchor).
-                    const _dupMainIdx = this.moveHistory.indexOf(_duplicateChild);
+                    const _dupMainIdx =
+                        this.moveHistory.indexOf(_duplicateChild);
                     if (_dupMainIdx !== -1) {
                         this.navigateToPosition(_dupMainIdx);
                     } else {
@@ -5639,21 +5721,24 @@ impossible to fulfill for either player, the game is considered a draw.</p>
             // Capture whether the parent is a leaf BEFORE the new node is prepended.
             // If it already has children, the new move is an alternative (isBranch).
             const _parentWasLeaf = _parentNode.children.length === 0;
-            const _newNode = this.makeMoveNode({
-                from: fromSquare,
-                to: toSquare,
-                piece: { ...movingPiece }, // Store original piece state for undo
-                captured: capturedPiece,
-                promoted: promote,
-                notation: moveNotation,
-                lionCapture: this.lastLionCapture, // Store Lion capture state with each move
-                previousLionCapture:
-                    _parentNode !== this.moveTree
-                        ? _parentNode.lionCapture
-                        : this.lastLionCapture, // Preserve previous state for proper tracking
-                resultingSFEN: "", // Will be set after player update
-                comment: "", // Comment for this move
-            }, _parentNode);
+            const _newNode = this.makeMoveNode(
+                {
+                    from: fromSquare,
+                    to: toSquare,
+                    piece: { ...movingPiece }, // Store original piece state for undo
+                    captured: capturedPiece,
+                    promoted: promote,
+                    notation: moveNotation,
+                    lionCapture: this.lastLionCapture, // Store Lion capture state with each move
+                    previousLionCapture:
+                        _parentNode !== this.moveTree
+                            ? _parentNode.lionCapture
+                            : this.lastLionCapture, // Preserve previous state for proper tracking
+                    resultingSFEN: "", // Will be set after player update
+                    comment: "", // Comment for this move
+                },
+                _parentNode,
+            );
             // Prepend so this move becomes the preferred (first) continuation of its parent.
             _parentNode.children.unshift(_newNode);
             if (this.currentNode !== null) {
@@ -5805,8 +5890,7 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                 // Pre-calculate moveable pieces if setting is enabled.
                 // Moves are always allowed (from any position they create a variation
                 // or extend a leaf branch), so show highlights whenever the mode permits.
-                const _isAtPlayableLeaf =
-                    this.currentTab !== "edit";
+                const _isAtPlayableLeaf = this.currentTab !== "edit";
                 const moveablePieces =
                     this.config.showMoveablePieces &&
                     this.currentTab !== "edit" &&
@@ -6560,7 +6644,10 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                 // Validate move in puzzle mode (after promotion prompt handling).
                 // Skip during import — imported moves (including variation branches)
                 // must not be checked against the active puzzle solution.
-                if (this.config.appletMode === "puzzle" && !context.skipPromotionPrompt) {
+                if (
+                    this.config.appletMode === "puzzle" &&
+                    !context.skipPromotionPrompt
+                ) {
                     const validation = this.validatePuzzleMove(moveNotation);
                     if (!validation.valid) {
                         console.log(
@@ -6848,19 +6935,22 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                 // If this exact move already exists as a child of the parent node,
                 // navigate to that existing node instead of creating a duplicate variation.
                 if (!this.isImporting && !this.isBatchImporting) {
-                    const _earlyParentNode = this.currentNode ?? this.getLiveNode();
-                    const _duplicateChild = _earlyParentNode.children.find(child =>
-                        child.from === from &&
-                        child.to === to &&
-                        !!child.promoted === !!moveData.promoted &&
-                        child.piece?.type === piece?.type
+                    const _earlyParentNode =
+                        this.currentNode ?? this.getLiveNode();
+                    const _duplicateChild = _earlyParentNode.children.find(
+                        (child) =>
+                            child.from === from &&
+                            child.to === to &&
+                            !!child.promoted === !!moveData.promoted &&
+                            child.piece?.type === piece?.type,
                     );
                     if (_duplicateChild) {
                         // If the duplicate is on the main line, use navigateToPosition so
                         // currentNavigationIndex advances correctly and back/forward remain sane.
                         // For off-branch nodes navigateToNode is fine (it intentionally leaves
                         // currentNavigationIndex pointing at the main-line anchor).
-                        const _dupMainIdx = this.moveHistory.indexOf(_duplicateChild);
+                        const _dupMainIdx =
+                            this.moveHistory.indexOf(_duplicateChild);
                         if (_dupMainIdx !== -1) {
                             this.navigateToPosition(_dupMainIdx);
                         } else {
@@ -7432,6 +7522,42 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                                 this.updateColorCheckboxOutlines();
                             }
                         }
+
+                        if (
+                            this.isMouseOverContainer() &&
+                            event.key === "Control"
+                        ) {
+                            event.preventDefault();
+
+                            const variationsCheckbox =
+                                this.container.querySelector(
+                                    "[data-nav-variations]",
+                                );
+
+                            if (variationsCheckbox) {
+                                this._variationsNavMode = event.ctrlKey;
+                                variationsCheckbox.checked =
+                                    this._variationsNavMode;
+                                const navPrevBtn =
+                                    this.container.querySelector(
+                                        "[data-nav-prev]",
+                                    );
+                                const navNextBtn =
+                                    this.container.querySelector(
+                                        "[data-nav-next]",
+                                    );
+                                if (navPrevBtn)
+                                    navPrevBtn.textContent = this
+                                        ._variationsNavMode
+                                        ? "\u2191"
+                                        : "\u2190";
+                                if (navNextBtn)
+                                    navNextBtn.textContent = this
+                                        ._variationsNavMode
+                                        ? "\u2193"
+                                        : "\u2192";
+                            }
+                        }
                     };
 
                     this.eventManager.keyupHandler = (event) => {
@@ -7464,6 +7590,42 @@ impossible to fulfill for either player, the game is considered a draw.</p>
 
                                 // Update colors when keyboard state changes
                                 this.updateColorCheckboxOutlines();
+                            }
+                        }
+
+                        if (
+                            this.isMouseOverContainer() &&
+                            event.key === "Control"
+                        ) {
+                            event.preventDefault();
+
+                            const variationsCheckbox =
+                                this.container.querySelector(
+                                    "[data-nav-variations]",
+                                );
+
+                            if (variationsCheckbox) {
+                                this._variationsNavMode = event.ctrlKey;
+                                variationsCheckbox.checked =
+                                    this._variationsNavMode;
+                                const navPrevBtn =
+                                    this.container.querySelector(
+                                        "[data-nav-prev]",
+                                    );
+                                const navNextBtn =
+                                    this.container.querySelector(
+                                        "[data-nav-next]",
+                                    );
+                                if (navPrevBtn)
+                                    navPrevBtn.textContent = this
+                                        ._variationsNavMode
+                                        ? "\u2191"
+                                        : "\u2190";
+                                if (navNextBtn)
+                                    navNextBtn.textContent = this
+                                        ._variationsNavMode
+                                        ? "\u2193"
+                                        : "\u2192";
                             }
                         }
                     };
@@ -7611,8 +7773,15 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                         // Add holding class immediately to maintain pressed appearance through navigation
                         newButton.classList.add("holding");
 
+                        // Check whether variations-sibling mode is active.
+                        // Read from instance variable — the checkbox's .checked property is
+                        // unreliable because cloneNode resets it to false on every re-attach.
+                        const siblingDir = isNext ? "next" : "prev";
+
                         // Perform single navigation immediately on press
-                        if (isNext) {
+                        if (this._variationsNavMode) {
+                            this.goToSiblingVariation(siblingDir);
+                        } else if (isNext) {
                             this.goForwardOneMove();
                         } else {
                             this.goBackOneMove();
@@ -7626,9 +7795,13 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                             this.navigationHold.navigationInterval =
                                 setInterval(() => {
                                     // Check if we can still navigate
-                                    const canContinue = isNext
-                                        ? this.canNavigateForward()
-                                        : this.canNavigateBack();
+                                    const isVariationsMode =
+                                        this._variationsNavMode;
+                                    const canContinue = isVariationsMode
+                                        ? this.hasSiblingVariation(siblingDir)
+                                        : isNext
+                                          ? this.canNavigateForward()
+                                          : this.canNavigateBack();
 
                                     if (!canContinue) {
                                         // Stop the interval if we can't navigate anymore
@@ -7636,7 +7809,9 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                                         return;
                                     }
 
-                                    if (isNext) {
+                                    if (isVariationsMode) {
+                                        this.goToSiblingVariation(siblingDir);
+                                    } else if (isNext) {
                                         this.goForwardOneMove();
                                     } else {
                                         this.goBackOneMove();
@@ -7769,6 +7944,47 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                         this.drawingState.altPressed = e.target.checked;
 
                         this.updateColorCheckboxOutlines();
+                    });
+                }
+
+                const variationsCheckbox = this.container.querySelector(
+                    "[data-nav-variations]",
+                );
+
+                if (variationsCheckbox) {
+                    const newVariationsCheckbox =
+                        variationsCheckbox.cloneNode(true);
+                    // cloneNode copies the HTML attribute (always false by default), not the
+                    // live JS property — so restore from the instance variable instead.
+                    if (this._variationsNavMode === undefined)
+                        this._variationsNavMode = false;
+                    newVariationsCheckbox.checked = this._variationsNavMode;
+                    variationsCheckbox.parentNode.replaceChild(
+                        newVariationsCheckbox,
+                        variationsCheckbox,
+                    );
+
+                    // Restore button labels to match current mode after re-clone.
+                    const _vpb =
+                        this.container.querySelector("[data-nav-prev]");
+                    const _vnb =
+                        this.container.querySelector("[data-nav-next]");
+                    if (_vpb)
+                        _vpb.textContent = this._variationsNavMode ? "\u2191" : "\u2190";
+                    if (_vnb)
+                        _vnb.textContent = this._variationsNavMode ? "\u2193" : "\u2192";
+
+                    newVariationsCheckbox.addEventListener("change", (e) => {
+                        const checked = e.target.checked;
+                        this._variationsNavMode = checked;
+                        const navPrevBtn =
+                            this.container.querySelector("[data-nav-prev]");
+                        const navNextBtn =
+                            this.container.querySelector("[data-nav-next]");
+                        if (navPrevBtn)
+                            navPrevBtn.textContent = checked ? "\u2191" : "\u2190";
+                        if (navNextBtn)
+                            navNextBtn.textContent = checked ? "\u2193" : "\u2192";
                     });
                 }
             },
@@ -8473,8 +8689,9 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                             this.currentNode = this.moveTree; // start position
                         } else {
                             this.currentNode =
-                                this.moveHistory[updates.currentNavigationIndex] ??
-                                null;
+                                this.moveHistory[
+                                    updates.currentNavigationIndex
+                                ] ?? null;
                         }
                     }
 
@@ -8589,14 +8806,24 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                 if (!Array.isArray(this.moveHistory)) {
                     console.warn("Invalid moveHistory structure detected");
                     this.moveHistory = [];
-                    this.moveTree = { id: "root", children: [], parent: null, ply: 0 };
+                    this.moveTree = {
+                        id: "root",
+                        children: [],
+                        parent: null,
+                        ply: 0,
+                    };
                     this.currentNode = null;
                 }
 
                 // Ensure moveTree sentinel is present and valid
                 if (!this.moveTree || typeof this.moveTree !== "object") {
                     console.warn("Invalid moveTree detected, reinitializing");
-                    this.moveTree = { id: "root", children: [], parent: null, ply: 0 };
+                    this.moveTree = {
+                        id: "root",
+                        children: [],
+                        parent: null,
+                        ply: 0,
+                    };
                     this.moveHistory = [];
                     this.currentNode = null;
                 }
@@ -8606,7 +8833,11 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                 // _viewedNode is set — it means we are viewing an off-branch variation
                 // node (not a main-line position).  Only treat it as an inconsistency
                 // when _viewedNode is also absent.
-                if (this.isNavigating && this.currentNavigationIndex === null && !this._viewedNode) {
+                if (
+                    this.isNavigating &&
+                    this.currentNavigationIndex === null &&
+                    !this._viewedNode
+                ) {
                     console.warn("Navigation state inconsistency detected");
                     this.isNavigating = false;
                 }
@@ -12236,7 +12467,9 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                 if (moveNumber) {
                     if (this._viewedNode) {
                         // Off-branch: show 1-based position within the current branch.
-                        moveNumber.textContent = this._branchPosition(this._viewedNode).current.toString();
+                        moveNumber.textContent = this._branchPosition(
+                            this._viewedNode,
+                        ).current.toString();
                     } else if (this.currentNavigationIndex === -1) {
                         // At starting position
                         moveNumber.textContent = "1";
@@ -13503,8 +13736,9 @@ impossible to fulfill for either player, the game is considered a draw.</p>
             // and optional comment, emit every sibling child of its parent as a
             // ( … ) variation.
             for (let i = 0; i < this.moveHistory.length; i++) {
-                const node   = this.moveHistory[i];
-                const parent = i === 0 ? this.moveTree : this.moveHistory[i - 1];
+                const node = this.moveHistory[i];
+                const parent =
+                    i === 0 ? this.moveTree : this.moveHistory[i - 1];
 
                 const usi = this.moveToUSI(node);
                 if (!usi) continue;
@@ -13533,7 +13767,7 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                 // Raw PGN variations stored on parent (first move failed).
                 if (parent.rawVariations) {
                     for (const rv of parent.rawVariations) {
-                        const rawMoves = rv && rv.isKIF ? null : (rv.moves || rv);
+                        const rawMoves = rv && rv.isKIF ? null : rv.moves || rv;
                         if (!rawMoves) continue;
                         for (const body of this._serializeRawMoves(rawMoves)) {
                             out += " (" + body + ")";
@@ -13583,7 +13817,7 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                 tokens.push(token);
 
                 // Sub-variations appear immediately after the move they follow.
-                for (const subVar of (m.variations || [])) {
+                for (const subVar of m.variations || []) {
                     for (const body of this._serializeRawMoves(subVar)) {
                         tokens.push("(" + body + ")");
                     }
@@ -13627,7 +13861,9 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                 //    after cur's token (before its main continuation).
                 for (let k = cur.children.length - 1; k >= 0; k--) {
                     if (!cur.children[k].isKIFBranch) continue;
-                    for (const body of this._serializeVariation(cur.children[k])) {
+                    for (const body of this._serializeVariation(
+                        cur.children[k],
+                    )) {
                         tokens.push("(" + body + ")");
                     }
                 }
@@ -13647,15 +13883,20 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                     for (let k = prevNode.children.length - 1; k >= 0; k--) {
                         if (k === prevContIdx) continue;
                         if (prevNode.children[k].isKIFBranch) continue;
-                        for (const body of this._serializeVariation(prevNode.children[k])) {
+                        for (const body of this._serializeVariation(
+                            prevNode.children[k],
+                        )) {
                             tokens.push("(" + body + ")");
                         }
                     }
                     if (prevNode.rawVariations) {
                         for (const rv of prevNode.rawVariations) {
-                            const rawMoves = rv && rv.isKIF ? null : (rv.moves || rv);
+                            const rawMoves =
+                                rv && rv.isKIF ? null : rv.moves || rv;
                             if (!rawMoves) continue;
-                            for (const body of this._serializeRawMoves(rawMoves)) {
+                            for (const body of this._serializeRawMoves(
+                                rawMoves,
+                            )) {
                                 tokens.push("(" + body + ")");
                             }
                         }
@@ -13666,7 +13907,10 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                 prevNode = cur;
                 prevContIdx = -1;
                 for (let j = cur.children.length - 1; j >= 0; j--) {
-                    if (!cur.children[j].isBranch) { prevContIdx = j; break; }
+                    if (!cur.children[j].isBranch) {
+                        prevContIdx = j;
+                        break;
+                    }
                 }
                 cur = prevContIdx >= 0 ? cur.children[prevContIdx] : null;
             }
@@ -13675,7 +13919,9 @@ impossible to fulfill for either player, the game is considered a draw.</p>
             if (prevNode !== null) {
                 for (let k = prevNode.children.length - 1; k >= 0; k--) {
                     if (!prevNode.children[k].isKIFBranch) continue;
-                    for (const body of this._serializeVariation(prevNode.children[k])) {
+                    for (const body of this._serializeVariation(
+                        prevNode.children[k],
+                    )) {
                         tokens.push("(" + body + ")");
                     }
                 }
@@ -13690,13 +13936,15 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                 for (let k = prevNode.children.length - 1; k >= 0; k--) {
                     if (k === prevContIdx) continue;
                     if (prevNode.children[k].isKIFBranch) continue;
-                    for (const body of this._serializeVariation(prevNode.children[k])) {
+                    for (const body of this._serializeVariation(
+                        prevNode.children[k],
+                    )) {
                         tokens.push("(" + body + ")");
                     }
                 }
                 if (prevNode.rawVariations) {
                     for (const rv of prevNode.rawVariations) {
-                        const rawMoves = rv && rv.isKIF ? null : (rv.moves || rv);
+                        const rawMoves = rv && rv.isKIF ? null : rv.moves || rv;
                         if (!rawMoves) continue;
                         for (const body of this._serializeRawMoves(rawMoves)) {
                             tokens.push("(" + body + ")");
@@ -13865,7 +14113,13 @@ impossible to fulfill for either player, the game is considered a draw.</p>
         //   "pgn"   (default) \u2014 letter-then-number PGN square convention.
         //   "shogi" \u2014 native CSL square convention (number-then-letter, e.g. "8g").
         // Returns { text, type } where type is "none" | "file" | "rank" | "square".
-        getSANDisambiguation(piece, fromSq, toSq, boardBefore, coordStyle = "pgn") {
+        getSANDisambiguation(
+            piece,
+            fromSq,
+            toSq,
+            boardBefore,
+            coordStyle = "pgn",
+        ) {
             if (!boardBefore) return { text: "", type: "none" };
             const [fromRankIdx, fromFileIdx] = this.parseSquareId(fromSq);
             const [destRankIdx, destFileIdx] = this.parseSquareId(toSq);
@@ -14123,7 +14377,11 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                     // 2. PGN siblings of cur: non-KIF, non-main children of
                     //    prevNode.  Emit after cur (and its KIF children above).
                     if (prevNode !== null) {
-                        for (let k = prevNode.children.length - 1; k >= 0; k--) {
+                        for (
+                            let k = prevNode.children.length - 1;
+                            k >= 0;
+                            k--
+                        ) {
                             if (k === prevContIdx) continue;
                             if (prevNode.children[k].isKIFBranch) continue;
                             renderChain(prevNode.children[k], depth + 1);
@@ -14281,16 +14539,24 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                     //    after cur (before its main continuation).
                     for (let k = cur.children.length - 1; k >= 0; k--) {
                         if (cur.children[k].isKIFBranch) {
-                            chunks.push("(" + buildChain(cur.children[k]) + ")");
+                            chunks.push(
+                                "(" + buildChain(cur.children[k]) + ")",
+                            );
                         }
                     }
                     // 2. PGN siblings of cur: non-KIF, non-main children of
                     //    prevNode.  Emit after cur (and its KIF children above).
                     if (prevNode !== null) {
-                        for (let k = prevNode.children.length - 1; k >= 0; k--) {
+                        for (
+                            let k = prevNode.children.length - 1;
+                            k >= 0;
+                            k--
+                        ) {
                             if (k === prevContIdx) continue;
                             if (prevNode.children[k].isKIFBranch) continue;
-                            chunks.push("(" + buildChain(prevNode.children[k]) + ")");
+                            chunks.push(
+                                "(" + buildChain(prevNode.children[k]) + ")",
+                            );
                         }
                     }
                     prevNode = cur;
@@ -14301,13 +14567,17 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                 if (prevNode !== null) {
                     for (let k = prevNode.children.length - 1; k >= 0; k--) {
                         if (prevNode.children[k].isKIFBranch) {
-                            chunks.push("(" + buildChain(prevNode.children[k]) + ")");
+                            chunks.push(
+                                "(" + buildChain(prevNode.children[k]) + ")",
+                            );
                         }
                     }
                     for (let k = prevNode.children.length - 1; k >= 0; k--) {
                         if (k === prevContIdx) continue;
                         if (prevNode.children[k].isKIFBranch) continue;
-                        chunks.push("(" + buildChain(prevNode.children[k]) + ")");
+                        chunks.push(
+                            "(" + buildChain(prevNode.children[k]) + ")",
+                        );
                     }
                 }
                 return chunks.join(" ");
@@ -14367,12 +14637,16 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                         for (let k = _fprev.children.length - 1; k >= 0; k--) {
                             if (k === _fprevContIdx) continue;
                             if (_fprev.children[k].isKIFBranch) continue;
-                            parts.push("(" + buildChain(_fprev.children[k]) + ")");
+                            parts.push(
+                                "(" + buildChain(_fprev.children[k]) + ")",
+                            );
                         }
                         // KIF children of _fcur:
                         for (let k = _fcur.children.length - 1; k >= 0; k--) {
                             if (_fcur.children[k].isKIFBranch) {
-                                parts.push("(" + buildChain(_fcur.children[k]) + ")");
+                                parts.push(
+                                    "(" + buildChain(_fcur.children[k]) + ")",
+                                );
                             }
                         }
                         _fprev = _fcur;
@@ -14387,13 +14661,17 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                         for (let k = _fprev.children.length - 1; k >= 0; k--) {
                             if (k === _fprevContIdx) continue;
                             if (_fprev.children[k].isKIFBranch) continue;
-                            parts.push("(" + buildChain(_fprev.children[k]) + ")");
+                            parts.push(
+                                "(" + buildChain(_fprev.children[k]) + ")",
+                            );
                         }
                     }
                 } else {
                     for (let k = _frontier.children.length - 1; k >= 0; k--) {
                         if (_frontier.children[k].isKIFBranch) continue;
-                        parts.push("(" + buildChain(_frontier.children[k]) + ")");
+                        parts.push(
+                            "(" + buildChain(_frontier.children[k]) + ")",
+                        );
                     }
                 }
             }
@@ -14415,7 +14693,12 @@ impossible to fulfill for either player, the game is considered a draw.</p>
         // export) or "shogi" (used by the move-history list) \u2014 native CSL
         // squares (fileNumber + rankChar, e.g. "8g"), used as-is with no
         // conversion since move.from/to/midpoint are already stored this way.
-        moveToSAN(move, boardBefore, midDestSeparator = "comma", coordStyle = "pgn") {
+        moveToSAN(
+            move,
+            boardBefore,
+            midDestSeparator = "comma",
+            coordStyle = "pgn",
+        ) {
             const piece = move.piece;
             const pieceLtr = piece.type; // e.g. "K", "N", "+H"
 
@@ -14631,11 +14914,7 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                 let emittedAnyVar = false;
 
                 // 1. PGN siblings
-                for (
-                    let k = parent.children.length - 1;
-                    k >= 0;
-                    k--
-                ) {
+                for (let k = parent.children.length - 1; k >= 0; k--) {
                     const sibling = parent.children[k];
                     if (sibling === move) continue;
                     if (sibling.isKIFBranch) continue;
@@ -14704,7 +14983,12 @@ impossible to fulfill for either player, the game is considered a draw.</p>
         //     to N, i.e. non-KIF, non-main children of prevNode) then KIF branches
         //     of N (responses to N, isKIFBranch children of N).  This produces the
         //     standard PGN "move (alternatives) continuation" ordering.
-        _serializePGNVariationChain(startNode, sfenBefore, startPly, blackStarted) {
+        _serializePGNVariationChain(
+            startNode,
+            sfenBefore,
+            startPly,
+            blackStarted,
+        ) {
             const tokens = [];
             let cur = startNode;
             let prevNode = null;
@@ -14716,8 +15000,8 @@ impossible to fulfill for either player, the game is considered a draw.</p>
             // — needed for PGN siblings whose board = sfenCur at the time they're
             //   the peers of cur (which equals sfenPrevAfter).
             let sfenPrevAfter = null;
-            let isFirst = true;       // first move in this variation?
-            let needsNumber = false;  // re-number after a sub-variation?
+            let isFirst = true; // first move in this variation?
+            let needsNumber = false; // re-number after a sub-variation?
 
             while (cur) {
                 // ── Board before cur ─────────────────────────────────────────
@@ -14727,7 +15011,9 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                     boardBefore = prevBoardStr
                         ? this.parseSFENBoard(prevBoardStr)
                         : null;
-                } catch (_) { /* skip on error */ }
+                } catch (_) {
+                    /* skip on error */
+                }
 
                 const san = boardBefore
                     ? this.moveToSAN(cur, boardBefore)
@@ -14745,9 +15031,7 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                 if (isFirst || needsNumber) {
                     // First move in variation (or after a sub-variation): always
                     // show the number so the reader knows whose turn it is.
-                    prefix = isWhiteTurn
-                        ? `${moveNum}. `
-                        : `${moveNum}... `;
+                    prefix = isWhiteTurn ? `${moveNum}. ` : `${moveNum}... `;
                 } else {
                     // Inside the variation: only white's moves get a number.
                     prefix = isWhiteTurn ? `${moveNum}. ` : "";
@@ -14756,9 +15040,7 @@ impossible to fulfill for either player, the game is considered a draw.</p>
 
                 const commentText =
                     cur.comment && cur.comment.trim()
-                        ? " {" +
-                          this.sanitizeCommentForPGN(cur.comment) +
-                          "}"
+                        ? " {" + this.sanitizeCommentForPGN(cur.comment) + "}"
                         : "";
 
                 tokens.push(`${prefix}${san}${commentText}`);
@@ -14772,11 +15054,7 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                 //    Board = sfenCur (= board before cur = board after prevNode).
                 //    Ply  = plyIndex (same as cur).
                 if (prevNode !== null) {
-                    for (
-                        let k = prevNode.children.length - 1;
-                        k >= 0;
-                        k--
-                    ) {
+                    for (let k = prevNode.children.length - 1; k >= 0; k--) {
                         if (k === prevContIdx) continue; // skip cur
                         if (prevNode.children[k].isKIFBranch) continue;
                         const vt = this._serializePGNVariationChain(
@@ -14822,10 +15100,7 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                         break;
                     }
                 }
-                cur =
-                    prevContIdx >= 0
-                        ? cur.children[prevContIdx]
-                        : null;
+                cur = prevContIdx >= 0 ? cur.children[prevContIdx] : null;
                 plyIndex++;
             }
 
@@ -14836,11 +15111,7 @@ impossible to fulfill for either player, the game is considered a draw.</p>
             if (prevNode !== null) {
                 // KIF children of prevNode were already emitted inside the loop
                 // on prevNode's own iteration.  Emit the non-KIF, non-main ones.
-                for (
-                    let k = prevNode.children.length - 1;
-                    k >= 0;
-                    k--
-                ) {
+                for (let k = prevNode.children.length - 1; k >= 0; k--) {
                     if (k === prevContIdx) continue; // prevContIdx=-1 → no skip
                     if (prevNode.children[k].isKIFBranch) continue;
                     const vt = this._serializePGNVariationChain(
@@ -15131,16 +15402,16 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                     `${num} \u624b\u76ee\u4e8c\u6b69\u76ee ${this.kifSquareToken(node.to)}${pieceName}${promoSuffix} \uff08\u2190${this.kifSquareToken(node.midpoint)}\uff09`,
                 );
             } else if (isReturnToOrigin) {
-                // じっと: pass move, rendered as a fake double move
-                const prevBoardStr = sfenBefore
-                    ? sfenBefore.split(" ")[0]
-                    : "";
+                // じ  �と: pass move, rendered as a fake double move
+                const prevBoardStr = sfenBefore ? sfenBefore.split(" ")[0] : "";
                 let boardBefore = null;
                 try {
                     boardBefore = prevBoardStr
                         ? this.parseSFENBoard(prevBoardStr)
                         : null;
-                } catch (_) { /* fall through */ }
+                } catch (_) {
+                    /* fall through */
+                }
                 const fakeMid = this.findPassMidpoint(node.from, boardBefore);
                 const midSq = fakeMid || node.from;
                 lines.push(
@@ -15174,7 +15445,13 @@ impossible to fulfill for either player, the game is considered a draw.</p>
         // child of preceding lower-ply block; equal or lower ply → sibling).
         // Within the same ply, blocks are emitted in "game order" (oldest
         // branch first), satisfying rule 5c.
-        _collectKIFVarBlocks(startNode, sfenBefore, startPly, numWidth, blocks) {
+        _collectKIFVarBlocks(
+            startNode,
+            sfenBefore,
+            startPly,
+            numWidth,
+            blocks,
+        ) {
             // ── Step 1: walk this variation's chain and render its move lines.
             //    Simultaneously, collect deferred calls for sub-variations.
             const moveLines = [];
@@ -15187,7 +15464,13 @@ impossible to fulfill for either player, the game is considered a draw.</p>
             let sfenCur = sfenBefore;
 
             while (cur) {
-                this._appendKIFNodeLines(cur, sfenCur, ply, numWidth, moveLines);
+                this._appendKIFNodeLines(
+                    cur,
+                    sfenCur,
+                    ply,
+                    numWidth,
+                    moveLines,
+                );
 
                 const sfenAfterCur = cur.resultingSFEN || "";
 
@@ -15195,11 +15478,7 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                 // children of prevNode that are not the main continuation and
                 // not KIF branches.  Oldest first (k from length-1 down to 0).
                 if (prevNode !== null) {
-                    for (
-                        let k = prevNode.children.length - 1;
-                        k >= 0;
-                        k--
-                    ) {
+                    for (let k = prevNode.children.length - 1; k >= 0; k--) {
                         if (k === prevContIdx) continue;
                         if (prevNode.children[k].isKIFBranch) continue;
                         subVarQueue.push({
@@ -15229,21 +15508,14 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                         break;
                     }
                 }
-                cur =
-                    prevContIdx >= 0
-                        ? cur.children[prevContIdx]
-                        : null;
+                cur = prevContIdx >= 0 ? cur.children[prevContIdx] : null;
                 ply++;
             }
 
             // Post-loop: KIF branches of last node (at ply = current ply),
             // then PGN non-main siblings of last node.
             if (prevNode !== null) {
-                for (
-                    let k = prevNode.children.length - 1;
-                    k >= 0;
-                    k--
-                ) {
+                for (let k = prevNode.children.length - 1; k >= 0; k--) {
                     if (!prevNode.children[k].isKIFBranch) continue;
                     subVarQueue.push({
                         node: prevNode.children[k],
@@ -15251,11 +15523,7 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                         ply,
                     });
                 }
-                for (
-                    let k = prevNode.children.length - 1;
-                    k >= 0;
-                    k--
-                ) {
+                for (let k = prevNode.children.length - 1; k >= 0; k--) {
                     if (k === prevContIdx) continue;
                     if (prevNode.children[k].isKIFBranch) continue;
                     subVarQueue.push({
@@ -15293,11 +15561,7 @@ impossible to fulfill for either player, the game is considered a draw.</p>
             // Walk the main line right-to-left (highest ply first), so that
             // top-level variations appear in descending order of their
             // branching move number (rule 5a).
-            for (
-                let i = this.moveHistory.length - 1;
-                i >= 0;
-                i--
-            ) {
+            for (let i = this.moveHistory.length - 1; i >= 0; i--) {
                 const node = this.moveHistory[i];
                 const parent =
                     i === 0 ? this.moveTree : this.moveHistory[i - 1];
@@ -15310,11 +15574,7 @@ impossible to fulfill for either player, the game is considered a draw.</p>
 
                 // PGN siblings: alternatives to `node` at ply `plyNum`.
                 // Iterate oldest-first (k from length-1 to 0).
-                for (
-                    let k = parent.children.length - 1;
-                    k >= 0;
-                    k--
-                ) {
+                for (let k = parent.children.length - 1; k >= 0; k--) {
                     if (parent.children[k] === node) continue;
                     if (parent.children[k].isKIFBranch) continue;
                     this._collectKIFVarBlocks(
@@ -15344,9 +15604,7 @@ impossible to fulfill for either player, the game is considered a draw.</p>
             // Each block is separated from the preceding content by a blank
             // line.  The leading "\n" ensures there is a blank line after the
             // last main-line move even when the main move list ends without one.
-            return blocks
-                .map((b) => "\n\n" + b.join("\n"))
-                .join("");
+            return blocks.map((b) => "\n\n" + b.join("\n")).join("");
         }
 
         // ── KIF variation import helpers ─────────────────────────────────────
@@ -15433,10 +15691,7 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                     usi =
                         marker === "pass"
                             ? origFrom + origFrom
-                            : origFrom +
-                              midSq +
-                              destSq +
-                              (promoted ? "+" : "");
+                            : origFrom + midSq + destSq + (promoted ? "+" : "");
                 } else {
                     usi = fromSq + destSq + (promoted ? "+" : "");
                 }
@@ -15606,9 +15861,7 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                 idx++; // consume opening border
 
                 const invDiagram = {};
-                for (const [type, kanji] of Object.entries(
-                    KIF_DIAGRAM_KANJI,
-                )) {
+                for (const [type, kanji] of Object.entries(KIF_DIAGRAM_KANJI)) {
                     invDiagram[kanji] = type;
                 }
 
@@ -15651,10 +15904,7 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                     }
                 }
                 // consume closing border, if present
-                if (
-                    idx < lines.length &&
-                    /^\+-+\+$/.test(lines[idx].trim())
-                )
+                if (idx < lines.length && /^\+-+\+$/.test(lines[idx].trim()))
                     idx++;
 
                 boardPart = this.sfenBoardPartFromArray(board);
@@ -15668,7 +15918,11 @@ impossible to fulfill for either player, the game is considered a draw.</p>
             let startingPlayer = "b";
             while (idx < lines.length) {
                 const t = lines[idx].trim();
-                if (t === "" || t.startsWith("\u5148\u624b") || t.startsWith("\u624b\u6570")) {
+                if (
+                    t === "" ||
+                    t.startsWith("\u5148\u624b") ||
+                    t.startsWith("\u624b\u6570")
+                ) {
                     idx++;
                     continue;
                 }
@@ -15702,9 +15956,7 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                 if (firstCommentLine) {
                     const csMatch = m[1].match(COUNTERSTRIKE_RE);
                     if (csMatch) {
-                        counterStrikeSquare = this.kifTokenToSquare(
-                            csMatch[1],
-                        );
+                        counterStrikeSquare = this.kifTokenToSquare(csMatch[1]);
                         idx++;
                         firstCommentLine = false;
                         continue;
@@ -15721,7 +15973,8 @@ impossible to fulfill for either player, the game is considered a draw.</p>
             // strict error-on-unknown-line semantics for the main line that the
             // shared helper doesn't provide.  Run the original strict loop,
             // extended to break (rather than error) on 変化：lines.
-            const NUM_RE = /^\s*(\d+)\s*\u624b\u76ee(\u4e00\u6b69\u76ee|\u4e8c\u6b69\u76ee)?\s*/;
+            const NUM_RE =
+                /^\s*(\d+)\s*\u624b\u76ee(\u4e00\u6b69\u76ee|\u4e8c\u6b69\u76ee)?\s*/;
             const FROM_RE =
                 /\uff08\u2190(\d{1,2}(?:\u5341\u4e00|\u5341\u4e8c|[\u4e00\u4e8c\u4e09\u56db\u4e94\u516d\u4e03\u516b\u4e5d\u5341]))\uff09\s*$/;
             const DEST_RE =
@@ -15767,7 +16020,9 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                 let marker = null;
                 if (rest.includes("\uff08\u5c45\u98df\u3044\uff09")) {
                     marker = "istick";
-                    rest = rest.replace("\uff08\u5c45\u98df\u3044\uff09", "").trim();
+                    rest = rest
+                        .replace("\uff08\u5c45\u98df\u3044\uff09", "")
+                        .trim();
                 } else if (/\(\u3058\u3063\u3068\)/.test(rest)) {
                     marker = "pass";
                     rest = rest.replace(/\(\u3058\u3063\u3068\)/, "").trim();
@@ -15836,16 +16091,26 @@ impossible to fulfill for either player, the game is considered a draw.</p>
             const VAR_HDR_RE = /^\u5909\u5316\uff1a(\d+)\u624b\s*$/;
 
             while (idx < lines.length) {
-                if (isBlank(lines[idx])) { idx++; continue; }
+                if (isBlank(lines[idx])) {
+                    idx++;
+                    continue;
+                }
                 const hdrMatch = lines[idx].trim().match(VAR_HDR_RE);
-                if (!hdrMatch) { idx++; continue; }
+                if (!hdrMatch) {
+                    idx++;
+                    continue;
+                }
 
                 const startPly = parseInt(hdrMatch[1], 10);
                 idx++; // consume header line
 
                 const seg = this._parseKIFMoveSegment(lines, idx);
                 idx = seg.nextIdx;
-                varSections.push({ startPly, entries: seg.entries, children: [] });
+                varSections.push({
+                    startPly,
+                    entries: seg.entries,
+                    children: [],
+                });
             }
 
             // ── Build variation tree via stack (rule 5b) ─────────────────────
@@ -15879,7 +16144,9 @@ impossible to fulfill for either player, the game is considered a draw.</p>
             try {
                 const tempBoard = this.parseSFENBoard(boardPart);
                 boardStates.push(
-                    tempBoard.map((row) => row.map((c) => (c ? { ...c } : null))),
+                    tempBoard.map((row) =>
+                        row.map((c) => (c ? { ...c } : null)),
+                    ),
                 );
                 for (const e of entries) {
                     this.applyUSIToBoard(e.usi, tempBoard);
@@ -15894,7 +16161,7 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                 boardStates.length = 0;
             }
 
-            // ── Convert root variations to CSL (…) tokens ────────────────────
+            //   �─ Convert root variations to CSL (  �) tokens ────on�───────────────
             // Map: ply (1-based) → array of CSL variation strings to insert
             //   AFTER the main-line move at that ply.
             const varAtPly = {}; // plyNum -> string[]
@@ -15917,7 +16184,9 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                         varAtPly[N].push("(" + parts.join(" ") + ")");
                     }
                 } catch (err) {
-                    console.warn(`KIF import: skipped variation at ply ${N} — ${err}`);
+                    console.warn(
+                        `KIF import: skipped variation at ply ${N} — ${err}`,
+                    );
                 }
             }
 
@@ -16382,12 +16651,11 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                         const varBoard = boardBeforeLastMove.map((row) =>
                             row.map((c) => (c ? { ...c } : null)),
                         );
-                        const subResult =
-                            this._convertPGNVariationToCSLParts(
-                                innerToks,
-                                varBoard,
-                                colorBeforeLastMove,
-                            );
+                        const subResult = this._convertPGNVariationToCSLParts(
+                            innerToks,
+                            varBoard,
+                            colorBeforeLastMove,
+                        );
                         if (subResult.error) {
                             console.warn(
                                 "PGN import: skipped variation —",
@@ -16452,21 +16720,18 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                         const varBoard = boardBeforeLastMove.map((row) =>
                             row.map((c) => (c ? { ...c } : null)),
                         );
-                        const subResult =
-                            this._convertPGNVariationToCSLParts(
-                                innerToks,
-                                varBoard,
-                                colorBeforeLastMove,
-                            );
+                        const subResult = this._convertPGNVariationToCSLParts(
+                            innerToks,
+                            varBoard,
+                            colorBeforeLastMove,
+                        );
                         if (subResult.error) {
                             console.warn(
                                 "PGN import: skipped sub-variation —",
                                 subResult.error,
                             );
                         } else if (subResult.parts.length > 0) {
-                            parts.push(
-                                "(" + subResult.parts.join(" ") + ")",
-                            );
+                            parts.push("(" + subResult.parts.join(" ") + ")");
                         }
                     }
                 }
@@ -16716,6 +16981,74 @@ impossible to fulfill for either player, the game is considered a draw.</p>
             return { current, total };
         }
 
+        goToSiblingVariation(direction) {
+            // direction: "prev" = ^ (up), "next" = v (down).
+            // Navigates to an adjacent sibling child of the same parent node.
+
+            // Determine the node currently being viewed.
+            let currentNode;
+            if (this._viewedNode !== null) {
+                currentNode = this._viewedNode;
+            } else if (this.currentNavigationIndex === null) {
+                // At the live leaf.
+                currentNode = this.getLiveNode();
+            } else if (this.currentNavigationIndex >= 0) {
+                currentNode = this.moveHistory[this.currentNavigationIndex];
+            } else {
+                return; // At start position — no sibling to navigate to.
+            }
+
+            if (!currentNode || currentNode === this.moveTree) return;
+
+            const parent = currentNode.parent;
+            if (!parent || !Array.isArray(parent.children)) return;
+
+            const siblings = parent.children;
+            const idx = siblings.indexOf(currentNode);
+            if (idx === -1) return;
+
+            // children[] is newest-first (unshift), so "prev" (older/up) = idx+1,
+            // "next" (newer/down) = idx-1 — matching the oldest-first display order.
+            const targetIdx = direction === "prev" ? idx + 1 : idx - 1;
+            if (targetIdx < 0 || targetIdx >= siblings.length) return;
+
+            const target = siblings[targetIdx];
+
+            // Use main-line navigation if the sibling is on the main line.
+            const mainLineIdx = this.moveHistory.indexOf(target);
+            if (mainLineIdx >= 0) {
+                this.navigateToPosition(mainLineIdx);
+            } else {
+                this.navigateToNode(target);
+            }
+        }
+
+        hasSiblingVariation(direction) {
+            let currentNode;
+            if (this._viewedNode !== null) {
+                currentNode = this._viewedNode;
+            } else if (this.currentNavigationIndex === null) {
+                currentNode = this.getLiveNode();
+            } else if (this.currentNavigationIndex >= 0) {
+                currentNode = this.moveHistory[this.currentNavigationIndex];
+            } else {
+                return false;
+            }
+
+            if (!currentNode || currentNode === this.moveTree) return false;
+
+            const parent = currentNode.parent;
+            if (!parent || !Array.isArray(parent.children)) return false;
+
+            const siblings = parent.children;
+            const idx = siblings.indexOf(currentNode);
+            if (idx === -1) return false;
+
+            // Same direction convention as goToSiblingVariation.
+            const targetIdx = direction === "prev" ? idx + 1 : idx - 1;
+            return targetIdx >= 0 && targetIdx < siblings.length;
+        }
+
         goBackOneMove() {
             // Off-branch: navigate within the variation tree.
             if (this._viewedNode !== null) {
@@ -16860,10 +17193,14 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                     this.goToStart();
                     break;
                 case "prev":
-                    this.goBackOneMove();
+                    if (this._variationsNavMode)
+                        this.goToSiblingVariation("prev");
+                    else this.goBackOneMove();
                     break;
                 case "next":
-                    this.goForwardOneMove();
+                    if (this._variationsNavMode)
+                        this.goToSiblingVariation("next");
+                    else this.goForwardOneMove();
                     break;
                 case "end":
                     this.goToCurrent();
@@ -16883,10 +17220,14 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                             canContinue = this.canNavigateBack();
                             break;
                         case "prev":
-                            canContinue = this.canNavigateBack();
+                            canContinue = this._variationsNavMode
+                                ? this.hasSiblingVariation("prev")
+                                : this.canNavigateBack();
                             break;
                         case "next":
-                            canContinue = this.canNavigateForward();
+                            canContinue = this._variationsNavMode
+                                ? this.hasSiblingVariation("next")
+                                : this.canNavigateForward();
                             break;
                         case "end":
                             canContinue = this.canNavigateForward();
@@ -16904,10 +17245,14 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                             this.goToStart();
                             break;
                         case "prev":
-                            this.goBackOneMove();
+                            if (this._variationsNavMode)
+                                this.goToSiblingVariation("prev");
+                            else this.goBackOneMove();
                             break;
                         case "next":
-                            this.goForwardOneMove();
+                            if (this._variationsNavMode)
+                                this.goToSiblingVariation("next");
+                            else this.goForwardOneMove();
                             break;
                         case "end":
                             this.goToCurrent();
@@ -17200,7 +17545,12 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                 this.startingSFEN = this.sanitizeSFEN(standardSFEN);
                 this.loadSFEN(standardSFEN);
                 this.moveHistory = [];
-                this.moveTree = { id: "root", children: [], parent: null, ply: 0 };
+                this.moveTree = {
+                    id: "root",
+                    children: [],
+                    parent: null,
+                    ply: 0,
+                };
                 this.lastMove = null;
                 this.lastLionCapture = null;
                 this.startingLionCapture = null;
@@ -17979,7 +18329,8 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                     // Sibling variation branches hanging off the clip-point node
                     // are children of newMoveHistory's last element, not of
                     // removedNodes[0], so detachSubtree leaves them untouched.
-                    if (removedNodes.length > 0) this.detachSubtree(removedNodes[0]);
+                    if (removedNodes.length > 0)
+                        this.detachSubtree(removedNodes[0]);
 
                     // Promote the nearest surviving child of the clip-point node
                     // (if any) to become the new main line.  New moves are
@@ -17990,9 +18341,7 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                             ? newMoveHistory[newMoveHistory.length - 1]
                             : this.moveTree;
                     let _promoteCur =
-                        _pivot.children.length > 0
-                            ? _pivot.children[0]
-                            : null;
+                        _pivot.children.length > 0 ? _pivot.children[0] : null;
                     while (_promoteCur) {
                         _promoteCur.isBranch = false;
                         newMoveHistory.push(_promoteCur);
@@ -18026,7 +18375,8 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                             if (this.startingSFEN) {
                                 this.applySFENPosition(this.startingSFEN);
                                 const _sp = this.startingSFEN.split(" ");
-                                if (_sp.length >= 2) this.setCurrentPlayer(_sp[1]);
+                                if (_sp.length >= 2)
+                                    this.setCurrentPlayer(_sp[1]);
                             }
                         } else {
                             const _clipNode = this.moveHistory[_clipIdx];
@@ -18037,7 +18387,8 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                             if (_clipNode?.resultingSFEN) {
                                 this.applySFENPosition(_clipNode.resultingSFEN);
                                 const _sp = _clipNode.resultingSFEN.split(" ");
-                                if (_sp.length >= 2) this.setCurrentPlayer(_sp[1]);
+                                if (_sp.length >= 2)
+                                    this.setCurrentPlayer(_sp[1]);
                             }
                         }
                     } else {
@@ -18096,7 +18447,10 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                         : this.moveTree;
                 if (!lastMove.isBranch) {
                     this.detachSubtree(lastMove);
-                    if (_pivot.children.length > 0 && _pivot.children[0].isBranch) {
+                    if (
+                        _pivot.children.length > 0 &&
+                        _pivot.children[0].isBranch
+                    ) {
                         _pivot.children[0].isBranch = false;
                     }
                 }
@@ -18195,7 +18549,8 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                     const removedNodes = newMoveHistory.splice(targetLength);
 
                     // Detach all removed nodes (and their branches) from the tree.
-                    if (removedNodes.length > 0) this.detachSubtree(removedNodes[0]);
+                    if (removedNodes.length > 0)
+                        this.detachSubtree(removedNodes[0]);
 
                     this.gameStateManager.updateGameState({
                         moveHistory: newMoveHistory,
@@ -18338,7 +18693,10 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                         : this.moveTree;
                 if (!lastMove.isBranch) {
                     this.detachSubtree(lastMove);
-                    if (_pivot.children.length > 0 && _pivot.children[0].isBranch) {
+                    if (
+                        _pivot.children.length > 0 &&
+                        _pivot.children[0].isBranch
+                    ) {
                         _pivot.children[0].isBranch = false;
                     }
                 }
@@ -18803,8 +19161,7 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                 this.moveHistory.length > 0
             ) {
                 // At live position — highlight the last move
-                targetNode =
-                    this.moveHistory[this.moveHistory.length - 1];
+                targetNode = this.moveHistory[this.moveHistory.length - 1];
             }
 
             if (targetNode) {
@@ -19466,7 +19823,6 @@ impossible to fulfill for either player, the game is considered a draw.</p>
             this.isImporting = false;
             this.isBatchImporting = false;
 
-
             // Set last move highlighting from the most recent main-line move
             if (this.moveHistory.length > 0) {
                 const lastMoveInHistory =
@@ -19553,12 +19909,18 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                 if (!this.executeUSIMove(moveData.usi)) {
                     const _failPiece = (() => {
                         try {
-                            const c = this.parseUSICoordinates(moveData.usi.replace(/\+$/,''));
-                            if (!c) return 'no-coords';
-                            const [r,f] = this.parseSquareId(c.fromSquare);
+                            const c = this.parseUSICoordinates(
+                                moveData.usi.replace(/\+$/, ""),
+                            );
+                            if (!c) return "no-coords";
+                            const [r, f] = this.parseSquareId(c.fromSquare);
                             const p = this.board[r]?.[f];
-                            return p ? `${p.color}${p.type}@${c.fromSquare}→${c.toSquare}` : `empty@${c.fromSquare}`;
-                        } catch { return 'err'; }
+                            return p
+                                ? `${p.color}${p.type}@${c.fromSquare}→${c.toSquare}`
+                                : `empty@${c.fromSquare}`;
+                        } catch {
+                            return "err";
+                        }
                     })();
                     console.warn(
                         `CSL import: stopping at invalid move "${moveData.usi}" player=${this.currentPlayer} piece=${_failPiece} isImporting=${this.isImporting} histLen=${this.moveHistory.length}`,
@@ -19608,11 +19970,14 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                                     );
                                     const _vp = this.board[_vr]?.[_vf];
                                     if (_vp) {
-                                        const _newPlayer = newSFEN.split(" ")[1];
+                                        const _newPlayer =
+                                            newSFEN.split(" ")[1];
                                         _isKIF = _vp.color === _newPlayer;
                                     }
                                 }
-                            } catch { /* default PGN */ }
+                            } catch {
+                                /* default PGN */
+                            }
                         }
                         const _varBranch = _isKIF ? newNode : parentNode;
                         const _varBranchSFEN = _isKIF ? newSFEN : parentSFEN;
@@ -19663,7 +20028,9 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                             if (!_varBranch.rawVariations)
                                 _varBranch.rawVariations = [];
                             _varBranch.rawVariations.push(
-                                _isKIF ? { moves: varMoves, isKIF: true } : varMoves,
+                                _isKIF
+                                    ? { moves: varMoves, isKIF: true }
+                                    : varMoves,
                             );
                         }
 
@@ -20689,7 +21056,6 @@ impossible to fulfill for either player, the game is considered a draw.</p>
             // updateBoard already applied the correct promotion highlights) but kept
             // as a safety net in case any intermediate state needs reapplying.
             this.updateSquareHighlights();
-
         }
 
         showPromotionPreviews(from, to, piece, isReversePromotion) {
@@ -21471,7 +21837,9 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                 nextPlayer = sfenParts.length >= 2 ? sfenParts[1] : "b";
             }
 
-            this.gameStateManager.updateGameState({ currentPlayer: nextPlayer });
+            this.gameStateManager.updateGameState({
+                currentPlayer: nextPlayer,
+            });
 
             console.log("Turn updated:", {
                 from: previousPlayer,
@@ -21506,7 +21874,9 @@ impossible to fulfill for either player, the game is considered a draw.</p>
         getPositionDisplayText() {
             // Off-branch: show position within the current variation branch.
             if (this._viewedNode) {
-                const { current, total } = this._branchPosition(this._viewedNode);
+                const { current, total } = this._branchPosition(
+                    this._viewedNode,
+                );
                 return `<span translate="yes">Position</span> ${current} / ${total}`;
             }
 
