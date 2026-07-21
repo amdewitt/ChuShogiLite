@@ -18200,6 +18200,7 @@ impossible to fulfill for either player, the game is considered a draw.</p>
          * then navigates to the newly-promoted node.
          */
         forceVariation() {
+            if (this.config.appletMode === "viewOnly" || this.config.appletMode === "puzzle") return;
             const node = this._getViewedNode();
             if (!node || node === this.moveTree) return;
             if (this.moveHistory.indexOf(node) < 0) return; // must be on main line
@@ -18245,6 +18246,7 @@ impossible to fulfill for either player, the game is considered a draw.</p>
          * Old main-line nodes at each junction become variations.
          */
         makeMainLine() {
+            if (this.config.appletMode === "viewOnly" || this.config.appletMode === "puzzle") return;
             const node = this._getViewedNode();
             if (!node || node === this.moveTree) return;
             if (this.moveHistory.indexOf(node) >= 0) return; // already on main line
@@ -18273,6 +18275,7 @@ impossible to fulfill for either player, the game is considered a draw.</p>
          * without affecting the global main line.
          */
         promoteVariation() {
+            if (this.config.appletMode === "viewOnly" || this.config.appletMode === "puzzle") return;
             const node = this._getViewedNode();
             if (!node || node === this.moveTree) return;
             if (this.moveHistory.indexOf(node) >= 0) return; // on main line
@@ -18304,6 +18307,18 @@ impossible to fulfill for either player, the game is considered a draw.</p>
             const forceBtn = panel.querySelector("[data-var-force]");
             const makeMainBtn = panel.querySelector("[data-var-make-main]");
             const promoteBtn = panel.querySelector("[data-var-promote]");
+
+            // Never show variation controls in viewOnly or puzzle mode.
+            if (
+                this.config.appletMode === "viewOnly" ||
+                this.config.appletMode === "puzzle"
+            ) {
+                if (forceBtn) forceBtn.hidden = true;
+                if (makeMainBtn) makeMainBtn.hidden = true;
+                if (promoteBtn) promoteBtn.hidden = true;
+                panel.hidden = true;
+                return;
+            }
 
             const node = this._getViewedNode();
             let showForce = false,
