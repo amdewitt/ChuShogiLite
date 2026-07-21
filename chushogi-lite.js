@@ -6065,15 +6065,19 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                         if (squareId === this.promotionAlternateSquare) {
                             shouldHaveHighlights.push("promotion-source");
                         }
-                        // Origin square gets selection highlight (for deselection) but NOT the \u00d7 symbol
-                        // Only apply after destination and deferral squares are set to avoid premature highlighting
+                        // Origin square gets selection highlight (for deselection) but NOT the \u00d7 symbol.
+                        // Only apply after destination and deferral squares are set to avoid premature highlighting.
+                        // Skip for Lion double-move promotions: promotion-origin-highlight uses the same
+                        // --highlight-selected-background (yellow) as lion-double-origin, so leaving the origin
+                        // yellow makes it visually indistinguishable from the double-move state that just ended.
                         if (
                             this.promotionMove &&
                             squareId === this.promotionMove.from &&
                             this.promotionDestinationSquare !== null &&
                             this.promotionDestinationSquare !== undefined &&
                             this.promotionDeferralSquare !== null &&
-                            this.promotionDeferralSquare !== undefined
+                            this.promotionDeferralSquare !== undefined &&
+                            !this.promotionMove.isDoubleMove
                         ) {
                             const isCoveredByDestination =
                                 squareId === this.promotionDestinationSquare;
@@ -6257,8 +6261,14 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                     }
                 }
 
-                // Always highlight the origin square during promotion prompts
-                if (this.promotionMove && this.promotionMove.from) {
+                // Highlight the origin square during promotion prompts, except for Lion double-move
+                // promotions where promotion-origin-highlight (yellow) is visually identical to
+                // lion-double-origin and makes the board look like the double-move is still active.
+                if (
+                    this.promotionMove &&
+                    this.promotionMove.from &&
+                    !this.promotionMove.isDoubleMove
+                ) {
                     const originElement = this.container.querySelector(
                         `[data-square="${this.promotionMove.from}"]`,
                     );
@@ -9963,8 +9973,18 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                 this.moveExecutor.executeMove(moveData);
             }
 
-            // Clear double move state
-            this.deselectSquare();
+            // Clear double move state, but only if a promotion prompt wasn't triggered.
+            // When showPromotionPrompt fires inside moveExecutor.executeMove it already:
+            //   • clears doubleMoveMidpoint / doubleMoveOrigin / doubleMoveDestinations
+            //   • calls clearSquareHighlights() + updateBoard() + updateSquareHighlights()
+            //   • sets promotionPromptActive = true
+            // Calling deselectSquare() on top of that schedules an extra updateBoard() whose
+            // inner updateSquareHighlights() runs while promotionPromptActive is still false
+            // (the board is regenerated before the flag is read), which can re-apply
+            // valid-illegal-move / moveable-piece highlights that then linger on screen.
+            if (!this.promotionPromptActive) {
+                this.deselectSquare();
+            }
         }
 
         // Execute a move from one square to another
@@ -20637,6 +20657,20 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                 ? this.calculatePromotionAlternateSquare(to)
                 : null;
 
+            // Set promotionPromptActive BEFORE updateBoard so the inner
+            // updateSquareHighlights() call inside updateBoard already sees the
+            // promotion state. Without this, it runs with promotionPromptActive=false
+            // and allowIllegalMoves=true, which adds moveable-piece (amber) to every
+            // piece square — including the still-unremoved captured pawn at the midpoint.
+            // The outer updateSquareHighlights() then removes moveable-piece, but the
+            // CSS background-color transition fires (amber → transparent, 0.2s) on every
+            // piece square, making the midpoint and other occupied squares look like
+            // stale double-move highlights until the fade completes.
+            // promotionDestinationSquare / promotionDeferralSquare are already set above,
+            // so the inner updateSquareHighlights() can apply the correct promotion CSS
+            // directly with no amber intermediate state.
+            this.promotionPromptActive = true;
+
             // Clear all highlights first, then preserve last move highlighting
             this.clearSquareHighlights();
 
@@ -20657,10 +20691,11 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                 this.showPromotionPreviews(from, to, piece, isReversePromotion);
             }, 0);
 
-            this.promotionPromptActive = true;
-
-            // Clear legal move highlights immediately when promotion prompt becomes active
+            // Outer updateSquareHighlights is now redundant (the inner call inside
+            // updateBoard already applied the correct promotion highlights) but kept
+            // as a safety net in case any intermediate state needs reapplying.
             this.updateSquareHighlights();
+
         }
 
         showPromotionPreviews(from, to, piece, isReversePromotion) {
@@ -20814,6 +20849,12 @@ impossible to fulfill for either player, the game is considered a draw.</p>
             this.promotionAlternateSquare =
                 this.calculatePromotionDeferralSquare(to); // For deselection
 
+            // Set promotionPromptActive before updateBoard for the same reason as in
+            // showPromotionPrompt: prevents the inner updateSquareHighlights() from
+            // applying moveable-piece (amber) to piece squares and triggering a
+            // spurious amber → transparent CSS transition that looks like stale highlights.
+            this.promotionPromptActive = true;
+
             // Clear all highlights first
             this.clearSquareHighlights();
 
@@ -20830,7 +20871,6 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                 this.showLionReturnPreviews(from, to, piece);
             }, 0);
 
-            this.promotionPromptActive = true;
             this.updateSquareHighlights();
         }
 
@@ -21011,15 +21051,33 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                 }, 0);
             }
 
-            // Clear highlights and restore proper highlighting
-            this.updateSquareHighlights();
-
-            // Clear promotion prompt state
+            // Clear promotion prompt state BEFORE updating highlights so the
+            // highlight update sees the correct (non-promotion) state.
+            // Ordering fix: previously state was cleared AFTER updateSquareHighlights(),
+            // which caused promotion-choice/promotion-source/promotion-origin-highlight
+            // classes to be re-added then linger until the next board update.
             this.promotionPromptActive = false;
             this.promotionDestinationSquare = null;
             this.promotionDeferralSquare = null;
             this.promotionAlternateSquare = null;
             this.promotionMove = null;
+
+            // Remove classes added by showPromotionPreviews (async via setTimeout).
+            // These are not in allHighlightClasses so clearAll() and
+            // updateSquareHighlights() never touch them; they must be removed explicitly.
+            [
+                "promotion-deferral",
+                "promotion-destination",
+                "promotion-alternate",
+                "promotion-origin",
+            ].forEach((cls) => {
+                this.container
+                    .querySelectorAll("." + cls)
+                    .forEach((el) => el.classList.remove(cls));
+            });
+
+            // Restore proper highlighting with correct (non-promotion) state
+            this.updateSquareHighlights();
         }
 
         executePromotionMove(shouldPromote) {
