@@ -6067,17 +6067,15 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                         }
                         // Origin square gets selection highlight (for deselection) but NOT the \u00d7 symbol.
                         // Only apply after destination and deferral squares are set to avoid premature highlighting.
-                        // Skip for Lion double-move promotions: promotion-origin-highlight uses the same
-                        // --highlight-selected-background (yellow) as lion-double-origin, so leaving the origin
-                        // yellow makes it visually indistinguishable from the double-move state that just ended.
+                        // promotion-origin-highlight is visually distinguished from lion-double-origin via an
+                        // amber inset ring (see CSS), so it is safe to show for double-move promotions too.
                         if (
                             this.promotionMove &&
                             squareId === this.promotionMove.from &&
                             this.promotionDestinationSquare !== null &&
                             this.promotionDestinationSquare !== undefined &&
                             this.promotionDeferralSquare !== null &&
-                            this.promotionDeferralSquare !== undefined &&
-                            !this.promotionMove.isDoubleMove
+                            this.promotionDeferralSquare !== undefined
                         ) {
                             const isCoveredByDestination =
                                 squareId === this.promotionDestinationSquare;
@@ -6261,14 +6259,10 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                     }
                 }
 
-                // Highlight the origin square during promotion prompts, except for Lion double-move
-                // promotions where promotion-origin-highlight (yellow) is visually identical to
-                // lion-double-origin and makes the board look like the double-move is still active.
-                if (
-                    this.promotionMove &&
-                    this.promotionMove.from &&
-                    !this.promotionMove.isDoubleMove
-                ) {
+                // Highlight the origin square during promotion prompts.
+                // promotion-origin-highlight is visually distinguished from lion-double-origin via an
+                // amber inset ring (see CSS), so it is safe to show for double-move promotions too.
+                if (this.promotionMove && this.promotionMove.from) {
                     const originElement = this.container.querySelector(
                         `[data-square="${this.promotionMove.from}"]`,
                     );
