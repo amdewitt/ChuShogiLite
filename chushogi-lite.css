@@ -1365,6 +1365,41 @@
   padding: 12px !important;
 }
 
+/* Variation manipulation controls — appear below the move list */
+.chushogi-variation-controls {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 4px !important;
+  padding: 4px 0 2px !important;
+}
+
+.chushogi-var-btn {
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  padding: 3px 10px !important;
+  height: auto !important;
+  white-space: nowrap !important;
+  border: none !important;
+  border-radius: 4px !important;
+  color: #fff !important;
+  transition: filter 0.15s !important;
+}
+
+/* Force Variation — amber/orange */
+[data-var-force]        { background: hsl(32,  95%, 48%) !important; }
+[data-var-force]:hover  { background: hsl(32,  95%, 56%) !important; }
+[data-var-force]:active { background: hsl(32,  95%, 40%) !important; }
+
+/* Make Main Line — blue */
+[data-var-make-main]        { background: hsl(207, 90%, 46%) !important; }
+[data-var-make-main]:hover  { background: hsl(207, 90%, 54%) !important; }
+[data-var-make-main]:active { background: hsl(207, 90%, 38%) !important; }
+
+/* Promote Variation — teal */
+[data-var-promote]        { background: hsl(174, 72%, 36%) !important; }
+[data-var-promote]:hover  { background: hsl(174, 72%, 44%) !important; }
+[data-var-promote]:active { background: hsl(174, 72%, 28%) !important; }
+
 /* Block-mode tree: let content declare its true width so the horizontal
    scrollbar activates when nesting is deep.  Scoped so it doesn't affect
    the inline notation view. */

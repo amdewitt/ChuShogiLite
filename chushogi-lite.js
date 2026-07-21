@@ -2238,6 +2238,11 @@
                   )
                   .join("")}
             </div>
+            <div class="chushogi-variation-controls" data-variation-controls hidden>
+              <button class="chushogi-btn chushogi-var-btn" data-var-force onclick="this.closest('.chushogi-container').chuShogiInstance.forceVariation()" title="Swap this main-line move with the nearest sibling variation">\u21c4 Force Variation</button>
+              <button class="chushogi-btn chushogi-var-btn" data-var-make-main onclick="this.closest('.chushogi-container').chuShogiInstance.makeMainLine()" title="Make this variation the main line">\u2b06 Make Main Line</button>
+              <button class="chushogi-btn chushogi-var-btn" data-var-promote onclick="this.closest('.chushogi-container').chuShogiInstance.promoteVariation()" title="Promote this variation within its sub-tree">\u2191 Promote Variation</button>
+            </div>
           </div>
         </div>
         <div class="chushogi-info-subpanel ${this.currentInfoSubTab === "piece-info" ? "active" : ""}" data-info-subpanel="piece-info">
@@ -18143,6 +18148,206 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                 : this.moveTree;
         }
 
+        /**
+         * Rebuild this.moveHistory by walking the main continuation (isBranch=false
+         * children) from the root.  Call after mutating isBranch flags so that the
+         * flat main-line array reflects the new tree state.
+         */
+        _rebuildMoveHistory() {
+            this.moveHistory = [];
+            let cur = this._mainContinuationOf(this.moveTree);
+            while (cur) {
+                this.moveHistory.push(cur);
+                cur = this._mainContinuationOf(cur);
+            }
+        }
+
+        /**
+         * Return the node the user is currently viewing / has selected, or null
+         * if they are at the Starting Position.
+         */
+        _getViewedNode() {
+            if (this._viewedNode !== null) return this._viewedNode;
+            if (this.currentNavigationIndex === -1) return null; // at start
+            if (this.currentNavigationIndex === null) return this.getLiveNode();
+            if (this.currentNavigationIndex >= 0)
+                return this.moveHistory[this.currentNavigationIndex] ?? null;
+            return null;
+        }
+
+        /**
+         * Navigate to a node that is known to be on the main line after a tree
+         * mutation.  Shared by forceVariation() and makeMainLine().
+         */
+        _navigateToMainLineNode(node) {
+            this._viewedNode = null;
+            const idx = this.moveHistory.indexOf(node);
+            if (idx >= 0) {
+                this.currentNavigationIndex = idx;
+                this.currentNode = node;
+                this.isNavigating = true;
+                if (node.resultingSFEN) {
+                    this.applySFENPosition(node.resultingSFEN);
+                    const parts = node.resultingSFEN.split(" ");
+                    if (parts.length >= 2) this.setCurrentPlayer(parts[1]);
+                }
+            }
+        }
+
+        /**
+         * Force Variation — only for main-line nodes with sibling variations.
+         * Swaps the selected main-line move with the nearest sibling variation,
+         * then navigates to the newly-promoted node.
+         */
+        forceVariation() {
+            const node = this._getViewedNode();
+            if (!node || node === this.moveTree) return;
+            if (this.moveHistory.indexOf(node) < 0) return; // must be on main line
+
+            const parent = node.parent;
+            if (!parent) return;
+            const siblings = parent.children;
+            const myIdx = siblings.indexOf(node);
+            if (myIdx < 0) return;
+
+            // Find nearest sibling variation.  children[] is newest-first so
+            // display order is reversed: adjacent-in-display prev = myIdx+1 in
+            // the array, next = myIdx-1.
+            let swapIdx = -1;
+            if (myIdx + 1 < siblings.length && siblings[myIdx + 1].isBranch)
+                swapIdx = myIdx + 1;
+            else if (myIdx - 1 >= 0 && siblings[myIdx - 1].isBranch)
+                swapIdx = myIdx - 1;
+            else {
+                for (let i = 0; i < siblings.length; i++) {
+                    if (i !== myIdx && siblings[i].isBranch) {
+                        swapIdx = i;
+                        break;
+                    }
+                }
+            }
+            if (swapIdx < 0) return;
+
+            const swapNode = siblings[swapIdx];
+            node.isBranch = true;
+            swapNode.isBranch = false;
+
+            this._rebuildMoveHistory();
+            this._navigateToMainLineNode(swapNode);
+            this.updateDisplay();
+            this.updateSquareHighlights();
+        }
+
+        /**
+         * Make Main Line — for any variation node.
+         * Walks the ancestry chain from the selected node to the root, flipping
+         * isBranch at every junction so the entire path becomes the main line.
+         * Old main-line nodes at each junction become variations.
+         */
+        makeMainLine() {
+            const node = this._getViewedNode();
+            if (!node || node === this.moveTree) return;
+            if (this.moveHistory.indexOf(node) >= 0) return; // already on main line
+
+            // Walk from node up to root, promoting this branch at each level.
+            let cur = node;
+            while (cur && cur !== this.moveTree) {
+                const parent = cur.parent;
+                if (!parent) break;
+                const oldMain = this._mainContinuationOf(parent);
+                if (oldMain && oldMain !== cur) oldMain.isBranch = true;
+                cur.isBranch = false;
+                cur = parent;
+            }
+
+            this._rebuildMoveHistory();
+            this._navigateToMainLineNode(node);
+            this.updateDisplay();
+            this.updateSquareHighlights();
+        }
+
+        /**
+         * Promote Variation — only for variations of variations.
+         * Promotes the selected node to be the main variation in its sub-tree
+         * (i.e. swaps isBranch flags with the current local main continuation),
+         * without affecting the global main line.
+         */
+        promoteVariation() {
+            const node = this._getViewedNode();
+            if (!node || node === this.moveTree) return;
+            if (this.moveHistory.indexOf(node) >= 0) return; // on main line
+
+            const parent = node.parent;
+            if (!parent || parent === this.moveTree) return;
+            if (this.moveHistory.indexOf(parent) >= 0) return; // parent on main line → use makeMainLine
+
+            const oldMain = this._mainContinuationOf(parent);
+            if (oldMain && oldMain !== node) oldMain.isBranch = true;
+            node.isBranch = false;
+
+            // Do not touch global moveHistory — only the sub-tree changed.
+            // _viewedNode stays as the selected node.
+            this.updateDisplay();
+            this.updateSquareHighlights();
+        }
+
+        /**
+         * Show / hide the variation control buttons below the move list based on
+         * what the currently-selected node is.
+         */
+        updateVariationControls() {
+            const panel = this.container.querySelector(
+                "[data-variation-controls]",
+            );
+            if (!panel) return;
+
+            const forceBtn = panel.querySelector("[data-var-force]");
+            const makeMainBtn = panel.querySelector("[data-var-make-main]");
+            const promoteBtn = panel.querySelector("[data-var-promote]");
+
+            const node = this._getViewedNode();
+            let showForce = false,
+                showMakeMain = false,
+                showPromote = false;
+
+            if (node && node !== this.moveTree) {
+                const onMainLine = this.moveHistory.indexOf(node) >= 0;
+
+                if (onMainLine && node.parent) {
+                    // Force Variation: main-line node whose parent has at least
+                    // one sibling tagged isBranch=true.
+                    showForce = node.parent.children.some(
+                        (c) => c !== node && c.isBranch,
+                    );
+                }
+
+                if (!onMainLine) {
+                    // Make Main Line: any variation node.
+                    showMakeMain = true;
+
+                    // Promote Variation: only for variations whose parent is
+                    // also off the main line (variation-of-variation), AND the
+                    // node is not already the main continuation of that parent
+                    // (isBranch=false means it's already the local main line).
+                    if (
+                        node.isBranch &&
+                        node.parent &&
+                        node.parent !== this.moveTree &&
+                        this.moveHistory.indexOf(node.parent) < 0
+                    ) {
+                        showPromote = true;
+                    }
+                }
+            }
+
+            if (forceBtn) forceBtn.hidden = !showForce;
+            if (makeMainBtn) makeMainBtn.hidden = !showMakeMain;
+            if (promoteBtn) promoteBtn.hidden = !showPromote;
+
+            // Collapse the container when nothing is visible.
+            panel.hidden = !showForce && !showMakeMain && !showPromote;
+        }
+
         // ── End move-tree helpers ─────────────────────────────────────────────
 
         undo() {
@@ -19105,6 +19310,10 @@ impossible to fulfill for either player, the game is considered a draw.</p>
         }
 
         updateMoveHistoryHighlight() {
+            // Sync variation-control button visibility first (independent of
+            // the highlight logic below and not affected by early returns).
+            this.updateVariationControls();
+
             // Clear all move highlighting
             const moveItems = this.container.querySelectorAll(
                 ".chushogi-move-item, .chushogi-move-item-inline",
