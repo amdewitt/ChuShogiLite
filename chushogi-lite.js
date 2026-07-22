@@ -4018,7 +4018,7 @@ impossible to fulfill for either player, the game is considered a draw.</p>
               <p>To navigate to a specfic position: Click its move in the move history</p>
               ${
                   !isViewOnly && !isPuzzle
-                      ? "<p>To move variations around, navigate to the target variation, and then press one of three buttons that appear below the move history:</p><ul><li>Force Variation: makes the main line a variation</li><li>Make Main Line: makes the target variation the main line</li><li>Promote variation: Promotes a sub-variation to the main variation of its sub-tree</li></ul>"
+                      ? "<p>To move variations around, navigate to the target variation, and then press one of three buttons that appear below the move history:</p><ul><li>Force Variation: makes the main line a variation</li><li>Make Main Line: makes the target variation the main line</li><li>Promote Variation: Promotes a sub-variation to the main variation of its sub-tree</li></ul>"
                       : ""
               }
               ${
