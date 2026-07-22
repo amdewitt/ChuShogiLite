@@ -3903,6 +3903,9 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                 this.config.appletMode === "fixedStart" ||
                 this.config.appletMode === "fixedStartAndRules" ||
                 this.config.appletMode === "fixedStartAndSettings";
+            const isFixedSettings =
+                this.config.appletMode === "fixedSettings" ||
+                this.config.appletMode === "fixedStartAndSettings";
             const isFixedRules =
                 this.config.appletMode === "fixedRules" ||
                 this.config.appletMode === "fixedStartAndRules";
@@ -3998,12 +4001,8 @@ impossible to fulfill for either player, the game is considered a draw.</p>
               <p><strong>Sidebar:</strong></p>
               <p>Use the tabs to switch between different panels</p>
               <ul>
-                <li>\ud83d\udccb Info: Shows information about the current game and the selected piece
-                <ul>
-                <li>Click a moves in the move history to jump to that point in the game</li>
-                </ul>
-                </li>
-                <li>\u2699\ufe0f Settings: Shows available settings${isViewOnly ? " (some settings are restricted in view-only mode)" : ""}</li>
+                <li>\ud83d\udccb Info: Shows information about the current game and the selected piece</li>
+                ${!isFixedSettings ? `<li>\u2699\ufe0f Settings: Shows available settings${isViewOnly ? " (some settings are restricted in view-only mode)" : ""}` : ""}</li>
                 <li>\u21c5 Export/Import: Allows for games to be exported to plaintext${!isViewOnly ? (isFixedStart ? " and imported from plaintext (imports restricted to same starting position)" : " and imported from plaintext") : " (Game imports not available in viewOnly mode)"}${isPuzzle ? " and has a 'View Solution' button to reveal the complete puzzle answer" : ""}</li>
                 ${!isViewOnly && !isFixedStart && !isPuzzle ? "<li>\u270f\ufe0f Edit: Allows the board to be edited without importing a game</li>" : ""}
                 <li>\u2139\ufe0f Rules: Explains the rules of Chu Shogi and displays the current Rules Settings</li>
@@ -4016,9 +4015,17 @@ impossible to fulfill for either player, the game is considered a draw.</p>
               <li><strong>Display inline notation:</strong> checkbox - puts all moves in the Game Log on a single line if checked</li>
               </ul>
               ${this.config.allowCustomComments ? "<p>When comments are shown, the current coomment can be edited by typing in the comment display window.</p>" : ""}
+              <p>To navigate to a specfic position: Click its move in the move history</p>
               ${
-                  !isViewOnly
-                      ? `<p><strong>Settings:</strong></p>
+                  !isViewOnly && !isPuzzle
+                      ? "<p>To move variations around, navigate to the target variation, and then press one of three buttons that appear below the move history:</p><ul><li>Force Variation: makes the main line a variation</li><li>Make Main Line: makes the target variation the main line</li><li>Promote variation: Promotes a sub-variation to the main variation of its sub-tree</li></ul>"
+                      : ""
+              }
+              ${
+                  isFixedSettings
+                      ? ""
+                      : !isViewOnly
+                        ? `<p><strong>Settings:</strong></p>
               <p>The \u2699\ufe0f Setting tab allows for various settings to be changed for a variety of effects.</p>
               <ul>
                 <li><strong>Board Size:</strong> Small, Medium, Large - Controls the visual size of the board</li>
@@ -4041,12 +4048,11 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                         : ""
                 }
               </ul>`
-                      : `<p><strong>Available Settings:</strong></p>
+                        : `<p><strong>Available Settings:</strong></p>
               <p>The \u2699\ufe0f Setting tab shows visual display settings (game-changing settings are restricted in view-only mode).</p>
               <ul>
                 <li><strong>Board Size:</strong> Small, Medium, Large - Controls the visual size of the board</li>
                 <li><strong>Show coordinates:</strong> checkbox - Shows file/rank labels around the board if checked</li>
-                <li><strong>Show moveable pieces:</strong> checkbox - Highlights all pieces that can be moved. Pieces that were last moved show a border outline instead of background highlight if checked</li>
                 <li><strong>Show last move:</strong> checkbox - Highlights the squares involved in the last move if checked</li>
                 <li><strong>Show promotion zones:</strong> checkbox - Highlights the promotion zones for both players if checked</li>
                 <li><strong>Show influence display:</strong> checkbox - Shows attack patterns and piece influence on the board if checked</li>
@@ -7975,9 +7981,13 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                     const _vnb =
                         this.container.querySelector("[data-nav-next]");
                     if (_vpb)
-                        _vpb.textContent = this._variationsNavMode ? "\u2191" : "\u2190";
+                        _vpb.textContent = this._variationsNavMode
+                            ? "\u2191"
+                            : "\u2190";
                     if (_vnb)
-                        _vnb.textContent = this._variationsNavMode ? "\u2193" : "\u2192";
+                        _vnb.textContent = this._variationsNavMode
+                            ? "\u2193"
+                            : "\u2192";
 
                     newVariationsCheckbox.addEventListener("change", (e) => {
                         const checked = e.target.checked;
@@ -7987,9 +7997,13 @@ impossible to fulfill for either player, the game is considered a draw.</p>
                         const navNextBtn =
                             this.container.querySelector("[data-nav-next]");
                         if (navPrevBtn)
-                            navPrevBtn.textContent = checked ? "\u2191" : "\u2190";
+                            navPrevBtn.textContent = checked
+                                ? "\u2191"
+                                : "\u2190";
                         if (navNextBtn)
-                            navNextBtn.textContent = checked ? "\u2193" : "\u2192";
+                            navNextBtn.textContent = checked
+                                ? "\u2193"
+                                : "\u2192";
                     });
                 }
             },
@@ -18200,7 +18214,11 @@ impossible to fulfill for either player, the game is considered a draw.</p>
          * then navigates to the newly-promoted node.
          */
         forceVariation() {
-            if (this.config.appletMode === "viewOnly" || this.config.appletMode === "puzzle") return;
+            if (
+                this.config.appletMode === "viewOnly" ||
+                this.config.appletMode === "puzzle"
+            )
+                return;
             const node = this._getViewedNode();
             if (!node || node === this.moveTree) return;
             if (this.moveHistory.indexOf(node) < 0) return; // must be on main line
@@ -18246,7 +18264,11 @@ impossible to fulfill for either player, the game is considered a draw.</p>
          * Old main-line nodes at each junction become variations.
          */
         makeMainLine() {
-            if (this.config.appletMode === "viewOnly" || this.config.appletMode === "puzzle") return;
+            if (
+                this.config.appletMode === "viewOnly" ||
+                this.config.appletMode === "puzzle"
+            )
+                return;
             const node = this._getViewedNode();
             if (!node || node === this.moveTree) return;
             if (this.moveHistory.indexOf(node) >= 0) return; // already on main line
@@ -18275,7 +18297,11 @@ impossible to fulfill for either player, the game is considered a draw.</p>
          * without affecting the global main line.
          */
         promoteVariation() {
-            if (this.config.appletMode === "viewOnly" || this.config.appletMode === "puzzle") return;
+            if (
+                this.config.appletMode === "viewOnly" ||
+                this.config.appletMode === "puzzle"
+            )
+                return;
             const node = this._getViewedNode();
             if (!node || node === this.moveTree) return;
             if (this.moveHistory.indexOf(node) >= 0) return; // on main line
